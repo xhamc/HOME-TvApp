@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- App theme. Edit with caution: there are many side effects to theme changes! -->
+    <style name="AppTheme" parent="Theme.Leanback">
+
+        <!-- theme colors, these mostly apply to phone apps with status bar, nav bar, etc -->
+        <item name="android:colorPrimary">@color/colorPrimary</item>
+        <item name="android:colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="android:textColorPrimary">@android:color/white</item>
+        <item name="android:navigationBarColor">@android:color/black</item>
+
+        <!-- main background -->
+        <item name="android:windowBackground">@drawable/background_gradient</item>
+
+        <!-- color for desktop recommendations, launch animation, etc -->
+        <item name="android:colorAccent">@color/accentColor</item>
+
+        <!-- widget background color -->
+        <item name="android:colorBackground">@color/dialogBackgroundColor</item>
+
+        <!-- not sure where this is used on tv? -->
+        <item name="android:colorForeground">@color/dialogAccentColor</item>
+
+        <!-- theme for dialogs -->
+        <item name="android:alertDialogTheme">@style/AlertDialogTheme</item>
+    </style>
+
+    <!-- parent theme is important, decides highlight colors, etc -->
+    <style name="AlertDialogTheme" parent="@android:style/Theme.Material.Dialog.Alert">
+        <!-- color for button text -->
+        <item name="android:colorAccent">@color/dialogAccentColor</item>
+        <!-- main background for each section in dialogs -->
+        <item name="android:background">@color/dialogBackgroundColor</item>
+        <!-- color used for title and text -->
+        <item name="android:textColorPrimary">@color/textColor</item>
+    </style>
+
+    <style name="normalText">
+        <item name="android:fontFamily">sans-serif-light</item>
+        <item name="android:textSize">24sp</item>
+        <item name="android:textColor">@color/textColor</item>
+    </style>
+
+    <style name="titleText" parent="normalText">
+        <item name="android:textSize">28sp</item>
+    </style>
+
+    <style name="dimmedNormalText" parent="normalText">
+        <item name="android:textColor">@color/dimmedTextColor</item>
+    </style>
+
+    <style name="smallText" parent="normalText">
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="cellTitleText" parent="normalText">
+        <item name="android:textSize">18sp</item>
+    </style>
+
+    <style name="cellMediumText" parent="normalText">
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="cellSmallText" parent="normalText">
+        <item name="android:textSize">12sp</item>
+    </style>
+
+
+
+    <style name="dimmedSmallText" parent="smallText">
+        <item name="android:textColor">@color/dimmedTextColor</item>
+    </style>
+
+    <style name="button">
+        <item name="android:background">@drawable/button_background</item>
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+
+    <style name="buttonText">
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+
+</resources>

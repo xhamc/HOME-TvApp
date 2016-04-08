@@ -1,0 +1,37 @@
+<resources>
+
+    <!-- theme colors -->
+    <color name="colorPrimary">@color/accentColor</color>
+    <color name="colorPrimaryDark">#003134</color>
+
+    <!-- accent color for nav bar, list cells, buttons, etc -->
+    <color name="accentColor">#00484f</color>
+    <color name="lighterAccentColor">#00616a</color>
+    <color name="translucentAccentColor">#8800484f</color>
+
+    <!-- text colors -->
+    <color name="textColor">@android:color/white</color>
+    <color name="readTextColor">@android:color/white</color>
+    <color name="dimmedTextColor">#88ffffff</color>
+    <color name="linkTextColor">#00616a</color>
+
+    <!-- navigation bar -->
+    <color name="navbarTextColor">@android:color/white</color>
+    <color name="navbarTextDisabledColor">#22ffffff</color>
+    <color name="navbarGradientStart">#00484f</color>
+    <color name="navbarGradientEnd">#00616a</color>
+
+    <!-- window background -->
+    <color name="backgroundColor">@android:color/black</color>
+    <color name="backgroundColorGradient">#002024</color>
+
+    <!-- dialog colors -->
+    <color name="dialogBackgroundColor">#002024</color>
+    <color name="dialogAccentColor">#00484f</color>
+
+    <!-- push buttons -->
+    <color name="buttonBackgroundFocusedColor">@color/translucentAccentColor</color>
+    <color name="buttonBackgroundColor">#10ffffff</color>
+    <color name="buttonBackgroundPressedColor">@color/accentColor</color>
+
+</resources>

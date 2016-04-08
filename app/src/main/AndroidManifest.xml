@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest
+    package="com.sony.sel.tvapp"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    >
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.WRITE_SETTINGS"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
+    <!-- Android TV -->
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false"
+        />
+
+    <!-- no touchscreen required -->
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false"
+        />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:logo="@drawable/ic_launcher_leanback"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        >
+
+        <activity
+            android:name=".activity.MainActivity"
+            android:screenOrientation="landscape"
+            >
+
+        </activity>
+
+        <activity
+            android:name=".activity.SelectEpgServerActivity"
+            android:screenOrientation="landscape"
+            >
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+
+                <category android:name="android.intent.category.LAUNCHER"/>
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+            </intent-filter>
+
+            </activity>
+    </application>
+
+    <!-- service that updates EPG -->
+    <service
+        android:name=".service.EpgService"
+        android:enabled="true"
+        />
+
+    <!-- Receiver to schedule the EpgService when state changes occur -->
+    <receiver
+        android:name=".service.EpgReceiver"
+        android:enabled="true"
+        android:exported="false"
+        >
+        <intent-filter>
+            <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            <action android:name="android.intent.action.SCREEN_ON"/>
+            <action android:name="android.intent.action.SCREEN_OFF"/>
+        </intent-filter>
+    </receiver>
+
+</manifest>

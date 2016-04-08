@@ -1,0 +1,21 @@
+<resources>
+    <!-- application idenitity -->
+    <string name="app_name">Sony TV</string>
+
+    <!-- general purpose strings -->
+    <string name="loading">Loading...</string>
+    <string name="quit">Quit</string>
+    <string name="cancel">Cancel</string>
+    <string name="settings">Settings</string>
+    <string name="back">Back</string>
+    <string name="quitConfirmation">Are you sure you want to quit?</string>
+
+    <!-- errors -->
+    <string name="error">Error</string>
+    <string name="genericErrorMessage">An error occurred.</string>
+
+    <!-- servers -->
+    <string name="selectServerTitle">Select a Server:</string>
+    <string name="searchingForServers">Searching...</string>
+    <string name="noServersFound">No supported servers were found.</string>
+</resources>
