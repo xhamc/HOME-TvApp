@@ -28,6 +28,7 @@
         android:logo="@drawable/ic_launcher_leanback"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
+        android:name=".app.TVApp"
         >
 
         <activity

@@ -12,9 +12,12 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.net.ServerSocket;
 import java.net.SocketException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -107,6 +110,83 @@ public class NetworkHelper extends BroadcastReceiver {
   }
 
   /**
+   * Return the port number of the first free TCP port.
+   */
+  public int getFreePort() throws IOException {
+    int port = 0;
+    final ServerSocket socket = new ServerSocket(0);  // A port of 0 creates a socket on any free port
+    socket.setReuseAddress(true);
+    port = socket.getLocalPort();
+    socket.close();
+    return port;
+  }
+
+  /**
+   * Return the list of network interfaces as a comma-delimited list.
+   */
+  public String getActiveIfNamesInCsvFormat() {
+    String ifNamesInCsvFormat = "";
+    Enumeration<NetworkInterface> nics;
+    try {
+      nics = NetworkInterface.getNetworkInterfaces();
+      if (nics != null) {
+        while (nics.hasMoreElements()) {
+          NetworkInterface ni = nics.nextElement();
+          if (ni.getName().compareTo("lo") == 0) {
+            continue; // skip local-loopback
+          }
+          /* Good check on API level 9 */
+          try {
+            // Use refrection because NetworkInterface.isUp is only available for GingerBread or later
+            final Method isUp = NetworkInterface.class.getMethod("isUp", new Class[] {});
+            if (isUp.invoke(ni).equals(false)) {
+              continue;
+            }
+          } catch (NoSuchMethodException e) {
+            // nothing to do.
+          } catch (IllegalArgumentException e) {
+            // nothing to do.
+          } catch (IllegalAccessException e) {
+            // nothing to do.
+          } catch (InvocationTargetException e) {
+            // nothing to do.
+          }
+          Log.d(TAG, "ifName=[" + ni.getName() + "]");
+          Enumeration<InetAddress> a = ni.getInetAddresses();
+          String ipAddress;
+          if (a.hasMoreElements()) {
+            ipAddress = a.nextElement().getHostAddress();
+            if (ipAddress.contains("::")) { // Assume as IPv6
+              if (a.hasMoreElements()) {  // Get IP address of IPv4
+                ipAddress = a.nextElement().getHostAddress();
+              } else {
+                Log.d(TAG, "-> No IPv4 address, skip");
+                continue; // No IPv4 address
+              }
+            }
+            Log.d(TAG, "-> [" + ipAddress + "]");
+            if (ipAddress.equalsIgnoreCase("10.0.2.15")) {
+              Log.d(TAG, "Skip this interface");
+              continue; // skip interface for adb connection on Emulator
+            }
+          } else {
+            Log.d(TAG, "-> No IP Address, skip");
+            continue;
+          }
+          if (!ifNamesInCsvFormat.equals("")) {
+            ifNamesInCsvFormat += ",";
+          }
+          ifNamesInCsvFormat += ni.getName();
+        }
+      }
+    } catch (SocketException e) {
+      Log.d(TAG, "Error occured in network: " + e);
+    }
+    Log.d(TAG, "ifName=" + ifNamesInCsvFormat);
+    return ifNamesInCsvFormat;
+  }
+
+  /**
    * Return 0 or more IP addresses for the current device on all active network interfaces.
    * Filters out any loopback addresses.
    * If the device is connected normally, the size of the list will usually be 1.
@@ -142,7 +222,7 @@ public class NetworkHelper extends BroadcastReceiver {
   /**
    * Retry the network connection.
    *
-   * @param observer   Observer to receive result of retries.
+   * @param observer   AsyncTaskObserver to receive result of retries.
    * @param numRetries Number of times to retry before returning a failure.
    */
   public void retryNetworkConnection(@NonNull String heartbeatUrl, @NonNull RetryObserver observer, int numRetries) {

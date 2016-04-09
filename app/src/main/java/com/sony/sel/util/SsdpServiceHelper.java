@@ -94,11 +94,11 @@ public class SsdpServiceHelper {
    * <p>
    * The observer is always notified on the UI thread.
    *
-   * @param observer Observer to receive the scalar API info, or error notification.
+   * @param observer AsyncTaskObserver to receive the scalar API info, or error notification.
    */
   public void findSsdpDevice(@NonNull SsdpServiceType serviceType, @NonNull SsdpDeviceObserver observer) {
     if (observer == null) {
-      throw new IllegalArgumentException("Observer can't be null.");
+      throw new IllegalArgumentException("AsyncTaskObserver can't be null.");
     }
     observers.add(observer);
     if (discoveryTask == null) {

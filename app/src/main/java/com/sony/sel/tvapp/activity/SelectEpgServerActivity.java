@@ -8,12 +8,10 @@ import android.util.Log;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.adapter.TvAppAdapter;
-import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.view.ServerCell;
 import com.sony.sel.util.NetworkHelper;
 import com.sony.sel.util.SsdpServiceHelper;
 import com.sony.sel.util.ViewUtils;
-import com.squareup.otto.Subscribe;
 
 import static com.sony.sel.util.SsdpServiceHelper.SsdpDeviceInfo;
 import static com.sony.sel.util.SsdpServiceHelper.SsdpDeviceObserver;
@@ -56,7 +54,7 @@ public class SelectEpgServerActivity extends BaseActivity {
 
   private void startDiscovery() {
     adapter.setLoading();
-    ssdpServiceHelper.findSsdpDevice(SsdpServiceType.ANY, new SsdpDeviceObserver() {
+    ssdpServiceHelper.findSsdpDevice(SsdpServiceType.CONTENT_DIRECTORY, new SsdpDeviceObserver() {
       @Override
       public void onDeviceFound(@NonNull SsdpDeviceInfo deviceInfo) {
         Log.d(TAG, "Device found: " + deviceInfo.getFriendlyName());
