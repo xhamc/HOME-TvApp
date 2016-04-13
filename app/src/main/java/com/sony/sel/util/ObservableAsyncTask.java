@@ -9,18 +9,39 @@ import android.os.Looper;
  */
 public abstract class ObservableAsyncTask<Params, Progress, Result> extends AsyncTask<Params, Progress, Result> {
 
-  private ObserverSet<AsyncTaskObserver> observers = new ObserverSet<>(AsyncTaskObserver.class);
-
+  private ObserverSet<AsyncTaskObserver<Progress, Result>> observers = new ObserverSet<>((Class<AsyncTaskObserver<Progress, Result>>) (Class<?>) AsyncTaskObserver.class);
 
   public interface AsyncTaskObserver<Progress, Result> {
     void onStarting();
+
     void onProgress(Progress... values);
+
     void onCanceled(Result result);
+
     void onComplete(Result result);
+
     void onError(Throwable error);
   }
 
-  public ObserverSet<AsyncTaskObserver> getObservers() {
+  public static abstract class BasicObserver<Progress, Result> implements AsyncTaskObserver<Progress, Result> {
+
+    @Override
+    public void onStarting() {
+
+    }
+
+    @Override
+    public void onProgress(Progress... values) {
+
+    }
+
+    @Override
+    public void onCanceled(Result result) {
+
+    }
+  }
+
+  public ObserverSet<AsyncTaskObserver<Progress, Result>> getObservers() {
     return observers;
   }
 

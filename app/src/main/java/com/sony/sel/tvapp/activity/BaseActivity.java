@@ -72,7 +72,7 @@ public abstract class BaseActivity extends Activity {
   public boolean onKeyDown(int keyCode, KeyEvent event) {
     if (settingsKeySequenceDetector.onKeyDown(keyCode, event) == true) {
       // matched secret key sequence to open settings
-      startActivity(new Intent(this, SelectEpgServerActivity.class));
+      startActivity(new Intent(this, SelectServerActivity.class));
       // handled
       return true;
     }

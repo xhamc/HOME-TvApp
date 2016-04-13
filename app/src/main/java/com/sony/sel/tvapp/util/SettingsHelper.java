@@ -3,6 +3,8 @@ package com.sony.sel.tvapp.util;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.google.gson.Gson;
+
 public class SettingsHelper {
 
   private static final String LOG_TAG = SettingsHelper.class.getSimpleName();
@@ -10,6 +12,7 @@ public class SettingsHelper {
   private static final String PREFS_FILE = "prefs";
 
   private static final String EPG_SERVER = "EpgServer";
+  private static final String CURRENT_CHANNEL = "CurrentChannel";
 
   private static SettingsHelper INSTANCE;
 
@@ -52,5 +55,24 @@ public class SettingsHelper {
       editor.commit();
       EventBus.getInstance().post(new EventBus.EpgServerChangedEvent(server));
     }
+  }
+
+  public DlnaObjects.VideoBroadcast getCurrentChannel() {
+    String channelString = getSharedPreferences().getString(CURRENT_CHANNEL, null);
+    if (channelString != null) {
+      return new Gson().fromJson(channelString, DlnaObjects.VideoBroadcast.class);
+    }
+    // no channel
+    return null;
+  }
+
+  public void setCurrentChannel(DlnaObjects.VideoBroadcast channel) {
+
+      SharedPreferences prefs = getSharedPreferences();
+      SharedPreferences.Editor editor = prefs.edit();
+      editor.putString(CURRENT_CHANNEL, channel.toString());
+      editor.commit();
+      EventBus.getInstance().post(new EventBus.ChannelChangedEvent(channel));
+
   }
 }

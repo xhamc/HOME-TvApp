@@ -136,6 +136,16 @@ public class DlnaObjects {
     public String toString() {
       return new Gson().toJson(this);
     }
+
+    @Override
+    public boolean equals(Object o) {
+      return o instanceof DlnaObject ? id.equals(((DlnaObject) o).id) : false;
+    }
+
+    @Override
+    public int hashCode() {
+      return id.hashCode();
+    }
   }
 
   /**

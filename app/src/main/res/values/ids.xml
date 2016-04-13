@@ -4,4 +4,6 @@
     <item name="empty_cell" type="id"/>
     <item name="error_cell" type="id"/>
     <item name="server_cell" type="id"/>
+
+    <item name="navigationCell" type="id" />
 </resources>

@@ -34,6 +34,14 @@
         <item name="android:background">@color/dialogBackgroundColor</item>
         <!-- color used for title and text -->
         <item name="android:textColorPrimary">@color/textColor</item>
+        <!-- color used for secondary text -->
+        <item name="android:textColorSecondary">@color/textColor</item>
+        <!-- button style -->
+        <item name="android:buttonBarButtonStyle">@style/AlertButtonStyle</item>
+    </style>
+
+    <style name="AlertButtonStyle" parent="android:Widget.Material.Button.Borderless">
+        <item name="android:textColor">@color/lightestAccentColor</item>
     </style>
 
     <style name="normalText">
@@ -80,5 +88,11 @@
     <style name="buttonText">
         <item name="android:textColor">@android:color/white</item>
     </style>
+
+    <style name="navigationText" parent="normalText">
+        <item name="android:textSize">@dimen/navigationFontSize</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
 
 </resources>

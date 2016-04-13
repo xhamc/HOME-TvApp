@@ -7,6 +7,7 @@
     <!-- accent color for nav bar, list cells, buttons, etc -->
     <color name="accentColor">#00484f</color>
     <color name="lighterAccentColor">#00616a</color>
+    <color name="lightestAccentColor">#00818a</color>
     <color name="translucentAccentColor">#8800484f</color>
 
     <!-- text colors -->
@@ -34,4 +35,6 @@
     <color name="buttonBackgroundColor">#10ffffff</color>
     <color name="buttonBackgroundPressedColor">@color/accentColor</color>
 
+    <!-- menu backgrounds -->
+    <color name="menuBackground">#A0000000</color>
 </resources>

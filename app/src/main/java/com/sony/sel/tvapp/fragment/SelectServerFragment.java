@@ -1,10 +1,14 @@
-package com.sony.sel.tvapp.activity;
+package com.sony.sel.tvapp.fragment;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.adapter.TvAppAdapter;
@@ -13,16 +17,12 @@ import com.sony.sel.util.NetworkHelper;
 import com.sony.sel.util.SsdpServiceHelper;
 import com.sony.sel.util.ViewUtils;
 
-import static com.sony.sel.util.SsdpServiceHelper.SsdpDeviceInfo;
-import static com.sony.sel.util.SsdpServiceHelper.SsdpDeviceObserver;
-import static com.sony.sel.util.SsdpServiceHelper.SsdpServiceType;
-
 /**
- * Activity to select the EPG server.
+ * Fragment for choosing the EPG server
  */
-public class SelectEpgServerActivity extends BaseActivity {
+public class SelectServerFragment extends BaseFragment {
 
-  public static final String TAG = SelectEpgServerActivity.class.getSimpleName();
+  public static final String TAG = SelectServerFragment.class.getSimpleName();
 
   private SsdpServiceHelper ssdpServiceHelper;
   private NetworkHelper networkHelper;
@@ -30,33 +30,38 @@ public class SelectEpgServerActivity extends BaseActivity {
   private RecyclerView list;
   private DeviceAdapter adapter;
 
+  @Nullable
   @Override
-  protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
+  public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    View contentView = inflater.inflate(R.layout.select_server_fragment, null);
 
-    setContentView(R.layout.select_server_activity);
-    list = ViewUtils.findViewById(this, android.R.id.list);
-    list.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
+    list = ViewUtils.findViewById(contentView, android.R.id.list);
+    list.setLayoutManager(new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false));
     adapter = new DeviceAdapter();
     list.setAdapter(adapter);
     adapter.setLoading();
 
-    networkHelper = NetworkHelper.getHelper(this);
+    networkHelper = NetworkHelper.getHelper(getActivity());
     ssdpServiceHelper = new SsdpServiceHelper(networkHelper);
     startDiscovery();
+
+    return contentView;
   }
 
+
   @Override
-  protected void onDestroy() {
+  public void onDestroy() {
     super.onDestroy();
     cancelDiscovery();
   }
 
   private void startDiscovery() {
     adapter.setLoading();
-    ssdpServiceHelper.findSsdpDevice(SsdpServiceType.CONTENT_DIRECTORY, new SsdpDeviceObserver() {
+
+    // search for devices
+    ssdpServiceHelper.findSsdpDevice(SsdpServiceHelper.SsdpServiceType.ANY, new SsdpServiceHelper.SsdpDeviceObserver() {
       @Override
-      public void onDeviceFound(@NonNull SsdpDeviceInfo deviceInfo) {
+      public void onDeviceFound(@NonNull SsdpServiceHelper.SsdpDeviceInfo deviceInfo) {
         Log.d(TAG, "Device found: " + deviceInfo.getFriendlyName());
         if (!adapter.contains(deviceInfo)) {
           adapter.add(deviceInfo);
@@ -75,11 +80,11 @@ public class SelectEpgServerActivity extends BaseActivity {
     ssdpServiceHelper.cancelDiscovery();
   }
 
-  private class DeviceAdapter extends TvAppAdapter<SsdpDeviceInfo, ServerCell> {
+  private class DeviceAdapter extends TvAppAdapter<SsdpServiceHelper.SsdpDeviceInfo, ServerCell> {
 
     public DeviceAdapter() {
       super(
-          SelectEpgServerActivity.this,
+          getActivity(),
           R.id.server_cell,
           R.layout.server_cell,
           getString(R.string.searchingForServers),

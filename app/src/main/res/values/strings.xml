@@ -6,7 +6,6 @@
     <string name="loading">Loading...</string>
     <string name="quit">Quit</string>
     <string name="cancel">Cancel</string>
-    <string name="settings">Settings</string>
     <string name="back">Back</string>
     <string name="quitConfirmation">Are you sure you want to quit?</string>
 
@@ -18,4 +17,12 @@
     <string name="selectServerTitle">Select a Server:</string>
     <string name="searchingForServers">Searching...</string>
     <string name="noServersFound">No supported servers were found.</string>
+
+    <!-- navigation items -->
+    <string name="search">Search</string>
+    <string name="channels">Channels</string>
+    <string name="guide">Guide</string>
+    <string name="recordings">Recordings</string>
+    <string name="settings">Settings</string>
+
 </resources>

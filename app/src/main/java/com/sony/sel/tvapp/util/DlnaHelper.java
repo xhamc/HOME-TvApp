@@ -1,6 +1,7 @@
 package com.sony.sel.tvapp.util;
 
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -12,29 +13,29 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
 
-import com.google.gson.Gson;
 import com.sony.huey.dlna.DlnaCdsStore;
 import com.sony.huey.dlna.IUpnpServiceCp;
 import com.sony.huey.dlna.UpnpServiceCp;
 import com.sony.sel.util.NetworkHelper;
-import com.sony.sel.util.ObservableAsyncTask;
 import com.sony.sel.util.ObserverSet;
+import com.sony.sel.util.SsdpServiceHelper;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import static com.sony.sel.tvapp.util.DlnaObjects.DlnaObject;
 import static com.sony.sel.tvapp.util.DlnaObjects.EpgContainer;
 import static com.sony.sel.tvapp.util.DlnaObjects.VideoBroadcast;
 import static com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
-import static com.sony.sel.tvapp.util.DlnaObjects.Container;
 
 /**
  * Helper for DLNA service and content provider.
@@ -50,6 +51,7 @@ public class DlnaHelper {
   private static final String HUEY_PACKAGE = "com.sony.huey.dlna.module";
 
   private Context context;
+  private ContentResolver contentResolver;
   private NetworkHelper networkHelper;
 
   private IUpnpServiceCp hueyService;
@@ -79,10 +81,6 @@ public class DlnaHelper {
   };
 
   private ObserverSet<DlnaServiceObserver> serviceObservers = new ObserverSet<DlnaServiceObserver>(DlnaServiceObserver.class);
-  private EpgServerIteratorTask iteratorTask;
-
-  private Map<String,List<EpgContainer>> epgCache = new HashMap<>();
-  private Map<String,List<VideoBroadcast>> channelCache = new HashMap<>();
 
   private static DlnaHelper INSTANCE;
 
@@ -99,6 +97,7 @@ public class DlnaHelper {
 
   private DlnaHelper(Context context) {
     this.context = context.getApplicationContext();
+    this.contentResolver = context.getContentResolver();
     networkHelper = NetworkHelper.getHelper(this.context);
   }
 
@@ -211,7 +210,7 @@ public class DlnaHelper {
     try {
       Uri uri = DlnaCdsStore.getObjectUri(udn, parentId);
       String[] columns = DlnaObject.getColumnNames(childClass);
-      cursor = context.getContentResolver().query(uri, columns, null, null, null);
+      cursor = contentResolver.query(uri, columns, null, null, null);
       if (cursor == null) {
         // no data
         Log.w(TAG, "No data.");
@@ -236,7 +235,7 @@ public class DlnaHelper {
             // generic/unknown DLNA object
             dlnaObject = new DlnaObject(cursor);
           }
-          children.add((T)dlnaObject);
+          children.add((T) dlnaObject);
         } while (cursor.moveToNext());
       }
     } catch (Throwable e) {
@@ -249,159 +248,53 @@ public class DlnaHelper {
     return children;
   }
 
-  public interface EpgIterationListener extends ObservableAsyncTask.AsyncTaskObserver<Integer,Integer> {
-  }
-
-  public void iterateEpgServer(String serverUdn, EpgIterationListener observer) {
-    if (iteratorTask == null) {
-      iteratorTask = new EpgServerIteratorTask();
-      iteratorTask.getObservers().add(new ObservableAsyncTask.AsyncTaskObserver<Integer, Integer>() {
-        @Override
-        public void onStarting() {
-          Log.d(TAG, "EPG iterator starting.");
-        }
-
-        @Override
-        public void onProgress(Integer... values) {
-          Log.d(TAG, "EPG iterator progress: "+values[0]+" items.");
-        }
-
-        @Override
-        public void onCanceled(Integer integer) {
-          Log.w(TAG, "EPG iterator canceled: "+integer+" items.");
-          // clear task on completion
-          iteratorTask = null;
-        }
-
-        @Override
-        public void onComplete(Integer integer) {
-          Log.d(TAG, "EPG iterator complete: "+integer+" items.");
-          // clear task on completion
-          iteratorTask = null;
-        }
-
-        @Override
-        public void onError(Throwable error) {
-          Log.e(TAG, "EPG iterator error: "+error);
-        }
-      });
-      iteratorTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, serverUdn);
-    }
-    if (observer != null) {
-      iteratorTask.getObservers().add(observer);
-    }
-  }
-
-  private class EpgServerIteratorTask extends ObservableAsyncTask<String, Integer, Integer> {
-
-    @Override
-    protected Integer doInBackground(String... params) {
-      String udn = params[0];
-      int objectCount = 0;
-      List<Container> rootObjects = getChildren(
-          udn,
-          DlnaHelper.DLNA_ROOT,
-          Container.class
-      );
-      objectCount += rootObjects.size();
-      for (DlnaObject child : rootObjects) {
-        if (isCancelled()) {
-          // canceled
-          return objectCount;
-        } else {
-          // report progress
-          publishProgress(objectCount);
-        }
-        if (child.getTitle().equals("Channels")) {
-          List<VideoBroadcast> channels = getChildren(
-              udn,
-              child.getId(),
-              VideoBroadcast.class
-          );
-          objectCount += channels.size();
-        } else if (child.getTitle().equals("EPG")) {
-          // get epg channel containers
-          List<EpgContainer> epgChannels = getChildren(
-              udn,
-              child.getId(),
-              EpgContainer.class
-          );
-          objectCount += epgChannels.size();
-          for (DlnaObject epgChannel : epgChannels) {
-            // check if canceled
-            if (isCancelled()) {
-              // canceled
-              return objectCount;
-            } else {
-              // report progress
-              publishProgress(objectCount);
-            }
-            // get containers for each day
-            List<EpgContainer> epgDays = getChildren(
-                udn,
-                epgChannel.getId(),
-                EpgContainer.class
-            );
-            objectCount += epgDays.size();
-            for (DlnaObject epgDay : epgDays) {
-              if (isCancelled()) {
-                // canceled
-                return objectCount;
-              } else {
-                // report progress
-                publishProgress(objectCount);
-              }
-              // get the video programs for each day
-              List<VideoProgram> epgPrograms = getChildren(
-                  udn,
-                  epgDay.getId(),
-                  VideoProgram.class
-              );
-              objectCount += epgPrograms.size();
-            }
-          }
-        }
-      }
-      return objectCount;
-    }
-  }
-
   public List<VideoBroadcast> getChannels(String udn) {
     return getChildren(udn, "0/Channels", VideoBroadcast.class);
   }
 
-  public List<VideoProgram> getEpgPrograms(String udn, Set<String> channelIds, Date startDateTime, Date endDateTime) {
-    // make a copy so we can delete channels that have been scanned
-    Set<String> mutableChannelIds = new HashSet<>(channelIds);
-    List<EpgContainer> epgChannels = getChildren(udn, "0/EPG", EpgContainer.class);
+  public List<VideoProgram> getEpgPrograms(String udn, Set<VideoBroadcast> channels, Date startDateTime, Date endDateTime) {
     List<VideoProgram> programs = new ArrayList<>();
-    for (EpgContainer channel : epgChannels) {
-      if (mutableChannelIds.contains(channel.getChannelId())) {
-        List<EpgContainer> days = getChildren(udn, channel.getId(), EpgContainer.class);
-        for (EpgContainer day : days) {
-          Date dayStart = day.getDateTimeRangeStart();
-          Date dayEnd = day.getDateTimeRangeEnd();
-          if (startDateTime.before(dayEnd) && endDateTime.after(dayStart)) {
-            // dates overlap, parse shows
-            List<VideoProgram> shows = getChildren(udn, day.getId(), VideoProgram.class);
-            for (VideoProgram show : shows) {
-              Date showStart = show.getScheduledStartTime();
-              Date showEnd = show.getScheduledEndTime();
-              if (startDateTime.before(showEnd) && endDateTime.after(showStart)) {
-                // show is in date range
-                programs.add(show);
-              }
-            }
+
+    // create list of days needed for EPG data
+    List<String> days = new ArrayList<>();
+    Calendar calendar = Calendar.getInstance();
+    for (calendar.setTime(startDateTime); calendar.getTimeInMillis() < endDateTime.getTime(); calendar.add(Calendar.DAY_OF_MONTH, 1)) {
+      DateFormat format = new SimpleDateFormat("M-d");
+      days.add(format.format(calendar.getTime()));
+    }
+
+    // iterate requested channels
+    for (VideoBroadcast channel : channels) {
+      for (String day : days) {
+        // shortcut for creating the container ID to directly access EPG programs for channel & day
+        // this may not work for non-Google EPG
+        String containerId = "0/EPG/" + channel.getChannelId() + "/" + day;
+        List<VideoProgram> shows = getChildren(udn, containerId, VideoProgram.class);
+        for (VideoProgram show : shows) {
+          Date showStart = show.getScheduledStartTime();
+          Date showEnd = show.getScheduledEndTime();
+          if (startDateTime.before(showEnd) && endDateTime.after(showStart)) {
+            // show is in time range
+            programs.add(show);
           }
-        }
-        mutableChannelIds.remove(channel.getChannelId());
-        if (mutableChannelIds.size() == 0) {
-          // done
-          break;
         }
       }
     }
     return programs;
+  }
+
+  public VideoProgram getCurrentEpgProgram(String udn, VideoBroadcast channel) {
+    DateFormat format = new SimpleDateFormat("M-d");
+    Date now = new Date();
+    String day = format.format(now);
+    List<VideoProgram> shows = getChildren(udn, "0/EPG/" + channel.getChannelId() + "/" + day, VideoProgram.class);
+    for (VideoProgram show : shows) {
+      if (show.getScheduledStartTime().before(now) && show.getScheduledEndTime().after(now)) {
+        // show found
+        return show;
+      }
+    }
+    return null;
   }
 
   private Context getDlnaServiceContext() throws PackageManager.NameNotFoundException {
@@ -433,6 +326,60 @@ public class DlnaHelper {
     intent.putExtra(UpnpServiceCp.MAXIMUM_BROWSE_REQUESTED_COUNT, 50);
 
     return intent;
+  }
+
+  /**
+   * Test task for extracting random EPG data from database.
+   */
+  private static class FindEpgDataTask extends AsyncTask<Void,Void,Void> {
+
+    public static final String LOG_TAG = "DlnaTest";
+
+    private DlnaHelper helper;
+    private final String udn;
+
+    public FindEpgDataTask(DlnaHelper helper, String udn) {
+      this.helper = helper;
+      this.udn = udn;
+    }
+
+    @Override
+    protected Void doInBackground(Void... params) {
+      // get channel list
+      List<VideoBroadcast> allChannels = helper.getChannels(udn);
+      if (allChannels.size() == 0) {
+        Log.e(LOG_TAG, "No channels found.");
+        return null;
+      } else {
+        Log.d(LOG_TAG, String.format("%d channels found.", allChannels.size()));
+      }
+
+      // pick some random channels
+      Set<VideoBroadcast> searchChannels = new HashSet<>();
+      for (int i = 0; i < 5; i++) {
+        searchChannels.add(allChannels.get(Math.abs(new Random().nextInt()) % allChannels.size()));
+      }
+
+      // set the time interval
+      Calendar start = Calendar.getInstance();
+      start.add(Calendar.HOUR, -1);
+      Calendar end = Calendar.getInstance();
+      end.setTime(start.getTime());
+      end.add(Calendar.HOUR, 6);
+
+      // query EPG data
+      long time = System.currentTimeMillis();
+      Log.d(LOG_TAG, "Finding shows on " + searchChannels.size() + " channels from " + start.getTime() + " to " + end.getTime() + ":");
+      List<VideoProgram> shows = helper.getEpgPrograms(udn, searchChannels, start.getTime(), end.getTime());
+      Log.d(LOG_TAG, "Query finished in " + (System.currentTimeMillis() - time) + "msec.");
+
+      // print search results
+      for (VideoProgram show : shows) {
+        Log.d(LOG_TAG, show.toString());
+      }
+
+      return null;
+    }
   }
 
 }
