@@ -47,6 +47,8 @@ public class VideoFragment extends BaseFragment {
   private VideoBroadcast currentChannel;
   private Map<String,VideoProgram> currentPrograms = new HashMap<>();
 
+  private GetCurrentProgramsTask epgTask;
+
   @Nullable
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -92,6 +94,14 @@ public class VideoFragment extends BaseFragment {
     return contentView;
   }
 
+  @Override
+  public void onDestroy() {
+    super.onDestroy();
+    if (epgTask != null) {
+      epgTask.cancel(true);
+    }
+  }
+
   @Subscribe
   public void onServerChanged(EventBus.EpgServerChangedEvent event) {
     getChannels();
@@ -111,7 +121,7 @@ public class VideoFragment extends BaseFragment {
 
   private void setChannels(List<VideoBroadcast> channels) {
     if (channels != null) {
-      // set channel list
+      // set channel grid
       this.channels = channels;
 
       // setup current channel
@@ -123,7 +133,8 @@ public class VideoFragment extends BaseFragment {
       setCurrentChannel(channel);
 
       // fetch current programs for all channels
-      new GetCurrentProgramsTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+      epgTask = new GetCurrentProgramsTask();
+      epgTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 
     }
   }
@@ -183,6 +194,10 @@ public class VideoFragment extends BaseFragment {
           publishProgress(currentProgram);
         } else {
           Log.e(TAG, "No current program found.");
+        }
+        if (isCancelled()) {
+          Log.w(TAG, "Canceling EPG task.");
+          break;
         }
       }
       return null;

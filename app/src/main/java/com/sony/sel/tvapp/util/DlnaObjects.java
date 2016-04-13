@@ -682,6 +682,9 @@ public class DlnaObjects {
     }
 
     public String getCallSign() {
+      if (callSign != null && callSign.startsWith("x")) {
+        return callSign.substring(1);
+      }
       return callSign;
     }
 

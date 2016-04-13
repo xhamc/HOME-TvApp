@@ -2,4 +2,5 @@
 <resources>
     <dimen name="navigationFontSize">18sp</dimen>
     <dimen name="channelThumbPadding">10dp</dimen>
+    <dimen name="channelHeight">400dp</dimen>
 </resources>

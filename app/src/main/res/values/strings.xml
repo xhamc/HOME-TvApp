@@ -18,6 +18,9 @@
     <string name="searchingForServers">Searching...</string>
     <string name="noServersFound">No supported servers were found.</string>
 
+    <!-- channels -->
+    <string name="noChannelsFound">No channels were found.</string>
+
     <!-- navigation items -->
     <string name="search">Search</string>
     <string name="channels">Channels</string>

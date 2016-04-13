@@ -6,4 +6,5 @@
     <item name="server_cell" type="id"/>
 
     <item name="navigationCell" type="id" />
+    <item name="channelCell" type="id" />
 </resources>

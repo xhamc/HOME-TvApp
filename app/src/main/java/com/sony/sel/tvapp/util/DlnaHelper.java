@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
@@ -31,6 +32,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static com.sony.sel.tvapp.util.DlnaObjects.DlnaObject;
 import static com.sony.sel.tvapp.util.DlnaObjects.EpgContainer;
@@ -53,6 +56,8 @@ public class DlnaHelper {
   private Context context;
   private ContentResolver contentResolver;
   private NetworkHelper networkHelper;
+
+  private Object lock = new Object();
 
   private IUpnpServiceCp hueyService;
   private ServiceConnection hueyConnection = new ServiceConnection() {
@@ -163,6 +168,27 @@ public class DlnaHelper {
       serviceObservers.proxy().onError(e);
     }
 
+    Cursor c = context.getContentResolver().query(UpnpServiceCp.CONTENT_URI,
+        UpnpServiceCp.PROJECTION,
+        true ?
+            UpnpServiceCp.DEVICE_TYPE + " LIKE '%'" :
+            UpnpServiceCp.DEVICE_TYPE + " LIKE '%:" + UpnpServiceCp.REMOTE_UI_SERVER_DEVICE + ":%'",
+        null, null);
+
+    Bundle bundle = new Bundle();
+    bundle.putInt(UpnpServiceCp.RESPOND_IOCTL_GET_CONTROL_POINT_STATUS, 0);
+    Bundle ret = c.respond(bundle);
+    if ((ret.getInt(UpnpServiceCp.RESPOND_IOCTL_GET_CONTROL_POINT_STATUS) & UpnpServiceCp.GENERIC_DEVICE_CP) != 0) {
+      Log.d(TAG, "Control point started.");
+    } else {
+      Log.d(TAG, "Control point starting.");
+      Bundle bundle1 = new Bundle();
+      bundle1.putInt(UpnpServiceCp.RESPOND_IOCTL_CONTROL_POINT, UpnpServiceCp.GENERIC_DEVICE_CP | UpnpServiceCp.IOCTL_START_CONTROL_POINT);
+      ret = c.respond(bundle1);
+      Log.d(TAG, "Control point starting. Response = " + ret + ".");
+    }
+    c.close();
+
   }
 
   /**
@@ -202,46 +228,52 @@ public class DlnaHelper {
    */
   public <T extends DlnaObject> List<T> getChildren(String udn, String parentId, Class<T> childClass) {
 
-    Log.d(TAG, "Get DLNA child objects. UDN = " + udn + ", ID = " + parentId + ".");
-    Cursor cursor = null;
 
+    Cursor cursor = null;
     List<T> children = new ArrayList<>();
 
     try {
-      Uri uri = DlnaCdsStore.getObjectUri(udn, parentId);
-      String[] columns = DlnaObject.getColumnNames(childClass);
-      cursor = contentResolver.query(uri, columns, null, null, null);
-      if (cursor == null) {
-        // no data
-        Log.w(TAG, "No data.");
-        return children;
-      } else {
-        Log.d(TAG, String.format(Locale.getDefault(), "%d child items found.", cursor.getCount()));
-      }
-      if (cursor.moveToFirst()) {
-        do {
-          String upnpClass = cursor.getString(cursor.getColumnIndex(DlnaCdsStore.CLASS));
-          DlnaObject dlnaObject;
-          if (upnpClass.equals(VideoBroadcast.CLASS)) {
-            // channel
-            dlnaObject = new VideoBroadcast(cursor);
-          } else if (upnpClass.equals(EpgContainer.CLASS)) {
-            // container
-            dlnaObject = new EpgContainer(cursor);
-          } else if (upnpClass.equals(VideoProgram.CLASS)) {
-            // epg program (tv show)
-            dlnaObject = new VideoProgram(cursor);
-          } else {
-            // generic/unknown DLNA object
-            dlnaObject = new DlnaObject(cursor);
-          }
-          children.add((T) dlnaObject);
-        } while (cursor.moveToNext());
+      // acquire lock to prevent huey from deadlocking on concurrent calls
+      synchronized (lock) {
+        Log.d(TAG, "Get DLNA child objects. UDN = " + udn + ", ID = " + parentId + ".");
+        Uri uri = DlnaCdsStore.getObjectUri(udn, parentId);
+        String[] columns = DlnaObject.getColumnNames(childClass);
+        Log.d(TAG, "Querying. UDN = " + udn + ", ID = " + parentId + ".");
+        cursor = contentResolver.query(uri, columns, null, null, null);
+        Log.d(TAG, "Response received. UDN = " + udn + ", ID = " + parentId + ".");
+        if (cursor == null) {
+          // no data
+          Log.w(TAG, "No data.");
+          return children;
+        } else {
+          Log.d(TAG, String.format(Locale.getDefault(), "%d child items found.", cursor.getCount()));
+        }
+        if (cursor.moveToFirst()) {
+          do {
+            String upnpClass = cursor.getString(cursor.getColumnIndex(DlnaCdsStore.CLASS));
+            DlnaObject dlnaObject;
+            if (upnpClass.equals(VideoBroadcast.CLASS)) {
+              // channel
+              dlnaObject = new VideoBroadcast(cursor);
+            } else if (upnpClass.equals(EpgContainer.CLASS)) {
+              // container
+              dlnaObject = new EpgContainer(cursor);
+            } else if (upnpClass.equals(VideoProgram.CLASS)) {
+              // epg program (tv show)
+              dlnaObject = new VideoProgram(cursor);
+            } else {
+              // generic/unknown DLNA object
+              dlnaObject = new DlnaObject(cursor);
+            }
+            children.add((T) dlnaObject);
+          } while (cursor.moveToNext());
+        }
       }
     } catch (Throwable e) {
       e.printStackTrace();
     } finally {
       if (cursor != null) {
+        // close cursor
         cursor.close();
       }
     }
@@ -331,7 +363,7 @@ public class DlnaHelper {
   /**
    * Test task for extracting random EPG data from database.
    */
-  private static class FindEpgDataTask extends AsyncTask<Void,Void,Void> {
+  private static class FindEpgDataTask extends AsyncTask<Void, Void, Void> {
 
     public static final String LOG_TAG = "DlnaTest";
 

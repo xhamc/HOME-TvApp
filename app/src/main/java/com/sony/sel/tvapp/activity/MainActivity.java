@@ -75,13 +75,20 @@ public class MainActivity extends BaseActivity {
     FragmentTransaction transaction = fragmentManager.beginTransaction();
 
     if (currentFragment != null) {
-      transaction.remove(currentFragment);
+      transaction.hide(currentFragment);
     }
 
     NavigationItem item = event.getItem();
-    currentFragment = event.getItem().getFragment();
+    currentFragment = fragmentManager.findFragmentByTag(item.getTag());
     if (currentFragment != null) {
-      transaction.add(R.id.contentFrame, currentFragment, item.getTag());
+      // fragment already exists, just show it
+      transaction.show(currentFragment);
+    } else {
+      // create the fragment
+      currentFragment = event.getItem().getFragment();
+      if (currentFragment != null) {
+        transaction.add(R.id.contentFrame, currentFragment, item.getTag());
+      }
     }
 
     transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
@@ -120,16 +127,22 @@ public class MainActivity extends BaseActivity {
     }
   }
 
-  private void removeCurrentFragment() {
+  private void hideCurrentFragment() {
     // pop the detail fragment
     if (currentFragment != null) {
       FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
-      fragmentTransaction.remove(currentFragment);
+      fragmentTransaction.hide(currentFragment);
       fragmentTransaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
       fragmentTransaction.commit();
       currentFragment = null;
       popFocus();
     }
+  }
+
+  @Subscribe
+  public void onChannelChanged(EventBus.ChannelChangedEvent event) {
+    hideCurrentFragment();
+    navigationFragment.hide();
   }
 
   @Override
@@ -138,7 +151,7 @@ public class MainActivity extends BaseActivity {
       switch (keyCode) {
         case KeyEvent.KEYCODE_BACK: {
           if (currentFragment != null) {
-            removeCurrentFragment();
+            hideCurrentFragment();
             return true;
           } else if (navigationFragment.isShown()) {
             navigationFragment.hide();

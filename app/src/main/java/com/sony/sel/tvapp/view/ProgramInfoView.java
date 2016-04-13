@@ -72,6 +72,9 @@ public class ProgramInfoView extends FrameLayout  {
   @Override
   protected void onFinishInflate() {
     super.onFinishInflate();
+    if (isInEditMode()) {
+      return;
+    }
     ButterKnife.bind(this);
   }
 
@@ -120,10 +123,10 @@ public class ProgramInfoView extends FrameLayout  {
       }
 
       // channel name
-      title.setText(channel.getTitle());
+      title.setText(channel.getCallSign());
 
       // call sign
-      channelNumber.setText(channel.getCallSign());
+      channelNumber.setText(channel.getChannelNr());
 
       // hide time
       time.setVisibility(View.GONE);

@@ -116,7 +116,7 @@ public class ServerCell extends BaseListCell<SsdpDeviceInfo> {
 
     check.setChecked(serverUdn != null ? serverUdn.equals(data.getUdn()) : false);
 
-    setupFocus();
+    setupFocus(null, 1.02f);
 
     this.setOnClickListener(new OnClickListener() {
       @Override

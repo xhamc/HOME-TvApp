@@ -15,7 +15,7 @@ import com.sony.sel.tvapp.adapter.Bindable;
  * <p/>
  * The primary job of this class is to provide consistent and reusable focus animation behavior to subclasses.
  * <p/>
- * One of the {@link #setupFocus(View, String)} methods should be called from
+ * One of the {@link #setupFocus} methods should be called from
  * {@link #onFinishInflate()} of derived classes to configure the focus animation behavior.
  */
 public abstract class BaseListCell<T> extends FrameLayout implements Bindable<T> {
@@ -34,7 +34,7 @@ public abstract class BaseListCell<T> extends FrameLayout implements Bindable<T>
   private boolean focusEnabled;
 
   private static final float DEFAULT_FOCUS_ZOOM = 1.05f;
-  private static final float DEFAULT_UNFOCUSED_ALPHA = 0.6f;
+  private static final float DEFAULT_UNFOCUSED_ALPHA = 0.8f;
 
   public BaseListCell(Context context) {
     super(context);
