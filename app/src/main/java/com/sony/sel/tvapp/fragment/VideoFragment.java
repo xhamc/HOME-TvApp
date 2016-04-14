@@ -77,7 +77,6 @@ public class VideoFragment extends BaseFragment {
           .show();
     }
 
-    contentView.setFocusable(true);
     contentView.requestFocus();
     contentView.setOnKeyListener(new View.OnKeyListener() {
       @Override
@@ -85,10 +84,8 @@ public class VideoFragment extends BaseFragment {
         if (KeyEvent.ACTION_DOWN == event.getAction()) {
           switch (keyCode) {
             case KeyEvent.KEYCODE_CHANNEL_UP:
-            case KeyEvent.KEYCODE_DPAD_UP:
               previousChannel();
               return true;
-            case KeyEvent.KEYCODE_DPAD_DOWN:
             case KeyEvent.KEYCODE_CHANNEL_DOWN:
               nextChannel();
               return true;
@@ -104,7 +101,7 @@ public class VideoFragment extends BaseFragment {
     });
 
     // start fetching channels
-    getChannels();
+    // getChannels();
 
     return contentView;
   }

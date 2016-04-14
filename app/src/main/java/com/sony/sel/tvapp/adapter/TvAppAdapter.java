@@ -203,6 +203,10 @@ public abstract class TvAppAdapter<T, V extends View & Bindable<T>> extends Recy
     return data != null ? data.contains(item) : false;
   }
 
+  public int indexOf(T item) {
+    return data.indexOf(item);
+  }
+
   public void add(T item) {
     if (data == null) {
       // first item

@@ -69,6 +69,11 @@ public class MainActivity extends BaseActivity {
   @Subscribe
   public void onNavigate(EventBus.NavigationClickedEvent event) {
 
+    if (currentFragment != null && currentFragment.getTag().equals(event.getItem().getTag())) {
+      // same item
+      return;
+    }
+
     pushFocus();
 
     FragmentManager fragmentManager = getFragmentManager();

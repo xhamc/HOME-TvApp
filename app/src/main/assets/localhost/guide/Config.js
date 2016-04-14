@@ -2,12 +2,6 @@ var gs;
 var TWELVEHOUR=true;
 function start(){
 
-    var v=document.getElementById("video");
-    v.src="http://192.168.1.8:4004/ODIDMediaServer/i/ZTViZjU1ZWNhYWMyMDYwOWVkNTNiZGFmYmZmZjU4NGI=/res/B-MP2PS_N-8.0.mpg"
-    v.onloadstart=function(){
-        console.log("Video loaded");
-        this.play();
-    }
     gs=new GuideController();
 
 }

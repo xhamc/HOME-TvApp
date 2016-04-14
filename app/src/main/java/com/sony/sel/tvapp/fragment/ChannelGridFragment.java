@@ -42,12 +42,8 @@ public class ChannelGridFragment extends BaseFragment {
     grid.setLayoutManager(layoutManager);
     adapter = new ChannelAdapter();
     grid.setAdapter(adapter);
-    adapter.setLoading();
 
-    new GetChannelsTask(
-        DlnaHelper.getHelper(getActivity()),
-        SettingsHelper.getHelper(getActivity()).getEpgServer()
-    ).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    loadChannels();
 
     return contentView;
   }
@@ -62,6 +58,24 @@ public class ChannelGridFragment extends BaseFragment {
           getString(R.string.loading),
           getString(R.string.noChannelsFound)
       );
+    }
+  }
+
+  private void loadChannels() {
+    layoutManager.setSpanCount(1);
+    adapter.setLoading();
+    new GetChannelsTask(
+        DlnaHelper.getHelper(getActivity()),
+        SettingsHelper.getHelper(getActivity()).getEpgServer()
+    ).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+  }
+
+  @Override
+  public void onHiddenChanged(boolean hidden) {
+    super.onHiddenChanged(hidden);
+    if (!hidden) {
+      // reload channels when re-showing
+      loadChannels();
     }
   }
 

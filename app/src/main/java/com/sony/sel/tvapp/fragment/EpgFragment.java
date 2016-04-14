@@ -29,24 +29,13 @@ public class EpgFragment extends BaseFragment {
 
     webView = (WebView)contentView.findViewById(R.id.webView);
 
-    return contentView;
-  }
-
-  @Override
-  public void onResume() {
-    super.onResume();
-
     webView.getSettings().setJavaScriptEnabled(true);
     webView.setInitialScale(100);
     webView.setBackgroundColor(Color.TRANSPARENT);
     webView.setLayerType(WebView.LAYER_TYPE_SOFTWARE, null);
     webView.loadUrl("http://127.0.0.1:9000/guide/index.html");
 
+    return contentView;
   }
 
-  @Override
-  public void onPause() {
-    super.onPause();
-    webView.loadUrl("about:blank");
-  }
 }

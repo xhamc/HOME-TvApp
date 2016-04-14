@@ -50,7 +50,7 @@ function GridController(){
 		//Draw background
 		ctx.clearRect(0,0, width, height);
 		ctx.globalAlpha=0.7;
-		ctx.drawImage(background, 0, 0, width, height);
+		// ctx.drawImage(background, 0, 0, width, height);
 		//Draw TODAY DATE
 		ctx.globalAlpha=1;
 		ctx.font = "50px arial";
