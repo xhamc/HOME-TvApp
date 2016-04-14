@@ -48,6 +48,7 @@
         <activity
             android:name=".activity.MainActivity"
             android:screenOrientation="landscape"
+            android:launchMode="singleInstance"
             >
         </activity>
 

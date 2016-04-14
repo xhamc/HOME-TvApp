@@ -1,5 +1,6 @@
 package com.sony.sel.tvapp.fragment;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -20,6 +21,8 @@ import com.sony.sel.tvapp.util.SettingsHelper;
 import com.sony.sel.tvapp.view.ProgramInfoView;
 import com.squareup.otto.Subscribe;
 
+import java.io.File;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -60,8 +63,19 @@ public class VideoFragment extends BaseFragment {
     // keep currentProgram info hidden until loaded
     programInfo.setAlpha(0.0f);
 
-    videoView.setVideoURI(Uri.parse("file:///storage/emulated/0/Movies/tvapp.mp4"));
-    videoView.start();
+    String videoFile = "file:///sdcard/Movies/tvapp.mp4";
+    if (new File(URI.create(videoFile)).exists()) {
+
+      videoView.setVideoURI(Uri.parse(videoFile));
+      videoView.start();
+    } else {
+      new AlertDialog.Builder(getActivity())
+          .setTitle("Error")
+          .setMessage("Background video file not found at "+videoFile+".")
+          .setPositiveButton(getString(android.R.string.ok),null)
+          .create()
+          .show();
+    }
 
     contentView.setFocusable(true);
     contentView.requestFocus();
