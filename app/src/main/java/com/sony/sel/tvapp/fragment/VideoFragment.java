@@ -4,6 +4,7 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -98,7 +99,7 @@ public class VideoFragment extends BaseFragment {
   public void onDestroy() {
     super.onDestroy();
     if (epgTask != null) {
-      epgTask.cancel(true);
+      // epgTask.cancel(true);
     }
   }
 
@@ -133,8 +134,8 @@ public class VideoFragment extends BaseFragment {
       setCurrentChannel(channel);
 
       // fetch current programs for all channels
-      epgTask = new GetCurrentProgramsTask();
-      epgTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+      // epgTask = new GetCurrentProgramsTask();
+      // epgTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 
     }
   }

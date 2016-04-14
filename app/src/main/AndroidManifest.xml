@@ -9,6 +9,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
     <!-- Android TV -->
     <uses-feature
@@ -56,25 +57,13 @@
             >
         </activity>
 
+
+        <!-- web server for EPG -->
+        <service
+            android:name="com.sony.localserver.ServerService"
+            android:enabled="true"
+            />
+
     </application>
-
-    <!-- service that updates EPG -->
-    <service
-        android:name=".service.EpgService"
-        android:enabled="true"
-        />
-
-    <!-- Receiver to schedule the EpgService when state changes occur -->
-    <receiver
-        android:name=".service.EpgReceiver"
-        android:enabled="true"
-        android:exported="false"
-        >
-        <intent-filter>
-            <action android:name="android.intent.action.BOOT_COMPLETED"/>
-            <action android:name="android.intent.action.SCREEN_ON"/>
-            <action android:name="android.intent.action.SCREEN_OFF"/>
-        </intent-filter>
-    </receiver>
 
 </manifest>

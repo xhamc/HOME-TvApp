@@ -13,6 +13,7 @@ import com.sony.sel.tvapp.util.SettingsHelper;
 import java.util.List;
 
 import static com.sony.sel.tvapp.util.DlnaObjects.Container;
+import static com.sony.sel.tvapp.util.DlnaObjects.DlnaObject;
 
 /**
  * Activity to perform startup checks before continuing
@@ -41,7 +42,7 @@ public class StartupActivity extends BaseActivity {
       // select the server first
       startActivity(new Intent(this, SelectServerActivity.class));
     } else {
-      new CheckServerTask(settingsHelper.getEpgServer(), dlnaHelper).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+      new CheckServerTask(dlnaHelper, settingsHelper.getEpgServer()).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
   }
@@ -51,7 +52,7 @@ public class StartupActivity extends BaseActivity {
     private String udn;
     private DlnaHelper dlnaHelper;
 
-    public CheckServerTask(String udn, DlnaHelper dlnaHelper) {
+    public CheckServerTask(DlnaHelper dlnaHelper, String udn) {
       this.udn = udn;
       this.dlnaHelper = dlnaHelper;
     }
@@ -92,6 +93,39 @@ public class StartupActivity extends BaseActivity {
       } else {
         Log.e(LOG_TAG, "Server " + udn + " could not be validated.");
       }
+    }
+  }
+
+  private static class IterateServerTask extends AsyncTask<Void, Void, Void> {
+
+    public static final String LOG_TAG = "DlnaTest";
+
+    private DlnaHelper helper;
+    private final String udn;
+
+    public IterateServerTask(DlnaHelper helper, String udn) {
+      this.helper = helper;
+      this.udn = udn;
+    }
+
+    @Override
+    protected Void doInBackground(Void... params) {
+      // get channel list
+      int count = iterateChildren("0");
+      Log.d(LOG_TAG, "Iteration complete, count = "+count+" objects.");
+      return null;
+    }
+
+    int iterateChildren(String parentId) {
+      List<DlnaObject> children = helper.getChildren(udn,parentId, DlnaObject.class);
+      int count = children.size();
+      for (DlnaObject child : children) {
+        if (child.getUpnpClass().startsWith(Container.CLASS)) {
+          // drill down
+          count += iterateChildren(child.getId());
+        }
+      }
+      return count;
     }
   }
 

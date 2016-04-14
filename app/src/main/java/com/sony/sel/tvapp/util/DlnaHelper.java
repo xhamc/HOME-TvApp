@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.RemoteException;
 import android.util.Log;
 
@@ -22,6 +23,7 @@ import com.sony.sel.util.ObserverSet;
 import com.sony.sel.util.SsdpServiceHelper;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -232,11 +234,11 @@ public class DlnaHelper {
     Cursor cursor = null;
     List<T> children = new ArrayList<>();
 
-    try {
-      // acquire lock to prevent huey from deadlocking on concurrent calls
-      synchronized (lock) {
+    synchronized (lock) {
+      try {
         Log.d(TAG, "Get DLNA child objects. UDN = " + udn + ", ID = " + parentId + ".");
         Uri uri = DlnaCdsStore.getObjectUri(udn, parentId);
+        Log.d(TAG, "URI = " + uri);
         String[] columns = DlnaObject.getColumnNames(childClass);
         Log.d(TAG, "Querying. UDN = " + udn + ", ID = " + parentId + ".");
         cursor = contentResolver.query(uri, columns, null, null, null);
@@ -268,16 +270,16 @@ public class DlnaHelper {
             children.add((T) dlnaObject);
           } while (cursor.moveToNext());
         }
+      } catch (Throwable e) {
+        e.printStackTrace();
+      } finally {
+        if (cursor != null) {
+          // close cursor
+          cursor.close();
+        }
       }
-    } catch (Throwable e) {
-      e.printStackTrace();
-    } finally {
-      if (cursor != null) {
-        // close cursor
-        cursor.close();
-      }
+      return children;
     }
-    return children;
   }
 
   public List<VideoBroadcast> getChannels(String udn) {
