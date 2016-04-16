@@ -19,6 +19,7 @@ public enum NavigationItem {
   CHANNELS(R.string.channels, ChannelGridFragment.class, ChannelGridFragment.TAG),
   GUIDE(R.string.guide, EpgFragment.class, EpgFragment.TAG),
   RECORDINGS(R.string.recordings, null, null),
+  VOD(R.string.vod, null, null),
   SETTINGS(R.string.settings, SelectServerFragment.class, SelectServerFragment.TAG);
 
   private final int titleStringId;

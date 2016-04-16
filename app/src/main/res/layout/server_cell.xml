@@ -13,6 +13,7 @@
     android:background="@drawable/cell_background"
     android:elevation="2dp"
     android:focusable="true"
+    android:descendantFocusability="beforeDescendants"
     >
 
     <LinearLayout
@@ -106,6 +107,7 @@
                 android:layout_gravity="center"
                 android:layout_marginLeft="10dp"
                 android:layout_marginRight="10dp"
+                android:focusable="false"
                 />
 
         </LinearLayout>

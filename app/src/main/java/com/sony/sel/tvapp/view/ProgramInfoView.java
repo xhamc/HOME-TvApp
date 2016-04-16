@@ -126,7 +126,7 @@ public class ProgramInfoView extends FrameLayout  {
       title.setText(channel.getCallSign());
 
       // call sign
-      channelNumber.setText(channel.getChannelNr());
+      channelNumber.setText(channel.getChannelNumber());
 
       // hide time
       time.setVisibility(View.GONE);

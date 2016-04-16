@@ -1,10 +1,13 @@
 package com.sony.sel.tvapp.fragment;
 
+import android.database.ContentObserver;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -43,7 +46,7 @@ public class ChannelGridFragment extends BaseFragment {
     adapter = new ChannelAdapter();
     grid.setAdapter(adapter);
 
-    loadChannels();
+    getChannels();
 
     return contentView;
   }
@@ -61,7 +64,7 @@ public class ChannelGridFragment extends BaseFragment {
     }
   }
 
-  private void loadChannels() {
+  private void getChannels() {
     layoutManager.setSpanCount(1);
     adapter.setLoading();
     new GetChannelsTask(
@@ -75,10 +78,26 @@ public class ChannelGridFragment extends BaseFragment {
     super.onHiddenChanged(hidden);
     if (!hidden) {
       // reload channels when re-showing
-      loadChannels();
+      getChannels();
     }
   }
 
+  /**
+   * Observer to receive notification of changes to the channel list.
+   */
+  private ContentObserver channelObserver = new ContentObserver(null) {
+    @Override
+    public void onChange(boolean selfChange, Uri uri) {
+      super.onChange(selfChange, uri);
+      // reload channels on content changes
+      Log.d(TAG, "Received notification channel list changed.");
+      getChannels();
+    }
+  };
+
+  /**
+   * Async task to retrieve the channel list.
+   */
   private class GetChannelsTask extends AsyncTask<Void, Void, List<DlnaObjects.VideoBroadcast>> {
 
     private final DlnaHelper helper;
@@ -91,7 +110,7 @@ public class ChannelGridFragment extends BaseFragment {
 
     @Override
     protected List<DlnaObjects.VideoBroadcast> doInBackground(Void... params) {
-      return helper.getChannels(udn);
+      return helper.getChannels(udn, channelObserver);
     }
 
     @Override

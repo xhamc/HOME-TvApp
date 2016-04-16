@@ -58,6 +58,13 @@
             >
         </activity>
 
+        <activity
+            android:name=".activity.EpgActivity"
+            android:screenOrientation="landscape"
+            >
+
+        </activity>
+
 
         <!-- web server for EPG -->
         <service

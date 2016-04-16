@@ -6,24 +6,25 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.Looper;
 import android.os.RemoteException;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.google.gson.Gson;
 import com.sony.huey.dlna.DlnaCdsStore;
 import com.sony.huey.dlna.IUpnpServiceCp;
 import com.sony.huey.dlna.UpnpServiceCp;
 import com.sony.sel.util.NetworkHelper;
 import com.sony.sel.util.ObserverSet;
-import com.sony.sel.util.SsdpServiceHelper;
 
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -34,13 +35,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static com.sony.sel.tvapp.util.DlnaObjects.DlnaObject;
 import static com.sony.sel.tvapp.util.DlnaObjects.EpgContainer;
 import static com.sony.sel.tvapp.util.DlnaObjects.VideoBroadcast;
 import static com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
+import static com.sony.sel.tvapp.util.DlnaObjects.UpnpDevice;
 
 /**
  * Helper for DLNA service and content provider.
@@ -193,6 +193,46 @@ public class DlnaHelper {
 
   }
 
+  private final boolean SHOW_ALL_DEVICES = true; // false shows only CVP-2 devices
+
+  /**
+   * Get the current list of known UPnP devices.
+   *
+   * @param observer Oberver to receive notification if the device list changes after this query.
+   * @return The device list, or an empty list when no devices are found.
+   */
+  public List<UpnpDevice> getDeviceList(@Nullable ContentObserver observer) {
+    List<UpnpDevice> devices = new ArrayList<>();
+    Uri uri = UpnpServiceCp.CONTENT_URI;
+    Cursor cursor = contentResolver.query(UpnpServiceCp.CONTENT_URI,
+        UpnpServiceCp.PROJECTION,
+        SHOW_ALL_DEVICES ?
+            UpnpServiceCp.DEVICE_TYPE + " LIKE '%'" :
+            UpnpServiceCp.DEVICE_TYPE + " LIKE '%:" + UpnpServiceCp.REMOTE_UI_SERVER_DEVICE + ":%'",
+        null, null);
+    if (cursor != null) {
+      Log.d(TAG, "Device column names: " + new Gson().toJson(cursor.getColumnNames()));
+      while (cursor.moveToNext()) {
+        UpnpDevice device = new DlnaObjects.UpnpDevice(cursor);
+        Log.d(TAG, device.toString());
+        devices.add(device);
+      }
+      cursor.close();
+    }
+    if (observer != null) {
+      contentResolver.registerContentObserver(uri, false, observer);
+    }
+    return devices;
+  }
+
+  public void registerDeviceObserver(ContentObserver contentObserver) {
+    contentResolver.registerContentObserver(UpnpServiceCp.CONTENT_URI, false, contentObserver);
+  }
+
+  public void unregisterContentObserver(ContentObserver contentObserver) {
+    contentResolver.unregisterContentObserver(contentObserver);
+  }
+
   /**
    * Returns true if the DNLA service is currently started & connected.
    */
@@ -222,14 +262,15 @@ public class DlnaHelper {
   /**
    * Retrieve the DLNA child objects for a given parent.
    *
-   * @param udn        UDN of the DLNA server to query.
-   * @param parentId   Parent object ID (use {@link #DLNA_ROOT} for the top level)
-   * @param childClass Class of child objects expected. Used to define query columns.
-   * @param <T>        Class of child object.
+   * @param udn             UDN of the DLNA server to query.
+   * @param parentId        Parent object ID (use {@link #DLNA_ROOT} for the top level)
+   * @param childClass      Class of child objects expected. Used to define query columns.
+   * @param contentObserver Observer to receive notifications if the contents of the parent object changes.
+   * @param <T>             Class of child object.
    * @return List of children, or an empty list if no children were found.
    */
-  public <T extends DlnaObject> List<T> getChildren(String udn, String parentId, Class<T> childClass) {
-
+  @NonNull
+  public <T extends DlnaObject> List<T> getChildren(String udn, String parentId, Class<T> childClass, @Nullable ContentObserver contentObserver) {
 
     Cursor cursor = null;
     List<T> children = new ArrayList<>();
@@ -243,6 +284,9 @@ public class DlnaHelper {
         Log.d(TAG, "Querying. UDN = " + udn + ", ID = " + parentId + ".");
         cursor = contentResolver.query(uri, columns, null, null, null);
         Log.d(TAG, "Response received. UDN = " + udn + ", ID = " + parentId + ".");
+        if (contentObserver != null) {
+          contentResolver.registerContentObserver(uri, false, contentObserver);
+        }
         if (cursor == null) {
           // no data
           Log.w(TAG, "No data.");
@@ -282,11 +326,20 @@ public class DlnaHelper {
     }
   }
 
-  public List<VideoBroadcast> getChannels(String udn) {
-    return getChildren(udn, "0/Channels", VideoBroadcast.class);
+  @NonNull
+  public List<VideoBroadcast> getChannels(@NonNull String udn, @Nullable ContentObserver contentObserver) {
+    return getChildren(udn, "0/Channels", VideoBroadcast.class, contentObserver);
   }
 
   public List<VideoProgram> getEpgPrograms(String udn, Set<VideoBroadcast> channels, Date startDateTime, Date endDateTime) {
+    List<String> channelIds = new ArrayList<>();
+    for (VideoBroadcast channel : channels) {
+      channelIds.add(channel.getChannelId());
+    }
+    return getEpgPrograms(udn, channelIds, startDateTime, endDateTime);
+  }
+
+  public List<VideoProgram> getEpgPrograms(String udn, List<String> channelIds, Date startDateTime, Date endDateTime) {
     List<VideoProgram> programs = new ArrayList<>();
 
     // create list of days needed for EPG data
@@ -298,12 +351,12 @@ public class DlnaHelper {
     }
 
     // iterate requested channels
-    for (VideoBroadcast channel : channels) {
+    for (String channelId : channelIds) {
       for (String day : days) {
         // shortcut for creating the container ID to directly access EPG programs for channel & day
         // this may not work for non-Google EPG
-        String containerId = "0/EPG/" + channel.getChannelId() + "/" + day;
-        List<VideoProgram> shows = getChildren(udn, containerId, VideoProgram.class);
+        String containerId = "0/EPG/" + channelId + "/" + day;
+        List<VideoProgram> shows = getChildren(udn, containerId, VideoProgram.class, null);
         for (VideoProgram show : shows) {
           Date showStart = show.getScheduledStartTime();
           Date showEnd = show.getScheduledEndTime();
@@ -317,11 +370,18 @@ public class DlnaHelper {
     return programs;
   }
 
+
+  public void registerContentObserver(String udn, DlnaObject objectToObserve, boolean notifyForChildren, ContentObserver observer) {
+    Log.d(TAG, "Register content objserver. UDN = " + udn + ", ID = " + objectToObserve.getId() + ".");
+    Uri uri = DlnaCdsStore.getObjectUri(udn, objectToObserve.getId());
+    contentResolver.registerContentObserver(uri, notifyForChildren, observer);
+  }
+
   public VideoProgram getCurrentEpgProgram(String udn, VideoBroadcast channel) {
     DateFormat format = new SimpleDateFormat("M-d");
     Date now = new Date();
     String day = format.format(now);
-    List<VideoProgram> shows = getChildren(udn, "0/EPG/" + channel.getChannelId() + "/" + day, VideoProgram.class);
+    List<VideoProgram> shows = getChildren(udn, "0/EPG/" + channel.getChannelId() + "/" + day, VideoProgram.class, null);
     for (VideoProgram show : shows) {
       if (show.getScheduledStartTime().before(now) && show.getScheduledEndTime().after(now)) {
         // show found
@@ -380,7 +440,7 @@ public class DlnaHelper {
     @Override
     protected Void doInBackground(Void... params) {
       // get channel list
-      List<VideoBroadcast> allChannels = helper.getChannels(udn);
+      List<VideoBroadcast> allChannels = helper.getChannels(udn, null);
       if (allChannels.size() == 0) {
         Log.e(LOG_TAG, "No channels found.");
         return null;

@@ -63,7 +63,7 @@ public class StartupActivity extends BaseActivity {
 
         // browse server root
         Log.d(LOG_TAG, "Checking root of server " + udn + ".");
-        List<Container> root = dlnaHelper.getChildren(udn, DlnaHelper.DLNA_ROOT, Container.class);
+        List<Container> root = dlnaHelper.getChildren(udn, DlnaHelper.DLNA_ROOT, Container.class, null);
         Log.d(LOG_TAG, "Root = " + root != null ? new Gson().toJson(root) : "null");
         if (root != null) {
           return true;
@@ -117,7 +117,7 @@ public class StartupActivity extends BaseActivity {
     }
 
     int iterateChildren(String parentId) {
-      List<DlnaObject> children = helper.getChildren(udn,parentId, DlnaObject.class);
+      List<DlnaObject> children = helper.getChildren(udn,parentId, DlnaObject.class, null);
       int count = children.size();
       for (DlnaObject child : children) {
         if (child.getUpnpClass().startsWith(Container.CLASS)) {

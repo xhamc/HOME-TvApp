@@ -70,7 +70,7 @@ public class ChannelCell extends BaseListCell<VideoBroadcast> {
     title.setText(channel.getCallSign());
 
     // number
-    details.setText(channel.getChannelNr());
+    details.setText(channel.getChannelNumber());
 
     setupFocus(null, 1.1f);
 

@@ -122,6 +122,7 @@
                                 channel.name=stations[keyStation]["callSign"];
                                 channel.icon_url = stations[keyStation]["channelIcon"];
                                 channel.channelId = stations[keyStation]['channelID'];
+                                channel.channelNumber=stations[keyStation]['channelNumber'];
                                 channel.icon=new Image();
                                 channel.icon.imageloaded=false;
 

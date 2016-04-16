@@ -50,11 +50,33 @@ function GuideController(){
 
 		//initialize the channelist data if needed.
 		//TODO: use preferences to turn random STATION_DATA into customized STATION_DATA (could be done from Java side too!)
+/****************************Sort STATION_DATA by ChannelNumber into CHANNELLIST_DATA****************/
+			for (var i=0; i<STATION_DATA.length;i++){
+				var channelNumber=parseInt(STATION_DATA[i].channelNumber);
+				if (CHANNELLIST_DATA.length>0){
+					if (parseInt(CHANNELLIST_DATA[CHANNELLIST_DATA.length-1].channelNumber) < channelNumber ){
+						CHANNELLIST_DATA[CHANNELLIST_DATA.length]=STATION_DATA[i];
+					}else{
+						var j=CHANNELLIST_DATA.length;
+						do{
+							j--;
+							CHANNELLIST_DATA[j+1]=CHANNELLIST_DATA[j];
+						} while (j>0 && parseInt(CHANNELLIST_DATA[j-1].channelNumber) >= channelNumber)
 
+						CHANNELLIST_DATA[j]=STATION_DATA[i];
+
+					}
+
+
+				}else{
+					CHANNELLIST_DATA[0]=STATION_DATA[i];
+				}
+			}
+/****************************Sort STATION_DATA by ChannelID into CHANNELLIST_DATA****************/
 //			for (var i=0; i<STATION_DATA.length;i++){
-//				var channelNumber=STATION_DATA[i].channelNumber;
+//				var channelNumber=parseInt(STATION_DATA[i].channelId);
 //				if (CHANNELLIST_DATA.length>0){
-//					if (CHANNELLIST_DATA[CHANNELLIST_DATA.length-1].channelNumber < channelNumber ){
+//					if (parseInt(CHANNELLIST_DATA[CHANNELLIST_DATA.length-1].channelId) < channelNumber ){
 //						CHANNELLIST_DATA[CHANNELLIST_DATA.length]=STATION_DATA[i];
 //					}else{
 //						var j=CHANNELLIST_DATA.length;
@@ -62,7 +84,7 @@ function GuideController(){
 //							j--;
 //							CHANNELLIST_DATA[j+1]=CHANNELLIST_DATA[j];
 //
-//						} while (j>0 && CHANNELLIST_DATA[j].channelNumber >= channelNumber)
+//						} while (j>0 && parseInt(CHANNELLIST_DATA[j-1].channelId) >= channelNumber)
 //						CHANNELLIST_DATA[j]=STATION_DATA[i];
 //
 //					}
@@ -71,27 +93,6 @@ function GuideController(){
 //				}
 //
 //			}
-/****************************Sort STATION_DATA by ChannelID into CHANNELLIST_DATA****************/
-			for (var i=0; i<STATION_DATA.length;i++){
-				var channelNumber=STATION_DATA[i].channelId;
-				if (CHANNELLIST_DATA.length>0){
-					if (CHANNELLIST_DATA[CHANNELLIST_DATA.length-1].channelId < channelNumber ){
-						CHANNELLIST_DATA[CHANNELLIST_DATA.length]=STATION_DATA[i];
-					}else{
-						var j=CHANNELLIST_DATA.length;
-						do{
-							j--;
-							CHANNELLIST_DATA[j+1]=CHANNELLIST_DATA[j];
-
-						} while (j>0 && CHANNELLIST_DATA[j].channelId >= channelNumber)
-						CHANNELLIST_DATA[j]=STATION_DATA[i];
-
-					}
-				}else{
-					CHANNELLIST_DATA[0]=STATION_DATA[i];
-				}
-
-			}
 
 			if (null==currentAvailableDataRange){
 				currentAvailableDataRange=new Array(CHANNELLIST_DATA.length);

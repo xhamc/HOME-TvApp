@@ -26,6 +26,7 @@
     <string name="channels">Channels</string>
     <string name="guide">Guide</string>
     <string name="recordings">Recordings</string>
+    <string name="vod">VOD</string>
     <string name="settings">Settings</string>
 
 </resources>
