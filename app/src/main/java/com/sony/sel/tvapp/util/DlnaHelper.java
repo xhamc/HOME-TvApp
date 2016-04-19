@@ -59,7 +59,7 @@ public class DlnaHelper {
   private Context context;
   private ContentResolver contentResolver;
   private NetworkHelper networkHelper;
-  private Map<String, Map<String, List<DlnaObject>>> dlnaCache = new HashMap<>();
+  private Map<Uri, List<DlnaObject>> dlnaCache = new HashMap<>();
 
   private IUpnpServiceCp hueyService;
   private ServiceConnection hueyConnection = new ServiceConnection() {
@@ -273,19 +273,21 @@ public class DlnaHelper {
   @NonNull
   public <T extends DlnaObject> List<T> getChildren(String udn, String parentId, Class<T> childClass, @Nullable ContentObserver contentObserver, boolean useCache) {
 
-    if (useCache) {
-      List<DlnaObject> cachedContent = getCachedChildren(udn, parentId);
+    Uri uri = DlnaCdsStore.getObjectUri(udn, parentId);
+
+    if (useCache && contentObserver == null) {
+      List<DlnaObject> cachedContent = dlnaCache.get(uri);
       if (cachedContent != null) {
-        Log.d(TAG, "Returning cached content for " + parentId + " at " + udn + ".");
+        Log.d(TAG, "Returning cached content for " + uri + ".");
         return (List<T>) cachedContent;
       }
     }
+
     Cursor cursor = null;
     List<T> children = new ArrayList<>();
 
     try {
       Log.d(TAG, "Get DLNA child objects. UDN = " + udn + ", ID = " + parentId + ".");
-      Uri uri = DlnaCdsStore.getObjectUri(udn, parentId);
       Log.d(TAG, "URI = " + uri);
       String[] columns = DlnaObject.getColumnNames(childClass);
       Log.d(TAG, "Querying. UDN = " + udn + ", ID = " + parentId + ".");
@@ -317,25 +319,10 @@ public class DlnaHelper {
         cursor.close();
       }
       if (children != null) {
-        cacheChildren(udn, parentId, children);
+        dlnaCache.put(uri, (List<DlnaObject>) children);
       }
     }
     return children;
-  }
-
-  List<DlnaObject> getCachedChildren(String udn, String parentId) {
-    if (dlnaCache.containsKey(udn)) {
-      return dlnaCache.get(udn).get(parentId);
-    } else {
-      return null;
-    }
-  }
-
-  private <T extends DlnaObject> void cacheChildren(String udn, String parentId, List<T> children) {
-    if (!dlnaCache.containsKey(udn)) {
-      dlnaCache.put(udn, new HashMap<String, List<DlnaObject>>());
-    }
-    dlnaCache.get(udn).put(parentId, (List<DlnaObject>) children);
   }
 
   @NonNull
