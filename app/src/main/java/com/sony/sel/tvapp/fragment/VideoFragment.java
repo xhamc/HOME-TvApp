@@ -5,7 +5,9 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
@@ -40,9 +42,9 @@ public class VideoFragment extends BaseFragment {
   SurfaceView surfaceView;
 
   private VideoBroadcast currentChannel;
+  private Uri videoUri;
   private MediaPlayer mediaPlayer;
-  private boolean preparing;
-  private boolean surfaceCreated;
+  private SurfaceHolder surfaceHolder;
 
   @Nullable
   @Override
@@ -54,7 +56,7 @@ public class VideoFragment extends BaseFragment {
 
     currentChannel = SettingsHelper.getHelper(getActivity()).getCurrentChannel();
 
-    setup();
+    changeChannel();
 
     return contentView;
   }
@@ -67,17 +69,16 @@ public class VideoFragment extends BaseFragment {
 
   /**
    * Set up the video playback components.
+   * @param uri Video URI. If not null, play this video after setup.
    */
-  private void setup() {
-    mediaPlayer = new MediaPlayer();
-    if (!surfaceCreated) {
+  private void setup(@Nullable final Uri uri) {
+    if (surfaceHolder == null) {
       surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
           holder.removeCallback(this);
-          mediaPlayer.setDisplay(holder);
-          surfaceCreated = true;
-          changeChannel();
+          surfaceHolder = holder;
+          play(uri);
         }
 
         @Override
@@ -91,8 +92,7 @@ public class VideoFragment extends BaseFragment {
         }
       });
     } else {
-      mediaPlayer.setDisplay(surfaceView.getHolder());
-      changeChannel();
+      play(uri);
     }
   }
 
@@ -100,35 +100,13 @@ public class VideoFragment extends BaseFragment {
    * Play a video.
    * @param uri URI of the video to play.
    */
-  public void play(Uri uri) {
-    if (mediaPlayer == null) {
-      setup();
+  public void play(@NonNull Uri uri) {
+    if (surfaceHolder == null) {
+      setup(uri);
+      return;
     }
-    try {
-      if (preparing) {
-        mediaPlayer.reset();
-      } else if (mediaPlayer.isPlaying()) {
-        mediaPlayer.stop();
-        mediaPlayer.reset();
-      }
-      mediaPlayer.setDataSource(getActivity(), uri);
-      mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-        @Override
-        public void onPrepared(MediaPlayer mp) {
-          preparing = false;
-          mediaPlayer.start();
-        }
-      });
-      preparing = true;
-      mediaPlayer.prepareAsync();
-    } catch (IOException e) {
-      new AlertDialog.Builder(getActivity())
-          .setTitle("Error")
-          .setMessage("Error preparing video:" + uri + ".")
-          .setPositiveButton(getString(android.R.string.ok), null)
-          .create()
-          .show();
-    }
+    new PlayVideoTask(uri).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
   }
 
   /**
@@ -136,8 +114,8 @@ public class VideoFragment extends BaseFragment {
    */
   public void play() {
     if (mediaPlayer == null) {
-      setup();
-    } else if (!mediaPlayer.isPlaying()) {
+      play(videoUri);
+    } else if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
       mediaPlayer.start();
     }
   }
@@ -165,11 +143,6 @@ public class VideoFragment extends BaseFragment {
    * Change channel to a random video stream.
    */
   private void changeChannel() {
-    if (mediaPlayer == null) {
-      // need to reset
-      setup();
-      return;
-    }
     List<VideoItem> videos = SettingsHelper.getHelper(getActivity()).getChannelVideos();
     if (videos.size() > 0) {
       VideoItem video = videos.get(Math.abs(new Random().nextInt()) % videos.size());
@@ -194,11 +167,64 @@ public class VideoFragment extends BaseFragment {
     }
   }
 
-
   @Subscribe
   public void onChannelChanged(EventBus.ChannelChangedEvent event) {
     currentChannel = event.getChannel();
     changeChannel();
   }
 
+  private class PlayVideoTask extends AsyncTask<Void,Void,Void> {
+
+    private final Uri uri;
+
+    public PlayVideoTask(Uri uri) {
+      this.uri = uri;
+    }
+
+    @Override
+    protected Void doInBackground(Void... params) {
+      try {
+        if (mediaPlayer != null) {
+          mediaPlayer.release();
+        }
+        mediaPlayer = MediaPlayer.create(getActivity(), uri);
+        mediaPlayer.setDisplay(surfaceHolder);
+        mediaPlayer.setScreenOnWhilePlaying(true);
+        mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+          @Override
+          public boolean onError(MediaPlayer mp, int what, int extra) {
+            new AlertDialog.Builder(getActivity())
+                .setTitle(R.string.error)
+                .setMessage("Player error " + what + ".")
+                .setNeutralButton(getString(android.R.string.ok), null)
+                .setPositiveButton(getString(R.string.selectChannelVideos), new DialogInterface.OnClickListener() {
+                  @Override
+                  public void onClick(DialogInterface dialog, int which) {
+                    startActivity(new Intent(getActivity(), SelectChannelVideosActivity.class));
+                  }
+                })
+                .create()
+                .show();
+            return false;
+          }
+        });
+        mediaPlayer.start();
+        videoUri = uri;
+      } catch (Throwable e) {
+        new AlertDialog.Builder(getActivity())
+            .setTitle(R.string.error)
+            .setMessage("Error preparing video:" + uri + ": "+e.toString())
+            .setNeutralButton(getString(android.R.string.ok), null)
+            .setPositiveButton(getString(R.string.selectChannelVideos), new DialogInterface.OnClickListener() {
+              @Override
+              public void onClick(DialogInterface dialog, int which) {
+                startActivity(new Intent(getActivity(), SelectChannelVideosActivity.class));
+              }
+            })
+            .create()
+            .show();
+      }
+      return null;
+    }
+  }
 }
