@@ -1,6 +1,7 @@
 package com.sony.sel.tvapp.util;
 
 import android.database.Cursor;
+import android.support.annotation.NonNull;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -24,13 +25,13 @@ import java.util.List;
 
 
 /**
- * Class to hold DLNA object declarations.
+ * Class for managing DLNA data.
  */
 public class DlnaObjects {
 
   /**
    * Annotation for tagging data fields to extract from a cursor
-   * <p/>
+   * <p>
    * Usage: @ColumnName(NAME) String field
    */
   @Target(ElementType.FIELD)
@@ -42,9 +43,14 @@ public class DlnaObjects {
     String value();
   }
 
+  /// Date format for UTC dates/times
   private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'Z");
 
-
+  /**
+   * Enumeration of all DLNA data classes.
+   * Primary purpose is to support the {@link #newInstance(String)} factory method
+   * to instantiate objects based upon the DLNA class name.
+   */
   public enum DlnaClass {
 
     VIDEO_BROADCAST(VideoBroadcast.class, "object.item.videoItem.videoBroadcast"),
@@ -67,7 +73,15 @@ public class DlnaObjects {
       this.className = className;
     }
 
-    public static DlnaObject newInstance(String className) throws IllegalAccessException, InstantiationException {
+    /**
+     * Return a new instance of a DlnaObject based upon the DLNA class name.
+     *
+     * @param className UPnP class name.
+     * @return
+     * @throws IllegalAccessException if constructor is not available.
+     * @throws InstantiationException if another instantiation error occurs.
+     */
+    public static DlnaObject newInstance(@NonNull String className) throws IllegalAccessException, InstantiationException {
       for (DlnaClass dlnaClass : values()) {
         if (className.startsWith(dlnaClass.className)) {
           return dlnaClass.objectClass.newInstance();
@@ -82,7 +96,7 @@ public class DlnaObjects {
    * Base class for objects that can be extracted from Cursors.
    * The {@link com.sony.sel.tvapp.util.DlnaObjects.ColumnName} annotation is used
    * to specify the column name in the cursor that should be extracted for the member contents.
-   * <p/>
+   * <p>
    * The constructor takes care of parsing all data fields from the cursor.
    */
   public static class CursorObject {
@@ -92,6 +106,11 @@ public class DlnaObjects {
     @ColumnName("@id")
     private String id;
 
+    /**
+     * Load object contents from a cursor.
+     *
+     * @param cursor Cursor containing DLNA object data.
+     */
     public final void loadFromCursor(Cursor cursor) {
       for (Class clazz = this.getClass(); clazz != Object.class; clazz = clazz.getSuperclass()) {
         for (Field field : clazz.getDeclaredFields()) {
@@ -122,6 +141,13 @@ public class DlnaObjects {
       }
     }
 
+    /**
+     * Return the list of Cursor column names expected from a given DLNA object class.
+     *
+     * @param clazz Class.
+     * @param <T>   Class.
+     * @return List of columns for use in Content Queries.
+     */
     public static <T extends DlnaObject> String[] getColumnNames(Class<T> clazz) {
       List<String> columnNames = new ArrayList<>();
       for (Class c = clazz; c != Object.class; c = c.getSuperclass()) {
@@ -155,7 +181,7 @@ public class DlnaObjects {
 
     @Override
     public int hashCode() {
-      return uid.hashCode();
+      return id.hashCode();
     }
 
     public String getUid() {
@@ -375,7 +401,7 @@ public class DlnaObjects {
 //    private String programCodeType;
     @ColumnName("upnp:rating")
     private String rating;
-//    @ColumnName("upnp:rating@type")
+    //    @ColumnName("upnp:rating@type")
 //    private String ratingType;
 //    @ColumnName("upnp:episodeType")
 //    private String episodeType;

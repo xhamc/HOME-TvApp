@@ -9,7 +9,6 @@ import android.content.pm.PackageManager;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -28,15 +27,11 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Random;
-import java.util.Set;
 
 import static com.sony.sel.tvapp.util.DlnaObjects.DlnaObject;
 import static com.sony.sel.tvapp.util.DlnaObjects.UpnpDevice;
@@ -193,6 +188,36 @@ public class DlnaHelper {
 
   }
 
+  public void unregisterContentObserver(ContentObserver contentObserver) {
+    contentResolver.unregisterContentObserver(contentObserver);
+  }
+
+  /**
+   * Returns true if the DNLA service is currently started & connected.
+   */
+  public boolean isDlnaServiceStarted() {
+    return hueyService != null;
+  }
+
+  /**
+   * Stop and disconnect the DLNA service.
+   */
+  public void stopDlnaService() {
+    if (hueyService == null) {
+      // already stopped
+      return;
+    }
+    try {
+      Context serviceContext = getDlnaServiceContext();
+      Intent intent = new Intent(serviceContext, UpnpServiceCp.class);
+      context.stopService(intent);
+      return;
+    } catch (PackageManager.NameNotFoundException e) {
+      Log.e(TAG, "Error stopping DLNA service: " + e);
+      serviceObservers.proxy().onError(e);
+    }
+  }
+
   /**
    * Get the current list of known UPnP devices.
    *
@@ -225,42 +250,8 @@ public class DlnaHelper {
     return devices;
   }
 
-  public void registerDeviceObserver(ContentObserver contentObserver) {
-    contentResolver.registerContentObserver(UpnpServiceCp.CONTENT_URI, false, contentObserver);
-  }
-
-  public void unregisterContentObserver(ContentObserver contentObserver) {
-    contentResolver.unregisterContentObserver(contentObserver);
-  }
-
   /**
-   * Returns true if the DNLA service is currently started & connected.
-   */
-  public boolean isDlnaServiceStarted() {
-    return hueyService != null;
-  }
-
-  /**
-   * Stop and disconnect the DLNA service.
-   */
-  public void stopDlnaService() {
-    if (hueyService == null) {
-      // already stopped
-      return;
-    }
-    try {
-      Context serviceContext = getDlnaServiceContext();
-      Intent intent = new Intent(serviceContext, UpnpServiceCp.class);
-      context.stopService(intent);
-      return;
-    } catch (PackageManager.NameNotFoundException e) {
-      Log.e(TAG, "Error stopping DLNA service: " + e);
-      serviceObservers.proxy().onError(e);
-    }
-  }
-
-  /**
-   * Retrieve the DLNA child objects for a given parent.
+   * Get all DLNA child objects for a given parent.
    *
    * @param udn             UDN of the DLNA server to query.
    * @param parentId        Parent object ID (use {@link #DLNA_ROOT} for the top level)
@@ -325,60 +316,26 @@ public class DlnaHelper {
     return children;
   }
 
+  /**
+   * Return the list of channels.
+   *
+   * @param udn             Server UDN.
+   * @param contentObserver Optional ContentObserver to receive notification when channel list changes.
+   * @return List of channels, or an empty list if no channels found.
+   */
   @NonNull
   public List<VideoBroadcast> getChannels(@NonNull String udn, @Nullable ContentObserver
       contentObserver) {
     return getChildren(udn, "0/Channels", VideoBroadcast.class, contentObserver, false);
   }
 
-  public List<VideoProgram> getEpgPrograms(String udn, Set<VideoBroadcast> channels, Date
-      startDateTime, Date endDateTime) {
-    List<String> channelIds = new ArrayList<>();
-    for (VideoBroadcast channel : channels) {
-      channelIds.add(channel.getChannelId());
-    }
-    return getEpgPrograms(udn, channelIds, startDateTime, endDateTime);
-  }
-
-  public List<VideoProgram> getEpgPrograms(String udn, List<String> channelIds, Date
-      startDateTime, Date endDateTime) {
-    List<VideoProgram> programs = new ArrayList<>();
-
-    // create list of days needed for EPG data
-    List<String> days = new ArrayList<>();
-    Calendar calendar = Calendar.getInstance();
-    for (calendar.setTime(startDateTime); calendar.getTimeInMillis() < endDateTime.getTime(); calendar.add(Calendar.DAY_OF_MONTH, 1)) {
-      DateFormat format = new SimpleDateFormat("M-d");
-      days.add(format.format(calendar.getTime()));
-    }
-
-    // iterate requested channels
-    for (String channelId : channelIds) {
-      for (String day : days) {
-        // shortcut for creating the container ID to directly access EPG programs for channel & day
-        // this may not work for non-Google EPG
-        String containerId = "0/EPG/" + channelId + "/" + day;
-        List<VideoProgram> shows = getChildren(udn, containerId, VideoProgram.class, null, true);
-        for (VideoProgram show : shows) {
-          Date showStart = show.getScheduledStartTime();
-          Date showEnd = show.getScheduledEndTime();
-          if (startDateTime.before(showEnd) && endDateTime.after(showStart)) {
-            // show is in time range
-            programs.add(show);
-          }
-        }
-      }
-    }
-    return programs;
-  }
-
-
-  public void registerContentObserver(String udn, DlnaObject objectToObserve, boolean notifyForChildren, ContentObserver observer) {
-    Log.d(TAG, "Register content objserver. UDN = " + udn + ", ID = " + objectToObserve.getId() + ".");
-    Uri uri = DlnaCdsStore.getObjectUri(udn, objectToObserve.getId());
-    contentResolver.registerContentObserver(uri, notifyForChildren, observer);
-  }
-
+  /**
+   * Return the EPG program on the requested channel for the current date/time.
+   *
+   * @param udn     Server UDN.
+   * @param channel Channel to get EPG data for.
+   * @return The current program, or null if no program found.
+   */
   public VideoProgram getCurrentEpgProgram(String udn, VideoBroadcast channel) {
     DateFormat format = new SimpleDateFormat("M-d");
     Date now = new Date();
@@ -423,59 +380,4 @@ public class DlnaHelper {
 
     return intent;
   }
-
-  /**
-   * Test task for extracting random EPG data from database.
-   */
-  private static class FindEpgDataTask extends AsyncTask<Void, Void, Void> {
-
-    public static final String LOG_TAG = "DlnaTest";
-
-    private DlnaHelper helper;
-    private final String udn;
-
-    public FindEpgDataTask(DlnaHelper helper, String udn) {
-      this.helper = helper;
-      this.udn = udn;
-    }
-
-    @Override
-    protected Void doInBackground(Void... params) {
-      // get channel list
-      List<VideoBroadcast> allChannels = helper.getChannels(udn, null);
-      if (allChannels.size() == 0) {
-        Log.e(LOG_TAG, "No channels found.");
-        return null;
-      } else {
-        Log.d(LOG_TAG, String.format("%d channels found.", allChannels.size()));
-      }
-
-      // pick some random channels
-      Set<VideoBroadcast> searchChannels = new HashSet<>();
-      for (int i = 0; i < 5; i++) {
-        searchChannels.add(allChannels.get(Math.abs(new Random().nextInt()) % allChannels.size()));
-      }
-
-      // set the time interval
-      Calendar start = Calendar.getInstance();
-      start.add(Calendar.HOUR, -1);
-      Calendar end = Calendar.getInstance();
-      end.setTime(start.getTime());
-      end.add(Calendar.HOUR, 6);
-
-      // query EPG data
-      long time = System.currentTimeMillis();
-      Log.d(LOG_TAG, "Finding shows on " + searchChannels.size() + " channels from " + start.getTime() + " to " + end.getTime() + ":");
-      List<VideoProgram> shows = helper.getEpgPrograms(udn, searchChannels, start.getTime(), end.getTime());
-      Log.d(LOG_TAG, "Query finished in " + (System.currentTimeMillis() - time) + "msec.");
-
-      // print search results
-      for (VideoProgram show : shows) {
-        Log.d(LOG_TAG, show.toString());
-      }
-
-      return null;
-    }
-  }
-
 }
