@@ -43,6 +43,7 @@ public class VideoFragment extends BaseFragment {
 
   private VideoBroadcast currentChannel;
   private MediaPlayer mediaPlayer;
+  private boolean preparing;
 
   @Nullable
   @Override
@@ -61,7 +62,9 @@ public class VideoFragment extends BaseFragment {
 
   public void play(Uri uri) {
     try {
-      if (mediaPlayer.isPlaying()) {
+      if (preparing) {
+        mediaPlayer.reset();
+      } else if (mediaPlayer.isPlaying()) {
         mediaPlayer.stop();
         mediaPlayer.reset();
       }
@@ -69,9 +72,11 @@ public class VideoFragment extends BaseFragment {
       mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
         @Override
         public void onPrepared(MediaPlayer mp) {
+          preparing = false;
           mediaPlayer.start();
         }
       });
+      preparing = true;
       mediaPlayer.prepareAsync();
     } catch (IOException e) {
       new AlertDialog.Builder(getActivity())
@@ -118,9 +123,6 @@ public class VideoFragment extends BaseFragment {
     mediaPlayer = new MediaPlayer();
   }
 
-  /**
-   * Select a random channel for playback.
-   */
   private void changeChannel() {
     List<VideoItem> videos = SettingsHelper.getHelper(getActivity()).getChannelVideos();
     if (videos.size() > 0) {
@@ -150,14 +152,7 @@ public class VideoFragment extends BaseFragment {
   @Subscribe
   public void onChannelChanged(EventBus.ChannelChangedEvent event) {
     currentChannel = event.getChannel();
-    // defer channel change to allow debugging
-    new Handler(Looper.getMainLooper()).post(new Runnable() {
-      @Override
-      public void run() {
-        changeChannel();
-      }
-    });
-
+    changeChannel();
   }
 
 }
