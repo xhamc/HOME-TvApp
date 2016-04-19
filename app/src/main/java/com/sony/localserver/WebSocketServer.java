@@ -143,7 +143,7 @@ public class WebSocketServer extends NanoWSD {
           DateFormat format = new SimpleDateFormat("M-d");
           String day = format.format(calendar.getTime());
           // get programs for the requested day
-          List<DlnaObjects.VideoProgram> programs = dlnaHelper.getChildren(udn, "0/EPG/" + channelId + "/" + day, DlnaObjects.VideoProgram.class, null);
+          List<DlnaObjects.VideoProgram> programs = dlnaHelper.getChildren(udn, "0/EPG/" + channelId + "/" + day, DlnaObjects.VideoProgram.class, null, true);
           // iterate programs and generate map entries
           Map<String, VideoProgram> programMap = new LinkedHashMap<>();
           for (VideoProgram program : programs) {

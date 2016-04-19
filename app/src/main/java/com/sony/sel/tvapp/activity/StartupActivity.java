@@ -63,7 +63,7 @@ public class StartupActivity extends BaseActivity {
 
         // browse server root
         Log.d(LOG_TAG, "Checking root of server " + udn + ".");
-        List<Container> root = dlnaHelper.getChildren(udn, DlnaHelper.DLNA_ROOT, Container.class, null);
+        List<Container> root = dlnaHelper.getChildren(udn, DlnaHelper.DLNA_ROOT, Container.class, null, false);
         Log.d(LOG_TAG, "Root = " + root != null ? new Gson().toJson(root) : "null");
         if (root != null) {
           return true;

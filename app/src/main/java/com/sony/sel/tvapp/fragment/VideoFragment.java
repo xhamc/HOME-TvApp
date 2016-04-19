@@ -9,11 +9,13 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.activity.SelectChannelVideosActivity;
@@ -39,6 +41,8 @@ public class VideoFragment extends BaseFragment {
 
   @Bind(R.id.surfaceView)
   SurfaceView surfaceView;
+  @Bind(R.id.spinner)
+  ProgressBar spinner;
 
   private VideoBroadcast currentChannel;
   private Uri videoUri;
@@ -54,11 +58,28 @@ public class VideoFragment extends BaseFragment {
     View contentView = inflater.inflate(R.layout.video_fragment, null);
     ButterKnife.bind(this, contentView);
 
+    // current EPG channel from settings
     currentChannel = SettingsHelper.getHelper(getActivity()).getCurrentChannel();
 
-    changeChannel();
-
     return contentView;
+  }
+
+  @Override
+  public void onPause() {
+    super.onPause();
+    stop();
+  }
+
+  @Override
+  public void onResume() {
+    super.onResume();
+    if (mediaPlayer != null) {
+      // resume play
+      play();
+    } else {
+      // pick a channel video to play
+      changeChannel();
+    }
   }
 
   @Override
@@ -68,62 +89,89 @@ public class VideoFragment extends BaseFragment {
   }
 
   /**
-   * Set up the video playback components.
+   * Set up the video playback surface.
+   *
    * @param uri Video URI. If not null, play this video after setup.
    */
   private void setup(@Nullable final Uri uri) {
     if (surfaceHolder == null) {
-      surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
-        @Override
-        public void surfaceCreated(SurfaceHolder holder) {
-          holder.removeCallback(this);
-          surfaceHolder = holder;
-          play(uri);
-        }
+      if (surfaceView.getHolder().getSurface() != null) {
+        // surface is ready, just need to get the holder
+        surfaceHolder = surfaceView.getHolder();
+        play(uri);
+      } else {
+        // surface is not ready, listen for surface creation
+        surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
+          @Override
+          public void surfaceCreated(SurfaceHolder holder) {
+            // surface is ready, now we can play
+            holder.removeCallback(this);
+            surfaceHolder = holder;
+            play(uri);
+          }
 
-        @Override
-        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+          @Override
+          public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
 
-        }
+          }
 
-        @Override
-        public void surfaceDestroyed(SurfaceHolder holder) {
+          @Override
+          public void surfaceDestroyed(SurfaceHolder holder) {
 
-        }
-      });
+          }
+        });
+      }
     } else {
+      // just initiate playback
       play(uri);
     }
   }
 
   /**
    * Play a video.
+   *
    * @param uri URI of the video to play.
    */
   public void play(@NonNull Uri uri) {
     if (surfaceHolder == null) {
+      // need to set up the surface
       setup(uri);
       return;
     }
     if (playVideoTask != null) {
+      // cancel a playback task in progress
       playVideoTask.cancel(true);
     }
     if (mediaPlayer != null) {
+      // stop & release currently playing video
       mediaPlayer.release();
       mediaPlayer = null;
     }
-    playVideoTask = new PlayVideoTask(uri);
-    playVideoTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    if (uri != null) {
+      showSpinner();
+      // create & execute async task for video playback
+      playVideoTask = new PlayVideoTask(uri);
+      playVideoTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    }
+  }
 
+  private void showSpinner() {
+    spinner.setVisibility(View.VISIBLE);
+  }
+
+  private void hideSpinner() {
+    spinner.setVisibility(View.GONE);
   }
 
   /**
-   * Play an existing video that is paused.
+   * Restart playback of an existing video that is paused or stopped.
    */
   public void play() {
-    if (mediaPlayer == null) {
+    if (mediaPlayer == null && videoUri != null) {
+      // restart playback from scratch
       play(videoUri);
     } else if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
+      // resume play
       mediaPlayer.start();
     }
   }
@@ -148,7 +196,7 @@ public class VideoFragment extends BaseFragment {
   }
 
   /**
-   * Change channel to a random video stream.
+   * Change to a random video stream selected from the "channel videos" list in Settings.
    */
   private void changeChannel() {
     List<VideoItem> videos = SettingsHelper.getHelper(getActivity()).getChannelVideos();
@@ -157,6 +205,7 @@ public class VideoFragment extends BaseFragment {
       final String res = video.getResource();
       final String protocolInfo = video.getProtocolInfo();
       if (res != null) {
+        Log.d(TAG, "Changing video channel to " + res + ".");
         play(Uri.parse(res));
       }
     } else {
@@ -181,7 +230,10 @@ public class VideoFragment extends BaseFragment {
     changeChannel();
   }
 
-  private class PlayVideoTask extends AsyncTask<Void,Void,MediaPlayer> {
+  /**
+   * Async task for initializing a MediaPlayer and starting video playback.
+   */
+  private class PlayVideoTask extends AsyncTask<Void, Void, MediaPlayer> {
 
     private final Uri uri;
 
@@ -191,9 +243,19 @@ public class VideoFragment extends BaseFragment {
 
     @Override
     protected MediaPlayer doInBackground(Void... params) {
+      Log.d(TAG, "Starting play video task for " + uri + ".");
+      if (isCancelled()) {
+        // don't do anything if canceled
+        return null;
+      }
       MediaPlayer mediaPlayer = null;
       try {
+        // create, set data source and prepare media player with one call
         mediaPlayer = MediaPlayer.create(getActivity(), uri);
+        if (isCancelled()) {
+          // don't continue if canceled while preparing
+          return mediaPlayer;
+        }
         mediaPlayer.setDisplay(surfaceHolder);
         mediaPlayer.setScreenOnWhilePlaying(true);
         mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
@@ -201,7 +263,7 @@ public class VideoFragment extends BaseFragment {
           public boolean onError(MediaPlayer mp, int what, int extra) {
             new AlertDialog.Builder(getActivity())
                 .setTitle(R.string.error)
-                .setMessage("Player error " + what + ".")
+                .setMessage("Player error: code = " + what + ", extra = " + extra + ".")
                 .setNeutralButton(getString(android.R.string.ok), null)
                 .setPositiveButton(getString(R.string.selectChannelVideos), new DialogInterface.OnClickListener() {
                   @Override
@@ -215,11 +277,10 @@ public class VideoFragment extends BaseFragment {
           }
         });
         mediaPlayer.start();
-        videoUri = uri;
       } catch (Throwable e) {
         new AlertDialog.Builder(getActivity())
             .setTitle(R.string.error)
-            .setMessage("Error preparing video:" + uri + ": "+e.toString())
+            .setMessage("Error playing video:" + uri + ": " + e.toString())
             .setNeutralButton(getString(android.R.string.ok), null)
             .setPositiveButton(getString(R.string.selectChannelVideos), new DialogInterface.OnClickListener() {
               @Override
@@ -236,6 +297,7 @@ public class VideoFragment extends BaseFragment {
     @Override
     protected void onCancelled(MediaPlayer mediaPlayer) {
       super.onCancelled(mediaPlayer);
+      Log.w(TAG, "Play video task canceled for " + uri + ".");
       if (mediaPlayer != null) {
         mediaPlayer.release();
       }
@@ -244,7 +306,10 @@ public class VideoFragment extends BaseFragment {
     @Override
     protected void onPostExecute(MediaPlayer mediaPlayer) {
       super.onPostExecute(mediaPlayer);
+      Log.d(TAG, "Play video task completed for " + uri + ".");
+      hideSpinner();
       VideoFragment.this.mediaPlayer = mediaPlayer;
+      videoUri = uri;
       playVideoTask = null;
     }
   }

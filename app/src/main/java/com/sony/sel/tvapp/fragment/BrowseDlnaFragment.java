@@ -135,7 +135,7 @@ public class BrowseDlnaFragment extends BaseFragment {
     @Override
     protected List<DlnaObject> doInBackground(Void... params) {
       Log.d(TAG, "Loading device list.");
-      return (List<DlnaObject>) (List<?>) dlnaHelper.getChildren(udn, parentId, VideoItem.class, null);
+      return (List<DlnaObject>) (List<?>) dlnaHelper.getChildren(udn, parentId, VideoItem.class, null, false);
     }
 
     @Override

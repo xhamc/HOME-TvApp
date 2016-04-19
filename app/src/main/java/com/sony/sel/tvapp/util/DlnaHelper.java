@@ -30,9 +30,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -57,6 +59,7 @@ public class DlnaHelper {
   private Context context;
   private ContentResolver contentResolver;
   private NetworkHelper networkHelper;
+  private Map<String, Map<String, List<DlnaObject>>> dlnaCache = new HashMap<>();
 
   private IUpnpServiceCp hueyService;
   private ServiceConnection hueyConnection = new ServiceConnection() {
@@ -264,55 +267,81 @@ public class DlnaHelper {
    * @param childClass      Class of child objects expected. Used to define query columns.
    * @param contentObserver Observer to receive notifications if the contents of the parent object changes.
    * @param <T>             Class of child object.
+   * @param useCache        Use cached content if available? Use with caution, DLNA nodes whose contents change often are not useful to cache.
    * @return List of children, or an empty list if no children were found.
    */
   @NonNull
-  public <T extends DlnaObject> List<T> getChildren(String udn, String parentId, Class<T> childClass, @Nullable ContentObserver contentObserver) {
+  public <T extends DlnaObject> List<T> getChildren(String udn, String parentId, Class<T> childClass, @Nullable ContentObserver contentObserver, boolean useCache) {
 
+    if (useCache) {
+      List<DlnaObject> cachedContent = getCachedChildren(udn, parentId);
+      if (cachedContent != null) {
+        Log.d(TAG, "Returning cached content for " + parentId + " at " + udn + ".");
+        return (List<T>) cachedContent;
+      }
+    }
     Cursor cursor = null;
     List<T> children = new ArrayList<>();
 
-      try {
-        Log.d(TAG, "Get DLNA child objects. UDN = " + udn + ", ID = " + parentId + ".");
-        Uri uri = DlnaCdsStore.getObjectUri(udn, parentId);
-        Log.d(TAG, "URI = " + uri);
-        String[] columns = DlnaObject.getColumnNames(childClass);
-        Log.d(TAG, "Querying. UDN = " + udn + ", ID = " + parentId + ".");
-        cursor = contentResolver.query(uri, columns, null, null, null);
-        Log.d(TAG, "Response received. UDN = " + udn + ", ID = " + parentId + ".");
-        if (contentObserver != null) {
-          contentResolver.registerContentObserver(uri, false, contentObserver);
-        }
-        if (cursor == null) {
-          // no data
-          Log.w(TAG, "No data.");
-          return children;
-        } else {
-          Log.d(TAG, String.format(Locale.getDefault(), "%d child items found.", cursor.getCount()));
-        }
-        if (cursor.moveToFirst()) {
-          do {
-            String upnpClass = cursor.getString(cursor.getColumnIndex(DlnaCdsStore.CLASS));
-            DlnaObject dlnaObject = DlnaObjects.DlnaClass.newInstance(upnpClass);
-            dlnaObject.loadFromCursor(cursor);
-            children.add((T) dlnaObject);
-          } while (cursor.moveToNext());
-        }
-      } catch (Throwable e) {
-        e.printStackTrace();
-      } finally {
-        if (cursor != null) {
-          // close cursor
-          cursor.close();
-        }
+    try {
+      Log.d(TAG, "Get DLNA child objects. UDN = " + udn + ", ID = " + parentId + ".");
+      Uri uri = DlnaCdsStore.getObjectUri(udn, parentId);
+      Log.d(TAG, "URI = " + uri);
+      String[] columns = DlnaObject.getColumnNames(childClass);
+      Log.d(TAG, "Querying. UDN = " + udn + ", ID = " + parentId + ".");
+      cursor = contentResolver.query(uri, columns, null, null, null);
+      Log.d(TAG, "Response received. UDN = " + udn + ", ID = " + parentId + ".");
+      if (contentObserver != null) {
+        contentResolver.registerContentObserver(uri, false, contentObserver);
       }
-      return children;
+      if (cursor == null) {
+        // no data
+        Log.w(TAG, "No data.");
+        return children;
+      } else {
+        Log.d(TAG, String.format(Locale.getDefault(), "%d child items found.", cursor.getCount()));
+      }
+      if (cursor.moveToFirst()) {
+        do {
+          String upnpClass = cursor.getString(cursor.getColumnIndex(DlnaCdsStore.CLASS));
+          DlnaObject dlnaObject = DlnaObjects.DlnaClass.newInstance(upnpClass);
+          dlnaObject.loadFromCursor(cursor);
+          children.add((T) dlnaObject);
+        } while (cursor.moveToNext());
+      }
+    } catch (Throwable e) {
+      e.printStackTrace();
+    } finally {
+      if (cursor != null) {
+        // close cursor
+        cursor.close();
+      }
+      if (children != null) {
+        cacheChildren(udn, parentId, children);
+      }
+    }
+    return children;
+  }
+
+  List<DlnaObject> getCachedChildren(String udn, String parentId) {
+    if (dlnaCache.containsKey(udn)) {
+      return dlnaCache.get(udn).get(parentId);
+    } else {
+      return null;
+    }
+  }
+
+  private <T extends DlnaObject> void cacheChildren(String udn, String parentId, List<T> children) {
+    if (!dlnaCache.containsKey(udn)) {
+      dlnaCache.put(udn, new HashMap<String, List<DlnaObject>>());
+    }
+    dlnaCache.get(udn).put(parentId, (List<DlnaObject>) children);
   }
 
   @NonNull
   public List<VideoBroadcast> getChannels(@NonNull String udn, @Nullable ContentObserver
       contentObserver) {
-    return getChildren(udn, "0/Channels", VideoBroadcast.class, contentObserver);
+    return getChildren(udn, "0/Channels", VideoBroadcast.class, contentObserver, false);
   }
 
   public List<VideoProgram> getEpgPrograms(String udn, Set<VideoBroadcast> channels, Date
@@ -342,7 +371,7 @@ public class DlnaHelper {
         // shortcut for creating the container ID to directly access EPG programs for channel & day
         // this may not work for non-Google EPG
         String containerId = "0/EPG/" + channelId + "/" + day;
-        List<VideoProgram> shows = getChildren(udn, containerId, VideoProgram.class, null);
+        List<VideoProgram> shows = getChildren(udn, containerId, VideoProgram.class, null, true);
         for (VideoProgram show : shows) {
           Date showStart = show.getScheduledStartTime();
           Date showEnd = show.getScheduledEndTime();
@@ -367,7 +396,7 @@ public class DlnaHelper {
     DateFormat format = new SimpleDateFormat("M-d");
     Date now = new Date();
     String day = format.format(now);
-    List<VideoProgram> shows = getChildren(udn, "0/EPG/" + channel.getChannelId() + "/" + day, VideoProgram.class, null);
+    List<VideoProgram> shows = getChildren(udn, "0/EPG/" + channel.getChannelId() + "/" + day, VideoProgram.class, null, true);
     for (VideoProgram show : shows) {
       if (show.getScheduledStartTime().before(now) && show.getScheduledEndTime().after(now)) {
         // show found
