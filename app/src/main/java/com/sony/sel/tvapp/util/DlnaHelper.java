@@ -37,10 +37,9 @@ import java.util.Random;
 import java.util.Set;
 
 import static com.sony.sel.tvapp.util.DlnaObjects.DlnaObject;
-import static com.sony.sel.tvapp.util.DlnaObjects.EpgContainer;
+import static com.sony.sel.tvapp.util.DlnaObjects.UpnpDevice;
 import static com.sony.sel.tvapp.util.DlnaObjects.VideoBroadcast;
 import static com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
-import static com.sony.sel.tvapp.util.DlnaObjects.UpnpDevice;
 
 /**
  * Helper for DLNA service and content provider.
@@ -58,8 +57,6 @@ public class DlnaHelper {
   private Context context;
   private ContentResolver contentResolver;
   private NetworkHelper networkHelper;
-
-  private Object lock = new Object();
 
   private IUpnpServiceCp hueyService;
   private ServiceConnection hueyConnection = new ServiceConnection() {
@@ -275,7 +272,6 @@ public class DlnaHelper {
     Cursor cursor = null;
     List<T> children = new ArrayList<>();
 
-    synchronized (lock) {
       try {
         Log.d(TAG, "Get DLNA child objects. UDN = " + udn + ", ID = " + parentId + ".");
         Uri uri = DlnaCdsStore.getObjectUri(udn, parentId);
@@ -311,7 +307,6 @@ public class DlnaHelper {
         }
       }
       return children;
-    }
   }
 
   @NonNull

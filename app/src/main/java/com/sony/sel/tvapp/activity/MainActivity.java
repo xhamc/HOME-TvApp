@@ -190,6 +190,9 @@ public class MainActivity extends BaseActivity {
         case KeyEvent.KEYCODE_MEDIA_PAUSE:
           videoFragment.pause();
           return true;
+        case KeyEvent.KEYCODE_MEDIA_STOP:
+          videoFragment.stop();
+          return true;
         case KeyEvent.KEYCODE_MEDIA_PLAY:
           videoFragment.play();
           return true;

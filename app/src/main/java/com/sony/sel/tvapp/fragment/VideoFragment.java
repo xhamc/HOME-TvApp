@@ -6,8 +6,6 @@ import android.content.Intent;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
@@ -44,6 +42,7 @@ public class VideoFragment extends BaseFragment {
   private VideoBroadcast currentChannel;
   private MediaPlayer mediaPlayer;
   private boolean preparing;
+  private boolean surfaceCreated;
 
   @Nullable
   @Override
@@ -55,12 +54,56 @@ public class VideoFragment extends BaseFragment {
 
     currentChannel = SettingsHelper.getHelper(getActivity()).getCurrentChannel();
 
-    setupVideo();
+    setup();
 
     return contentView;
   }
 
+  @Override
+  public void onDestroy() {
+    super.onDestroy();
+    stop();
+  }
+
+  /**
+   * Set up the video playback components.
+   */
+  private void setup() {
+    mediaPlayer = new MediaPlayer();
+    if (!surfaceCreated) {
+      surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
+        @Override
+        public void surfaceCreated(SurfaceHolder holder) {
+          holder.removeCallback(this);
+          mediaPlayer.setDisplay(holder);
+          surfaceCreated = true;
+          changeChannel();
+        }
+
+        @Override
+        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+
+        }
+
+        @Override
+        public void surfaceDestroyed(SurfaceHolder holder) {
+
+        }
+      });
+    } else {
+      mediaPlayer.setDisplay(surfaceView.getHolder());
+      changeChannel();
+    }
+  }
+
+  /**
+   * Play a video.
+   * @param uri URI of the video to play.
+   */
   public void play(Uri uri) {
+    if (mediaPlayer == null) {
+      setup();
+    }
     try {
       if (preparing) {
         mediaPlayer.reset();
@@ -88,42 +131,45 @@ public class VideoFragment extends BaseFragment {
     }
   }
 
+  /**
+   * Play an existing video that is paused.
+   */
   public void play() {
-    mediaPlayer.start();
+    if (mediaPlayer == null) {
+      setup();
+    } else if (!mediaPlayer.isPlaying()) {
+      mediaPlayer.start();
+    }
   }
-
-  public void pause() {
-    mediaPlayer.pause();
-  }
-
 
   /**
-   * Set up the video playback in the background.
+   * Pause a video that's playing.
    */
-  private void setupVideo() {
-
-    SurfaceHolder holder = surfaceView.getHolder();
-    holder.addCallback(new SurfaceHolder.Callback() {
-      @Override
-      public void surfaceCreated(SurfaceHolder holder) {
-        mediaPlayer.setDisplay(holder);
-        changeChannel();
-      }
-
-      @Override
-      public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-
-      }
-
-      @Override
-      public void surfaceDestroyed(SurfaceHolder holder) {
-
-      }
-    });
-    mediaPlayer = new MediaPlayer();
+  public void pause() {
+    if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+      mediaPlayer.pause();
+    }
   }
 
+  /**
+   * Stop video playback & release player resources.
+   */
+  public void stop() {
+    if (mediaPlayer != null) {
+      mediaPlayer.release();
+      mediaPlayer = null;
+    }
+  }
+
+  /**
+   * Change channel to a random video stream.
+   */
   private void changeChannel() {
+    if (mediaPlayer == null) {
+      // need to reset
+      setup();
+      return;
+    }
     List<VideoItem> videos = SettingsHelper.getHelper(getActivity()).getChannelVideos();
     if (videos.size() > 0) {
       VideoItem video = videos.get(Math.abs(new Random().nextInt()) % videos.size());
