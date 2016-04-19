@@ -5,11 +5,11 @@
     android:layout_height="match_parent"
     >
 
-    <SurfaceView
-        android:id="@+id/surfaceView"
+    <android.support.v7.widget.RecyclerView
+        android:id="@android:id/list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="visible"
+        android:focusable="true"
         />
 
 </FrameLayout>

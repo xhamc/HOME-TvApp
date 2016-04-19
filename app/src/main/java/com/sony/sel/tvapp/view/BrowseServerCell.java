@@ -4,15 +4,11 @@ import android.content.Context;
 import android.net.Uri;
 import android.util.AttributeSet;
 import android.view.View;
-import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.sony.huey.dlna.IconList;
 import com.sony.sel.tvapp.R;
-import com.sony.sel.tvapp.util.EventBus;
-import com.sony.sel.tvapp.util.SettingsHelper;
-import com.squareup.otto.Subscribe;
 import com.squareup.picasso.Picasso;
 
 import java.util.Arrays;
@@ -23,7 +19,7 @@ import butterknife.ButterKnife;
 
 import static com.sony.sel.tvapp.util.DlnaObjects.UpnpDevice;
 
-public class ServerCell extends BaseListCell<UpnpDevice> {
+public class BrowseServerCell extends BaseListCell<UpnpDevice> {
 
   private UpnpDevice data;
 
@@ -33,54 +29,34 @@ public class ServerCell extends BaseListCell<UpnpDevice> {
   TextView friendlyName;
   @Bind(R.id.deviceInfo)
   TextView deviceInfo;
-  @Bind(R.id.udn)
-  TextView udn;
-  @Bind(R.id.deviceType)
-  TextView deviceType;
-  @Bind(R.id.serviceTypes)
-  TextView serviceTypes;
-  @Bind(R.id.check)
-  CheckBox check;
 
-  public ServerCell(Context context) {
+  public BrowseServerCell(Context context) {
     super(context);
   }
 
-  public ServerCell(Context context, AttributeSet attrs) {
+  public BrowseServerCell(Context context, AttributeSet attrs) {
     super(context, attrs);
   }
 
-  public ServerCell(Context context, AttributeSet attrs, int defStyleAttr) {
+  public BrowseServerCell(Context context, AttributeSet attrs, int defStyleAttr) {
     super(context, attrs, defStyleAttr);
   }
 
-  public ServerCell(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+  public BrowseServerCell(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
     super(context, attrs, defStyleAttr, defStyleRes);
   }
 
   @Override
   protected void onFinishInflate() {
     super.onFinishInflate();
-
     ButterKnife.bind(this);
-
-    EventBus.getInstance().register(this);
-  }
-
-  @Subscribe
-  public void onServerChanged(EventBus.EpgServerChangedEvent event) {
-    check.setChecked(event.getServerUdn().equals(data.getUdn()));
   }
 
   @Override
   public void bind(final UpnpDevice data) {
 
-    String serverUdn = SettingsHelper.getHelper(getContext()).getEpgServer();
-
     this.data = data;
     friendlyName.setText(data.getFriendlyName());
-    udn.setText(data.getUdn());
-    deviceType.setText(data.getDeviceType());
 
     StringBuilder info = new StringBuilder();
     if (data.getManufacturer() != null) {
@@ -107,8 +83,6 @@ public class ServerCell extends BaseListCell<UpnpDevice> {
       icon.setImageDrawable(null);
     }
 
-    check.setChecked(serverUdn != null ? serverUdn.equals(data.getUdn()) : false);
-
     setupFocus(null, 1.02f);
   }
 
@@ -116,8 +90,6 @@ public class ServerCell extends BaseListCell<UpnpDevice> {
   public UpnpDevice getData() {
     return data;
   }
-
-  public static final String LOG_TAG = "DlnaTest";
 
   void drawIcon(IconList iconList) {
     List<String> formats = Arrays.asList(

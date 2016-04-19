@@ -28,5 +28,12 @@
     <string name="recordings">Recordings</string>
     <string name="vod">VOD</string>
     <string name="settings">Settings</string>
+    <string name="noItemsFound">No items were found.</string>
+    <string name="selectChannelVideos">Select Channel Videos</string>
+    <string name="selectChannelVideosPrompt">Browse local DLNA servers and select channel videos:</string>
+    <string name="done">Done</string>
+    <string name="clearChannelVideos">Clear Videos</string>
+    <string name="selectVideos">Select Videos</string>
+    <string name="noVideosError">You have not yet selected any videos to play.</string>
 
 </resources>

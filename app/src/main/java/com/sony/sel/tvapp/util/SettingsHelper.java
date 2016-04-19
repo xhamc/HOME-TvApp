@@ -5,6 +5,13 @@ import android.content.SharedPreferences;
 
 import com.google.gson.Gson;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static com.sony.sel.tvapp.util.DlnaObjects.VideoItem;
+
 public class SettingsHelper {
 
   private static final String LOG_TAG = SettingsHelper.class.getSimpleName();
@@ -13,8 +20,10 @@ public class SettingsHelper {
 
   private static final String EPG_SERVER = "EpgServer";
   private static final String CURRENT_CHANNEL = "CurrentChannel";
+  private static final String CHANNEL_VIDEOS = "ChannelVideos";
 
   private static SettingsHelper INSTANCE;
+  private List<VideoItem> channelVideos;
 
   private Context context;
 
@@ -68,11 +77,58 @@ public class SettingsHelper {
 
   public void setCurrentChannel(DlnaObjects.VideoBroadcast channel) {
 
-      SharedPreferences prefs = getSharedPreferences();
-      SharedPreferences.Editor editor = prefs.edit();
-      editor.putString(CURRENT_CHANNEL, channel.toString());
-      editor.commit();
-      EventBus.getInstance().post(new EventBus.ChannelChangedEvent(channel));
+    SharedPreferences prefs = getSharedPreferences();
+    SharedPreferences.Editor editor = prefs.edit();
+    editor.putString(CURRENT_CHANNEL, channel.toString());
+    editor.commit();
+    EventBus.getInstance().post(new EventBus.ChannelChangedEvent(channel));
 
+  }
+
+  /**
+   * Class for deserializing videos
+   */
+  private static class VideoList extends ArrayList<VideoItem> {
+  }
+
+  public List<VideoItem> getChannelVideos() {
+    if (channelVideos == null) {
+      String videosString = getSharedPreferences().getString(CHANNEL_VIDEOS, null);
+      if (videosString != null) {
+        channelVideos = new Gson().fromJson(videosString, VideoList.class);
+      } else {
+        channelVideos = new ArrayList<>();
+      }
+    }
+    return channelVideos;
+  }
+
+    private void saveChannelVideos() {
+      if (channelVideos != null) {
+        SharedPreferences prefs = getSharedPreferences();
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString(CHANNEL_VIDEOS, new Gson().toJson(channelVideos));
+        editor.commit();
+      }
+    }
+
+  public void addChannelVideo(VideoItem video) {
+    List<VideoItem> videos = getChannelVideos();
+    videos.add(video);
+    saveChannelVideos();
+  }
+
+  public void removeChannelVideo(VideoItem video) {
+    List<VideoItem> videos = getChannelVideos();
+    videos.remove(video);
+    saveChannelVideos();
+  }
+
+  public void clearChannelVideos() {
+    SharedPreferences prefs = getSharedPreferences();
+    SharedPreferences.Editor editor = prefs.edit();
+    editor.remove(CHANNEL_VIDEOS);
+    editor.commit();
+    channelVideos = new ArrayList<>();
   }
 }

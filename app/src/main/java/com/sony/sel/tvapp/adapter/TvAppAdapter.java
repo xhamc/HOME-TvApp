@@ -29,7 +29,12 @@ public abstract class TvAppAdapter<T, V extends View & Bindable<T>> extends Recy
   private final int cellViewType;
   private final int cellLayoutResId;
   private Throwable error;
-  private View.OnClickListener onItemClickListener;
+  private final OnClickListener<T, V> onClickListener;
+  boolean firstFocus;
+
+  public interface OnClickListener<T, V> {
+    void onClick(V view, int position);
+  }
 
   /**
    * Create an adapter to display specific data items.
@@ -46,6 +51,16 @@ public abstract class TvAppAdapter<T, V extends View & Bindable<T>> extends Recy
     this.appContext = context.getApplicationContext();
     this.cellViewType = cellViewType;
     this.cellLayoutResId = cellLayoutResId;
+    this.onClickListener = null;
+  }
+
+  public TvAppAdapter(Context context, int cellViewType, int cellLayoutResId, String loadingMessage, String emptyMessage, OnClickListener<T, V> onItemClickListener) {
+    this.loadingMessage = loadingMessage;
+    this.emptyMessage = emptyMessage;
+    this.appContext = context.getApplicationContext();
+    this.cellViewType = cellViewType;
+    this.cellLayoutResId = cellLayoutResId;
+    this.onClickListener = onItemClickListener;
   }
 
   /**
@@ -54,6 +69,7 @@ public abstract class TvAppAdapter<T, V extends View & Bindable<T>> extends Recy
   public void setLoading() {
     this.data = null;
     this.error = null;
+    this.firstFocus = false;
     notifyDataSetChanged();
   }
 
@@ -124,7 +140,6 @@ public abstract class TvAppAdapter<T, V extends View & Bindable<T>> extends Recy
         };
       default:
         View v = LayoutInflater.from(appContext).inflate(cellLayoutResId, parent, false);
-        v.setOnClickListener(onItemClickListener);
         return new RecyclerView.ViewHolder(v) {
         };
     }
@@ -151,7 +166,7 @@ public abstract class TvAppAdapter<T, V extends View & Bindable<T>> extends Recy
   }
 
   @Override
-  public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+  public void onBindViewHolder(RecyclerView.ViewHolder holder, final int position) {
     switch (holder.getItemViewType()) {
       case R.id.loading_cell: {
         if (loadingMessage != null) {
@@ -179,9 +194,18 @@ public abstract class TvAppAdapter<T, V extends View & Bindable<T>> extends Recy
         break;
       default:
         ((V) holder.itemView).bind(data.get(position));
-        if (position == 0 && data.size() == 1) {
+        if (position == 0 && firstFocus == false) {
           // focus first item
           holder.itemView.requestFocus();
+          firstFocus = true;
+        }
+        if (onClickListener != null) {
+          holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+              onClickListener.onClick((V) v, position);
+            }
+          });
         }
         break;
     }

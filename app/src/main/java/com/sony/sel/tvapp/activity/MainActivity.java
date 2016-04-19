@@ -12,6 +12,7 @@ import android.view.View;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.fragment.NavigationFragment;
+import com.sony.sel.tvapp.fragment.ChannelInfoFragment;
 import com.sony.sel.tvapp.fragment.VideoFragment;
 import com.sony.sel.tvapp.ui.NavigationItem;
 import com.sony.sel.tvapp.util.EventBus;
@@ -28,6 +29,7 @@ public class MainActivity extends BaseActivity {
   public static final String TAG = MainActivity.class.getSimpleName();
 
   private VideoFragment videoFragment;
+  private ChannelInfoFragment channelInfoFragment;
   private Fragment currentFragment;
   private NavigationFragment navigationFragment;
 
@@ -55,9 +57,14 @@ public class MainActivity extends BaseActivity {
     FragmentManager fragmentManager = getFragmentManager();
     FragmentTransaction transaction = fragmentManager.beginTransaction();
 
-    // background video fragment
+    // channel info overlay fragment
     videoFragment = new VideoFragment();
     transaction.add(R.id.videoFrame, videoFragment);
+
+
+    // channel info overlay fragment
+    channelInfoFragment = new ChannelInfoFragment();
+    transaction.add(R.id.videoFrame, channelInfoFragment);
 
     // navigation fragment
     navigationFragment = new NavigationFragment();
@@ -179,6 +186,13 @@ public class MainActivity extends BaseActivity {
             return true;
           }
         }
+        case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+        case KeyEvent.KEYCODE_MEDIA_PAUSE:
+          videoFragment.pause();
+          return true;
+        case KeyEvent.KEYCODE_MEDIA_PLAY:
+          videoFragment.play();
+          return true;
       }
     }
     return super.onKeyDown(keyCode, event);

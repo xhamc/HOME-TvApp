@@ -47,8 +47,8 @@
 
         <activity
             android:name=".activity.MainActivity"
-            android:screenOrientation="landscape"
             android:launchMode="singleInstance"
+            android:screenOrientation="landscape"
             >
         </activity>
 
@@ -65,6 +65,12 @@
 
         </activity>
 
+        <activity
+            android:name=".activity.SelectChannelVideosActivity"
+            android:screenOrientation="landscape"
+            >
+
+        </activity>
 
         <!-- web server for EPG -->
         <service

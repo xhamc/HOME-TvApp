@@ -193,27 +193,27 @@ public class DlnaHelper {
 
   }
 
-  private final boolean SHOW_ALL_DEVICES = true; // false shows only CVP-2 devices
-
   /**
    * Get the current list of known UPnP devices.
    *
-   * @param observer Oberver to receive notification if the device list changes after this query.
+   * @param observer       Oberver to receive notification if the device list changes after this query.
+   * @param showAllDevices Show all UpnP devices, or only media servers?
    * @return The device list, or an empty list when no devices are found.
    */
-  public List<UpnpDevice> getDeviceList(@Nullable ContentObserver observer) {
+  public List<UpnpDevice> getDeviceList(@Nullable ContentObserver observer, boolean showAllDevices) {
     List<UpnpDevice> devices = new ArrayList<>();
     Uri uri = UpnpServiceCp.CONTENT_URI;
     Cursor cursor = contentResolver.query(UpnpServiceCp.CONTENT_URI,
         UpnpServiceCp.PROJECTION,
-        SHOW_ALL_DEVICES ?
+        showAllDevices ?
             UpnpServiceCp.DEVICE_TYPE + " LIKE '%'" :
-            UpnpServiceCp.DEVICE_TYPE + " LIKE '%:" + UpnpServiceCp.REMOTE_UI_SERVER_DEVICE + ":%'",
+            UpnpServiceCp.DEVICE_TYPE + " LIKE '%:MediaServer:%'",
         null, null);
     if (cursor != null) {
       Log.d(TAG, "Device column names: " + new Gson().toJson(cursor.getColumnNames()));
       while (cursor.moveToNext()) {
-        UpnpDevice device = new DlnaObjects.UpnpDevice(cursor);
+        UpnpDevice device = new DlnaObjects.UpnpDevice();
+        device.loadFromCursor(cursor);
         Log.d(TAG, device.toString());
         devices.add(device);
       }
@@ -297,20 +297,8 @@ public class DlnaHelper {
         if (cursor.moveToFirst()) {
           do {
             String upnpClass = cursor.getString(cursor.getColumnIndex(DlnaCdsStore.CLASS));
-            DlnaObject dlnaObject;
-            if (upnpClass.equals(VideoBroadcast.CLASS)) {
-              // channel
-              dlnaObject = new VideoBroadcast(cursor);
-            } else if (upnpClass.equals(EpgContainer.CLASS)) {
-              // container
-              dlnaObject = new EpgContainer(cursor);
-            } else if (upnpClass.equals(VideoProgram.CLASS)) {
-              // epg program (tv show)
-              dlnaObject = new VideoProgram(cursor);
-            } else {
-              // generic/unknown DLNA object
-              dlnaObject = new DlnaObject(cursor);
-            }
+            DlnaObject dlnaObject = DlnaObjects.DlnaClass.newInstance(upnpClass);
+            dlnaObject.loadFromCursor(cursor);
             children.add((T) dlnaObject);
           } while (cursor.moveToNext());
         }
@@ -327,11 +315,13 @@ public class DlnaHelper {
   }
 
   @NonNull
-  public List<VideoBroadcast> getChannels(@NonNull String udn, @Nullable ContentObserver contentObserver) {
+  public List<VideoBroadcast> getChannels(@NonNull String udn, @Nullable ContentObserver
+      contentObserver) {
     return getChildren(udn, "0/Channels", VideoBroadcast.class, contentObserver);
   }
 
-  public List<VideoProgram> getEpgPrograms(String udn, Set<VideoBroadcast> channels, Date startDateTime, Date endDateTime) {
+  public List<VideoProgram> getEpgPrograms(String udn, Set<VideoBroadcast> channels, Date
+      startDateTime, Date endDateTime) {
     List<String> channelIds = new ArrayList<>();
     for (VideoBroadcast channel : channels) {
       channelIds.add(channel.getChannelId());
@@ -339,7 +329,8 @@ public class DlnaHelper {
     return getEpgPrograms(udn, channelIds, startDateTime, endDateTime);
   }
 
-  public List<VideoProgram> getEpgPrograms(String udn, List<String> channelIds, Date startDateTime, Date endDateTime) {
+  public List<VideoProgram> getEpgPrograms(String udn, List<String> channelIds, Date
+      startDateTime, Date endDateTime) {
     List<VideoProgram> programs = new ArrayList<>();
 
     // create list of days needed for EPG data

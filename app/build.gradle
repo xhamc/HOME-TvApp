@@ -30,4 +30,5 @@ dependencies {
     compile 'com.jakewharton:butterknife:7.0.1'
     compile files('libs/sony/huey.jar')
     compile files('libs/sony/discoverycommon.jar')
+    compile 'com.google.android.gms:play-services-appindexing:8.1.0'
 }

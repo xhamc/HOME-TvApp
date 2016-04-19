@@ -9,7 +9,6 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.sony.huey.dlna.IconList;
 
-import java.io.Serializable;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -22,6 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
 
 /**
  * Class to hold DLNA object declarations.
@@ -44,6 +44,40 @@ public class DlnaObjects {
 
   private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'Z");
 
+
+  public enum DlnaClass {
+
+    VIDEO_BROADCAST(VideoBroadcast.class, "object.item.videoItem.videoBroadcast"),
+    VIDEO_ITEM(VideoItem.class, "object.item.videoItem"),
+
+
+    VIDEO_PROGRAM(VideoProgram.class, "object.item.epgItem.videoProgram"),
+    EPG_ITEM(EpgItem.class, "object.item.epgItem"),
+
+    ITEM(Item.class, "object.item"),
+
+    CONTAINER(Container.class, "object.container"),
+    OBJECT(DlnaObject.class, "object");
+
+    private final Class<DlnaObject> objectClass;
+    private final String className;
+
+    DlnaClass(Class objectClass, String className) {
+      this.objectClass = objectClass;
+      this.className = className;
+    }
+
+    public static DlnaObject newInstance(String className) throws IllegalAccessException, InstantiationException {
+      for (DlnaClass dlnaClass : values()) {
+        if (className.startsWith(dlnaClass.className)) {
+          return dlnaClass.objectClass.newInstance();
+        }
+      }
+      throw new InstantiationException("Class not resolved.");
+    }
+
+  }
+
   /**
    * Base class for objects that can be extracted from Cursors.
    * The {@link com.sony.sel.tvapp.util.DlnaObjects.ColumnName} annotation is used
@@ -55,8 +89,10 @@ public class DlnaObjects {
 
     @ColumnName("_id")
     private String uid;
+    @ColumnName("@id")
+    private String id;
 
-    public CursorObject(Cursor cursor) {
+    public final void loadFromCursor(Cursor cursor) {
       for (Class clazz = this.getClass(); clazz != Object.class; clazz = clazz.getSuperclass()) {
         for (Field field : clazz.getDeclaredFields()) {
           // allow access to private fields
@@ -114,7 +150,7 @@ public class DlnaObjects {
 
     @Override
     public boolean equals(Object o) {
-      return o instanceof CursorObject ? uid.equals(((CursorObject) o).uid) : false;
+      return o instanceof CursorObject ? id.equals(((CursorObject) o).id) : false;
     }
 
     @Override
@@ -122,6 +158,13 @@ public class DlnaObjects {
       return uid.hashCode();
     }
 
+    public String getUid() {
+      return uid;
+    }
+
+    public String getId() {
+      return id;
+    }
   }
 
   /**
@@ -202,10 +245,6 @@ public class DlnaObjects {
 //    @ColumnName("CHILD_COUNT")
 //    private String childCount;
 
-    public UpnpDevice(Cursor cursor) {
-      super(cursor);
-    }
-
     public String getLocation() {
       return location;
     }
@@ -245,8 +284,6 @@ public class DlnaObjects {
 
   public static class DlnaObject extends CursorObject {
 
-    @ColumnName("@id")
-    private String id;
     //    @ColumnName("_num_")
 //    private String responseOrder;
 //    @ColumnName("@parentID")
@@ -257,16 +294,12 @@ public class DlnaObjects {
     private String title;
     @ColumnName("upnp:class")
     private String upnpClass;
+    @ColumnName("res")
+    private String res;
     @ColumnName("res@protocolInfo")
     private String protocolInfo;
-
-    public DlnaObject(Cursor cursor) {
-      super(cursor);
-    }
-
-    public String getId() {
-      return id;
-    }
+    @ColumnName("upnp:icon")
+    private String icon;
 
     public String getTitle() {
       return title;
@@ -276,8 +309,16 @@ public class DlnaObjects {
       return upnpClass;
     }
 
+    public String getResource() {
+      return res;
+    }
+
     public String getProtocolInfo() {
       return protocolInfo;
+    }
+
+    public String getIcon() {
+      return icon;
     }
   }
 
@@ -290,10 +331,6 @@ public class DlnaObjects {
 //    private String refId;
 //    @ColumnName("upnp:bookmarkID")
 //    private String bookmarkId;
-
-    public Item(Cursor cursor) {
-      super(cursor);
-    }
 
   }
 
@@ -386,8 +423,6 @@ public class DlnaObjects {
     private String description;
     @ColumnName("upnp:longDescription")
     private String longDescription;
-    @ColumnName("upnp:icon")
-    private String icon;
     //    @ColumnName("upnp:region")
 //    private String region;
 //    @ColumnName("dc:language")
@@ -400,10 +435,6 @@ public class DlnaObjects {
     private String scheduledEndTime;
 //    @ColumnName("upnp:recordable")
 //    private String recordable;
-
-    public EpgItem(Cursor cursor) {
-      super(cursor);
-    }
 
     public String getChannelName() {
       return channelName;
@@ -439,10 +470,6 @@ public class DlnaObjects {
 
     public String getLongDescription() {
       return longDescription;
-    }
-
-    public String getIcon() {
-      return icon;
     }
 
     public Date getScheduledStartTime() {
@@ -482,12 +509,6 @@ public class DlnaObjects {
    * Class for video programs, a.k.a. TV shows.
    */
   public static class VideoProgram extends EpgItem {
-
-    public static final String CLASS = "object.item.epgItem.videoProgram";
-
-    public VideoProgram(Cursor cursor) {
-      super(cursor);
-    }
 
     /**
      * Gson serializer that adds keys & values expected by JavaScript code.
@@ -546,10 +567,6 @@ public class DlnaObjects {
 //    @ColumnName("upnp:srsRecordScheduleID")
 //    private String srsRecordScheduleId;
 
-    public VideoItem(Cursor cursor) {
-      super(cursor);
-    }
-
     public String getLongDescription() {
       return longDescription;
     }
@@ -564,10 +581,6 @@ public class DlnaObjects {
    */
   public static class VideoBroadcast extends VideoItem {
 
-    public static final String CLASS = "object.item.videoItem.videoBroadcast";
-
-    @ColumnName("upnp:icon")
-    private String icon;
     //    @ColumnName("upnp:region")
 //    private String region;
     @ColumnName("upnp:channelNr")
@@ -586,14 +599,6 @@ public class DlnaObjects {
 //    private String price;
 //    @ColumnName("upnp:payPerView")
 //    private String payPerView;
-
-    public VideoBroadcast(Cursor cursor) {
-      super(cursor);
-    }
-
-    public String getIcon() {
-      return icon;
-    }
 
     public String getChannelNumber() {
       return channelNumber;
@@ -633,8 +638,6 @@ public class DlnaObjects {
    */
   public static class Container extends DlnaObject {
 
-    public static final String CLASS = "object.container";
-
 //    @ColumnName("@childCount")
 //    private String childCount;
 //    @ColumnName("upnp:createClass")
@@ -646,9 +649,6 @@ public class DlnaObjects {
 //    @ColumnName("@neverPlayable")
 //    private String neverPlayable;
 
-    public Container(Cursor cursor) {
-      super(cursor);
-    }
   }
 
   /**
@@ -692,8 +692,6 @@ public class DlnaObjects {
 //    private String payPerView;
 //    @ColumnName("upnp:epgProviderName")
 //    private String epgProviderName;
-    @ColumnName("upnp:icon")
-    private String icon;
     //    @ColumnName("upnp:region")
 //    private String region;
 //    @ColumnName("dc:language")
@@ -702,14 +700,6 @@ public class DlnaObjects {
 //    private String relation;
     @ColumnName("upnp:dateTimeRange")
     private String dateTimeRange;
-
-    public EpgContainer(Cursor cursor) {
-      super(cursor);
-    }
-
-    public String getIcon() {
-      return icon;
-    }
 
     public Date getDateTimeRangeStart() {
       if (dateTimeRange != null) {

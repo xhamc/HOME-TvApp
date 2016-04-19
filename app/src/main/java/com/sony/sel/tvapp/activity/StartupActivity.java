@@ -96,38 +96,4 @@ public class StartupActivity extends BaseActivity {
     }
   }
 
-  private static class IterateServerTask extends AsyncTask<Void, Void, Void> {
-
-    public static final String LOG_TAG = "DlnaTest";
-
-    private DlnaHelper helper;
-    private final String udn;
-
-    public IterateServerTask(DlnaHelper helper, String udn) {
-      this.helper = helper;
-      this.udn = udn;
-    }
-
-    @Override
-    protected Void doInBackground(Void... params) {
-      // get channel list
-      int count = iterateChildren("0");
-      Log.d(LOG_TAG, "Iteration complete, count = "+count+" objects.");
-      return null;
-    }
-
-    int iterateChildren(String parentId) {
-      List<DlnaObject> children = helper.getChildren(udn,parentId, DlnaObject.class, null);
-      int count = children.size();
-      for (DlnaObject child : children) {
-        if (child.getUpnpClass().startsWith(Container.CLASS)) {
-          // drill down
-          count += iterateChildren(child.getId());
-        }
-      }
-      return count;
-    }
-  }
-
-
 }
