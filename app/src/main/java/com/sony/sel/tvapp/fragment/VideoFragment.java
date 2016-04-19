@@ -21,7 +21,6 @@ import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.squareup.otto.Subscribe;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Random;
 
@@ -45,6 +44,7 @@ public class VideoFragment extends BaseFragment {
   private Uri videoUri;
   private MediaPlayer mediaPlayer;
   private SurfaceHolder surfaceHolder;
+  private PlayVideoTask playVideoTask;
 
   @Nullable
   @Override
@@ -105,7 +105,15 @@ public class VideoFragment extends BaseFragment {
       setup(uri);
       return;
     }
-    new PlayVideoTask(uri).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    if (playVideoTask != null) {
+      playVideoTask.cancel(true);
+    }
+    if (mediaPlayer != null) {
+      mediaPlayer.release();
+      mediaPlayer = null;
+    }
+    playVideoTask = new PlayVideoTask(uri);
+    playVideoTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 
   }
 
@@ -173,7 +181,7 @@ public class VideoFragment extends BaseFragment {
     changeChannel();
   }
 
-  private class PlayVideoTask extends AsyncTask<Void,Void,Void> {
+  private class PlayVideoTask extends AsyncTask<Void,Void,MediaPlayer> {
 
     private final Uri uri;
 
@@ -182,11 +190,9 @@ public class VideoFragment extends BaseFragment {
     }
 
     @Override
-    protected Void doInBackground(Void... params) {
+    protected MediaPlayer doInBackground(Void... params) {
+      MediaPlayer mediaPlayer = null;
       try {
-        if (mediaPlayer != null) {
-          mediaPlayer.release();
-        }
         mediaPlayer = MediaPlayer.create(getActivity(), uri);
         mediaPlayer.setDisplay(surfaceHolder);
         mediaPlayer.setScreenOnWhilePlaying(true);
@@ -224,7 +230,22 @@ public class VideoFragment extends BaseFragment {
             .create()
             .show();
       }
-      return null;
+      return mediaPlayer;
+    }
+
+    @Override
+    protected void onCancelled(MediaPlayer mediaPlayer) {
+      super.onCancelled(mediaPlayer);
+      if (mediaPlayer != null) {
+        mediaPlayer.release();
+      }
+    }
+
+    @Override
+    protected void onPostExecute(MediaPlayer mediaPlayer) {
+      super.onPostExecute(mediaPlayer);
+      VideoFragment.this.mediaPlayer = mediaPlayer;
+      playVideoTask = null;
     }
   }
 }
