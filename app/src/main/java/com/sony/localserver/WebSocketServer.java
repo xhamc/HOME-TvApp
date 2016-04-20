@@ -73,7 +73,7 @@ public class WebSocketServer extends NanoWSD {
 
 
     @Override
-    protected void onMessage(WebSocketFrame message) {
+    protected void onMessage(final WebSocketFrame message) {
       Log.d(TAG, "MESSAGE RECEIVED: " + message.getTextPayload());
       String payload = message.getTextPayload();
       if (payload.equalsIgnoreCase("Ping")) {
@@ -83,27 +83,36 @@ public class WebSocketServer extends NanoWSD {
           e.printStackTrace();
         }
       } else if (payload.contains("browseEPGData")) {
-        String json = processEpgRequest(message.getTextPayload());
-        if (json != null) {
-          try {
-            ws.send(json);
-          } catch (IOException e) {
-            e.printStackTrace();
+        Log.d(TAG, "Browse EPG data.");
+        new Thread(new Runnable() {
+          @Override
+          public void run() {
+            String json = processEpgRequest(message.getTextPayload());
+            if (json != null) {
+              try {
+                ws.send(json);
+              } catch (IOException e) {
+                e.printStackTrace();
+              }
+            }
           }
-          return;
-        }
+        }).start();
       } else if (payload.equals("browseEPGStations")) {
-        Log.d(TAG, "Browse EPG stations.");
-        String json = getChannels();
-        if (json != null) {
-          try {
-            ws.send(json != null ? json : "ERROR");
-          } catch (IOException e) {
-            Log.e(TAG, "Error sending Channels:" + e);
+        new Thread(new Runnable() {
+          @Override
+          public void run() {
+            Log.d(TAG, "Browse EPG stations.");
+            String json = getChannels();
+            if (json != null) {
+              try {
+                ws.send(json != null ? json : "ERROR");
+              } catch (IOException e) {
+                Log.e(TAG, "Error sending Channels:" + e);
+              }
+            }
           }
-        }
+        }).start();
       }
-
     }
 
     /**
@@ -168,6 +177,7 @@ public class WebSocketServer extends NanoWSD {
 
     /**
      * Return the list of channels as a JSON string.
+     *
      * @return Channel list JSON.
      */
     String getChannels() {
