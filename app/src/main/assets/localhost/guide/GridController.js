@@ -7,7 +7,6 @@ function GridController(){
 	var HORIZCELLSIZE=(1905-300)/5;
 
 	GRID_UPDATE_TIMER=100;
-	GRID_TIME_START_TIMER=5*60*1000;
 	GLOBAL_ALPHA=1;
 
     var ctx;
@@ -47,8 +46,6 @@ function GridController(){
 		ctx.save();
 		//Draw background
 		ctx.clearRect(0,0, width, height);
-		ctx.globalAlpha=0.7*GLOBAL_ALPHA;
-//		ctx.drawImage(background, 0, 0, width, height);
 		//Draw TODAY DATE
 		ctx.globalAlpha=1*GLOBAL_ALPHA;
 		ctx.font = "50px arial";
@@ -692,47 +689,12 @@ function GridController(){
 			}
 		}
 
-		restartgridTimeStartTimer();
-
-
     }
-
-	function restartgridTimeStartTimer(){
-		if (null!=gridTimeStartTimer) clearTimeout(gridTimeStartTimer);
-		gridTimeStartTimer=setTimeout(gridTimeStartUpdate, GRID_TIME_START_TIMER);
-	}
-
-//	function restartDescriptionBoxStartTimer(){
-//		if (null!=descriptionBoxStartTimer) clearTimeout(descriptionBoxStartTimer);
-//
-//    		descriptionBoxStartTimer=setTimeout(function(){
-//    			descriptionBoxDrawFlag=true;
-//    		},20000);
-//	}
-
-	var gridOn=true;
-	var animateGridOff;
-	var timeGridOff=setTimeout(gridOff,15000);
-	function gridOff(){
-		gridOn=false;
-
-		if (GLOBAL_ALPHA>=0){
-			GLOBAL_ALPHA-=0.05;
-			if (GLOBAL_ALPHA<0) GLOBAL_ALPHA=0;
-			clearTimeout(animateGridOff);
-			animateGridOff=setTimeout(gridOff,50)
-		}
-
-	}
 
 	function keyDown(e){
 
-
-
-		restartgridTimeStartTimer();
-
 		console.log("key pressed: "+e.keyIdentifier);
-		if (e.keyIdentifier == "U+019F" && gridOn && VIDEO_ENABLED){
+		if (e.keyIdentifier == "U+019F" && VIDEO_ENABLED){
 				do{
 					var i=Math.floor(Math.random()*media.length);
 				}while (i==mainVideoIndex);
@@ -747,14 +709,9 @@ function GridController(){
 //				mainVideo.src=encryptedMedia[mainVideoIndex];
                 console.log("Video src set: "+mainVideo.src);
 
-				clearTimeout(timeGridOff);
-				timeGridOff=setTimeout(gridOff,5000);
                 return;
 		}
 
-		clearTimeout(timeGridOff);
-		timeGridOff=setTimeout(gridOff,10000);
-		if (gridOn){
 
 
 			if (e.keyIdentifier == 'Enter') {
@@ -885,11 +842,7 @@ function GridController(){
 
 				}
 			}
-		}else{
-			clearTimeout(animateGridOff);
-			GLOBAL_ALPHA=1.0;
-			gridOn=true;
-		}
+
 
 	}
 
