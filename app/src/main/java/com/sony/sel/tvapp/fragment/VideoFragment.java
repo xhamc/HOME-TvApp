@@ -258,6 +258,7 @@ public class VideoFragment extends BaseFragment {
         }
         mediaPlayer.setDisplay(surfaceHolder);
         mediaPlayer.setScreenOnWhilePlaying(true);
+        mediaPlayer.setLooping(true);
         mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
           @Override
           public boolean onError(MediaPlayer mp, int what, int extra) {

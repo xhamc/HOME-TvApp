@@ -8,6 +8,7 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.util.DlnaHelper;
+import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.SettingsHelper;
 
 import java.util.List;
@@ -23,7 +24,8 @@ public class StartupActivity extends BaseActivity {
   public static final String LOG_TAG = StartupActivity.class.getSimpleName();
 
   private SettingsHelper settingsHelper;
-  private DlnaHelper dlnaHelper;
+  private DlnaInterface dlnaHelper;
+  private boolean serviceConnected;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -33,26 +35,55 @@ public class StartupActivity extends BaseActivity {
 
     settingsHelper = SettingsHelper.getHelper(this);
     dlnaHelper = DlnaHelper.getHelper(this);
+
   }
 
   @Override
   protected void onResume() {
     super.onResume();
+    startService();
+  }
+
+  void startService() {
+    if (!serviceConnected) {
+      // start the DLNA service when app starts
+      dlnaHelper.startDlnaService(new DlnaInterface.DlnaServiceObserver() {
+        @Override
+        public void onServiceConnected() {
+          serviceConnected = true;
+          checkServer();
+        }
+
+        @Override
+        public void onServiceDisconnected() {
+
+        }
+
+        @Override
+        public void onError(Exception error) {
+
+        }
+      });
+    } else {
+      checkServer();
+    }
+  }
+
+  void checkServer() {
     if (settingsHelper.getEpgServer() == null) {
       // select the server first
       startActivity(new Intent(this, SelectServerActivity.class));
     } else {
       new CheckServerTask(dlnaHelper, settingsHelper.getEpgServer()).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
-
   }
 
   private class CheckServerTask extends AsyncTask<Void, Void, Boolean> {
 
     private String udn;
-    private DlnaHelper dlnaHelper;
+    private DlnaInterface dlnaHelper;
 
-    public CheckServerTask(DlnaHelper dlnaHelper, String udn) {
+    public CheckServerTask(DlnaInterface dlnaHelper, String udn) {
       this.udn = udn;
       this.dlnaHelper = dlnaHelper;
     }

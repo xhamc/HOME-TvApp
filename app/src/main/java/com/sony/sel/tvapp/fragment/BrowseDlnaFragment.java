@@ -15,6 +15,7 @@ import android.view.ViewGroup;
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.adapter.TvAppAdapter;
 import com.sony.sel.tvapp.util.DlnaHelper;
+import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.sony.sel.tvapp.view.BrowseDlnaCell;
 import com.sony.sel.util.ViewUtils;
@@ -35,7 +36,7 @@ public class BrowseDlnaFragment extends BaseFragment {
   public static final String UDN = "udn";
   public static final String PARENT_ID = "parentId";
 
-  private DlnaHelper dlnaHelper;
+  private DlnaInterface dlnaHelper;
   private String udn;
   private String parentId;
   private RecyclerView list;

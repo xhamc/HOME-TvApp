@@ -15,6 +15,7 @@ import android.view.ViewGroup;
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.adapter.TvAppAdapter;
 import com.sony.sel.tvapp.util.DlnaHelper;
+import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.DlnaObjects;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.sony.sel.tvapp.view.ServerCell;
@@ -31,7 +32,7 @@ public class SelectServerFragment extends BaseFragment {
 
   public static final String TAG = SelectServerFragment.class.getSimpleName();
 
-  private DlnaHelper dlnaHelper;
+  private DlnaInterface dlnaHelper;
 
   private RecyclerView list;
   private DeviceAdapter adapter;

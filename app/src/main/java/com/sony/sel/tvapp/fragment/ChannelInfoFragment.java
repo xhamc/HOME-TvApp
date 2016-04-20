@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.util.DlnaHelper;
+import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.sony.sel.tvapp.view.ProgramInfoView;
@@ -45,7 +46,7 @@ public class ChannelInfoFragment extends BaseFragment {
 
   private GetCurrentProgramsTask epgTask;
 
-  private DlnaHelper dlnaHelper;
+  private DlnaInterface dlnaHelper;
 
   @Nullable
   @Override
@@ -191,7 +192,6 @@ public class ChannelInfoFragment extends BaseFragment {
     @Override
     protected Void doInBackground(Void... params) {
       String udn = SettingsHelper.getHelper(getActivity()).getEpgServer();
-      dlnaHelper.getHelper(getActivity());
       for (VideoBroadcast channel : channels) {
         Log.d(TAG, "Channel: " + channel.toString());
         VideoProgram currentProgram = dlnaHelper.getCurrentEpgProgram(udn, channel);

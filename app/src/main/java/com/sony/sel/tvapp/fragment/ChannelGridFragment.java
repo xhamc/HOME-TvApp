@@ -15,6 +15,7 @@ import android.view.ViewGroup;
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.adapter.TvAppAdapter;
 import com.sony.sel.tvapp.util.DlnaHelper;
+import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.DlnaObjects;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.sony.sel.tvapp.view.ChannelCell;
@@ -100,10 +101,10 @@ public class ChannelGridFragment extends BaseFragment {
    */
   private class GetChannelsTask extends AsyncTask<Void, Void, List<DlnaObjects.VideoBroadcast>> {
 
-    private final DlnaHelper helper;
+    private final DlnaInterface helper;
     private final String udn;
 
-    public GetChannelsTask(DlnaHelper helper, String udn) {
+    public GetChannelsTask(DlnaInterface helper, String udn) {
       this.helper = helper;
       this.udn = udn;
     }

@@ -17,6 +17,7 @@ import android.view.ViewGroup;
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.adapter.TvAppAdapter;
 import com.sony.sel.tvapp.util.DlnaHelper;
+import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.DlnaObjects;
 import com.sony.sel.tvapp.view.BrowseServerCell;
 import com.sony.sel.tvapp.view.ServerCell;
@@ -33,7 +34,7 @@ public class BrowseServersFragment extends BaseFragment {
 
   public static final String TAG = BrowseServersFragment.class.getSimpleName();
 
-  private DlnaHelper dlnaHelper;
+  private DlnaInterface dlnaHelper;
 
   @Bind(android.R.id.list)
   RecyclerView list;
@@ -73,8 +74,8 @@ public class BrowseServersFragment extends BaseFragment {
    */
   private ContentObserver contentObserver = new ContentObserver(null) {
     @Override
-    public void onChange(boolean selfChange, Uri uri) {
-      super.onChange(selfChange, uri);
+    public void onChange(boolean selfChange) {
+      super.onChange(selfChange);
       // reload channels on content changes
       Log.d(TAG, "Received notification device list changed.");
       getDevices();

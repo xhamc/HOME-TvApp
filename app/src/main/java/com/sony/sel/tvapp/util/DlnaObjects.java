@@ -10,6 +10,8 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.sony.huey.dlna.IconList;
 
+import org.fourthline.cling.support.model.DIDLObject;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -21,7 +23,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -191,6 +195,14 @@ public class DlnaObjects {
     public String getId() {
       return id;
     }
+
+    public void setUid(String uid) {
+      this.uid = uid;
+    }
+
+    public void setId(String id) {
+      this.id = id;
+    }
   }
 
   /**
@@ -306,6 +318,42 @@ public class DlnaObjects {
     public IconList getIconList() {
       return IconList.blob2IconList(iconList);
     }
+
+    public void setLocation(String location) {
+      this.location = location;
+    }
+
+    public void setModelName(String modelName) {
+      this.modelName = modelName;
+    }
+
+    public void setModelNumber(String modelNumber) {
+      this.modelNumber = modelNumber;
+    }
+
+    public void setUdn(String udn) {
+      this.udn = udn;
+    }
+
+    public void setFriendlyName(String friendlyName) {
+      this.friendlyName = friendlyName;
+    }
+
+    public void setDeviceType(String deviceType) {
+      this.deviceType = deviceType;
+    }
+
+    public void setManufacturer(String manufacturer) {
+      this.manufacturer = manufacturer;
+    }
+
+    public void setServiceType(String serviceType) {
+      this.serviceType = serviceType;
+    }
+
+    public void setIconList(byte[] iconList) {
+      this.iconList = iconList;
+    }
   }
 
   public static class DlnaObject extends CursorObject {
@@ -345,6 +393,26 @@ public class DlnaObjects {
 
     public String getIcon() {
       return icon;
+    }
+
+    public void setTitle(String title) {
+      this.title = title;
+    }
+
+    public void setUpnpClass(String upnpClass) {
+      this.upnpClass = upnpClass;
+    }
+
+    public void setRes(String res) {
+      this.res = res;
+    }
+
+    public void setProtocolInfo(String protocolInfo) {
+      this.protocolInfo = protocolInfo;
+    }
+
+    public void setIcon(String icon) {
+      this.icon = icon;
     }
   }
 
@@ -529,6 +597,58 @@ public class DlnaObjects {
     public String getRating() {
       return rating;
     }
+
+    public void setChannelName(String channelName) {
+      this.channelName = channelName;
+    }
+
+    public void setChannelNumber(String channelNumber) {
+      this.channelNumber = channelNumber;
+    }
+
+    public void setProgramTitle(String programTitle) {
+      this.programTitle = programTitle;
+    }
+
+    public void setSeriesTitle(String seriesTitle) {
+      this.seriesTitle = seriesTitle;
+    }
+
+    public void setChannelId(String channelId) {
+      this.channelId = channelId;
+    }
+
+    public void setRating(String rating) {
+      this.rating = rating;
+    }
+
+    public void setGenre(String genre) {
+      this.genre = genre;
+    }
+
+    public void setCallSign(String callSign) {
+      this.callSign = callSign;
+    }
+
+    public void setNetworkAffiliation(String networkAffiliation) {
+      this.networkAffiliation = networkAffiliation;
+    }
+
+    public void setDescription(String description) {
+      this.description = description;
+    }
+
+    public void setLongDescription(String longDescription) {
+      this.longDescription = longDescription;
+    }
+
+    public void setScheduledStartTime(String scheduledStartTime) {
+      this.scheduledStartTime = scheduledStartTime;
+    }
+
+    public void setScheduledEndTime(String scheduledEndTime) {
+      this.scheduledEndTime = scheduledEndTime;
+    }
   }
 
   /**
@@ -600,6 +720,14 @@ public class DlnaObjects {
     public String getDescription() {
       return description;
     }
+
+    public void setLongDescription(String longDescription) {
+      this.longDescription = longDescription;
+    }
+
+    public void setDescription(String description) {
+      this.description = description;
+    }
   }
 
   /**
@@ -642,6 +770,14 @@ public class DlnaObjects {
         return getId().split("/")[2];
       }
       return null;
+    }
+
+    public void setChannelNumber(String channelNumber) {
+      this.channelNumber = channelNumber;
+    }
+
+    public void setCallSign(String callSign) {
+      this.callSign = callSign;
     }
 
     /**

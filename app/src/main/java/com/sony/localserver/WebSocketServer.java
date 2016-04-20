@@ -8,6 +8,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 import com.sony.localserver.NanoWSD.WebSocketFrame.CloseCode;
 import com.sony.sel.tvapp.util.DlnaHelper;
+import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.DlnaObjects;
 
 import java.io.IOException;
@@ -31,9 +32,9 @@ public class WebSocketServer extends NanoWSD {
 
   private LocalWebSocket ws;
   private String udn;
-  private DlnaHelper dlnaHelper;
+  private DlnaInterface dlnaHelper;
 
-  public WebSocketServer(String host, int port, DlnaHelper dlnaHelper) {
+  public WebSocketServer(String host, int port, DlnaInterface dlnaHelper) {
     super(host, port);
     this.dlnaHelper = dlnaHelper;
   }

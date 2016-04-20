@@ -30,5 +30,12 @@ dependencies {
     compile 'com.jakewharton:butterknife:7.0.1'
     compile files('libs/sony/huey.jar')
     compile files('libs/sony/discoverycommon.jar')
-    compile 'com.google.android.gms:play-services-appindexing:8.1.0'
+    compile files('libs/cling/cling-core-2.1.0.jar')
+    compile files('libs/cling/cling-support-2.1.0.jar')
+    compile files('libs/cling/seamless-util-1.1.1.jar')
+    compile files('libs/cling/seamless-http-1.1.1.jar')
+    compile files('libs/cling/seamless-xml-1.1.1.jar')
+    compile 'org.eclipse.jetty:jetty-server:8.1.19.v20160209'
+    compile 'org.eclipse.jetty:jetty-servlet:8.1.19.v20160209'
+    compile 'org.eclipse.jetty:jetty-client:8.1.19.v20160209'
 }
