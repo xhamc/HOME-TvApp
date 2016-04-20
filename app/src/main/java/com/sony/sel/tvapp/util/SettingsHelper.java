@@ -23,6 +23,10 @@ public class SettingsHelper {
   private static SettingsHelper INSTANCE;
   private List<VideoItem> channelVideos;
 
+  private static final String[] DEFAULT_CHANNEL_VIDEOS = {
+      "file:///sdcard/Movies/tvapp.mp4"
+  };
+
   private Context context;
 
   /**
@@ -96,6 +100,11 @@ public class SettingsHelper {
         channelVideos = new Gson().fromJson(videosString, VideoList.class);
       } else {
         channelVideos = new ArrayList<>();
+        for (String video : DEFAULT_CHANNEL_VIDEOS) {
+          VideoItem item = new VideoItem();
+          item.setResource(video);
+          channelVideos.add(item);
+        }
       }
     }
     return channelVideos;

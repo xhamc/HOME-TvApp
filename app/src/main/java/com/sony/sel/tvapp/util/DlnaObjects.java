@@ -346,6 +346,10 @@ public class DlnaObjects {
     public String getIcon() {
       return icon;
     }
+
+    public void setResource(String res) {
+      this.res = res;
+    }
   }
 
   /**
