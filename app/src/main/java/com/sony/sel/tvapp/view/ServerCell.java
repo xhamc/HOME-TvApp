@@ -99,12 +99,19 @@ public class ServerCell extends BaseListCell<UpnpDevice> {
       deviceInfo.setVisibility(View.GONE);
     }
 
-    IconList iconList = data.getIconList();
-
-    if (iconList != null && iconList.getCount() > 0) {
-      drawIcon(iconList);
-    } else {
+    String iconUri = data.getIcon();
+    if (iconUri != null) {
+      // use explicitly set icon
       icon.setImageDrawable(null);
+      Picasso.with(getContext()).load(iconUri).into(icon);
+    } else {
+      // else parse icon list
+      IconList iconList = data.getIconList();
+      if (iconList != null && iconList.getCount() > 0) {
+        drawIcon(iconList);
+      } else {
+        icon.setImageDrawable(null);
+      }
     }
 
     check.setChecked(serverUdn != null ? serverUdn.equals(data.getUdn()) : false);

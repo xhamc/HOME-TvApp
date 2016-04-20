@@ -75,12 +75,15 @@ public class BrowseServerCell extends BaseListCell<UpnpDevice> {
       deviceInfo.setVisibility(View.GONE);
     }
 
-    IconList iconList = data.getIconList();
-
-    if (iconList != null && iconList.getCount() > 0) {
-      drawIcon(iconList);
+    icon.setImageDrawable(null);
+    String iconUrl = data.getIcon();
+    if (iconUrl != null) {
+      Picasso.with(getContext()).load(iconUrl).into(icon);
     } else {
-      icon.setImageDrawable(null);
+      IconList iconList = data.getIconList();
+      if (iconList != null && iconList.getCount() > 0) {
+        drawIcon(iconList);
+      }
     }
 
     setupFocus(null, 1.02f);

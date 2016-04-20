@@ -283,6 +283,8 @@ public class DlnaObjects {
 //    @ColumnName("CHILD_COUNT")
 //    private String childCount;
 
+    private String icon;
+
     public String getLocation() {
       return location;
     }
@@ -353,6 +355,14 @@ public class DlnaObjects {
 
     public void setIconList(byte[] iconList) {
       this.iconList = iconList;
+    }
+
+    public String getIcon() {
+      return icon;
+    }
+
+    public void setIcon(String icon) {
+      this.icon = icon;
     }
   }
 

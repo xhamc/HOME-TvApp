@@ -54,6 +54,7 @@ public class EpgFragment extends BaseFragment {
     super.onDestroy();
     webView.loadUrl("about:blank");
     stopWebService();
+    getActivity().unregisterReceiver(receiver);
   }
 
   private void startWebService() {

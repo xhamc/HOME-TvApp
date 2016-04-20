@@ -1,6 +1,5 @@
 package com.sony.sel.tvapp.util;
 
-import android.bluetooth.BluetoothClass;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -11,7 +10,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import com.google.gson.Gson;
 import com.sony.sel.util.ObserverSet;
 
 import org.fourthline.cling.android.AndroidUpnpService;
@@ -19,9 +17,10 @@ import org.fourthline.cling.android.AndroidUpnpServiceImpl;
 import org.fourthline.cling.model.action.ActionInvocation;
 import org.fourthline.cling.model.message.UpnpResponse;
 import org.fourthline.cling.model.meta.Device;
+import org.fourthline.cling.model.meta.Icon;
 import org.fourthline.cling.model.meta.RemoteDevice;
+import org.fourthline.cling.model.meta.RemoteDeviceIdentity;
 import org.fourthline.cling.model.meta.Service;
-import org.fourthline.cling.model.types.ServiceType;
 import org.fourthline.cling.model.types.UDAServiceType;
 import org.fourthline.cling.model.types.UDN;
 import org.fourthline.cling.registry.DefaultRegistryListener;
@@ -31,16 +30,18 @@ import org.fourthline.cling.support.contentdirectory.callback.Browse;
 import org.fourthline.cling.support.model.BrowseFlag;
 import org.fourthline.cling.support.model.DIDLContent;
 import org.fourthline.cling.support.model.DIDLObject;
-import org.fourthline.cling.support.model.DescMeta;
 import org.fourthline.cling.support.model.Res;
 import org.fourthline.cling.support.model.container.Container;
 import org.fourthline.cling.support.model.item.Item;
 import org.fourthline.cling.support.model.item.VideoBroadcast;
 import org.fourthline.cling.support.model.item.VideoItem;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -160,17 +161,52 @@ public class ClingDlnaHelper implements DlnaInterface {
   public List<DlnaObjects.UpnpDevice> getDeviceList(@Nullable ContentObserver observer, boolean showAllDevices) {
     List<DlnaObjects.UpnpDevice> devices = new ArrayList<>();
     deviceObserver = observer;
-    for (Device device : deviceList) {
-      DlnaObjects.UpnpDevice upnpDevice = new DlnaObjects.UpnpDevice();
-      upnpDevice.setUdn(device.getIdentity().getUdn().toString());
-      upnpDevice.setFriendlyName(device.getDetails().getFriendlyName());
-      upnpDevice.setDeviceType(device.getType().getDisplayString());
-      upnpDevice.setManufacturer(device.getDetails().getManufacturerDetails().getManufacturer());
-      upnpDevice.setModelName(device.getDetails().getModelDetails().getModelName());
-      upnpDevice.setModelNumber(device.getDetails().getModelDetails().getModelNumber());
-      devices.add(upnpDevice);
+    synchronized (deviceList) {
+      for (Device device : deviceList) {
+        if (showAllDevices || device.findService(new UDAServiceType("ContentDirectory")) != null) {
+          DlnaObjects.UpnpDevice upnpDevice = new DlnaObjects.UpnpDevice();
+          upnpDevice.setUdn(device.getIdentity().getUdn().toString());
+          upnpDevice.setFriendlyName(device.getDetails().getFriendlyName());
+          upnpDevice.setDeviceType(device.getType().getDisplayString());
+          upnpDevice.setManufacturer(device.getDetails().getManufacturerDetails().getManufacturer());
+          upnpDevice.setModelName(device.getDetails().getModelDetails().getModelName());
+          upnpDevice.setModelNumber(device.getDetails().getModelDetails().getModelNumber());
+          Icon icon = findBestIcon(device.getIcons());
+          RemoteDeviceIdentity identity = (RemoteDeviceIdentity) device.getIdentity();
+          if (icon != null && identity.getDescriptorURL() != null) {
+            try {
+              URI iconUri = identity.getDescriptorURL().toURI().resolve(icon.getUri());
+              upnpDevice.setIcon(iconUri.toString());
+            } catch (URISyntaxException e) {
+              e.printStackTrace();
+            }
+          }
+          devices.add(upnpDevice);
+        }
+      }
     }
     return devices;
+  }
+
+  Icon findBestIcon(Icon[] icons) {
+    if (icons == null || icons.length == 0) {
+      return null;
+    }
+    List<String> formats = Arrays.asList(
+        "image/bmp",
+        "image/gif",
+        "image/jpeg",
+        "image/png"
+    );
+    Icon bestIcon = icons[0];
+    for (Icon icon : icons) {
+      if (formats.indexOf(icon.getMimeType().getType()) > formats.indexOf(bestIcon.getMimeType().getType())) {
+        bestIcon = icon;
+      } else if (icon.getWidth() > bestIcon.getWidth()) {
+        bestIcon = icon;
+      }
+    }
+    return bestIcon;
   }
 
   @NonNull
@@ -317,17 +353,21 @@ public class ClingDlnaHelper implements DlnaInterface {
 
   private void addDevice(Device device) {
     Log.d(TAG, "Device added: " + device.getDisplayString());
-    deviceList.add(device);
+    synchronized (deviceList) {
+      deviceList.add(device);
+    }
     if (deviceObserver != null) {
-      deviceObserver.onChange(false);
+      deviceObserver.dispatchChange(false, null);
     }
   }
 
   private void removeDevice(Device device) {
     Log.d(TAG, "Device removed: " + device.getDisplayString());
-    deviceList.remove(device);
+    synchronized (deviceList) {
+      deviceList.remove(device);
+    }
     if (deviceObserver != null) {
-      deviceObserver.onChange(false);
+      deviceObserver.dispatchChange(false, null);
     }
   }
 }
