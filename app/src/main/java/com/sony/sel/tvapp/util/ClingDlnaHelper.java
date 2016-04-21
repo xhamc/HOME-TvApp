@@ -38,29 +38,22 @@ import org.fourthline.cling.support.model.item.VideoItem;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Implementation of DLNA helper based on cling.
+ * Implementation of DLNA helper based on cling DLNA libraries.
  */
-public class ClingDlnaHelper implements DlnaInterface {
+public class ClingDlnaHelper extends BaseDlnaHelper {
 
   private static final String TAG = ClingDlnaHelper.class.getSimpleName();
 
-  private static DlnaInterface INSTANCE;
-
   private final Context context;
-
   private ObserverSet<DlnaServiceObserver> serviceObservers = new ObserverSet<>(DlnaServiceObserver.class);
   private ContentObserver deviceObserver;
-
   private Map<String, List<DlnaObjects.DlnaObject>> dlnaCache = new HashMap<>();
 
   /**
@@ -114,17 +107,6 @@ public class ClingDlnaHelper implements DlnaInterface {
   private AndroidUpnpService upnpService;
   private List<Device> deviceList = new ArrayList<>();
 
-  /**
-   * Get the helper instance.
-   */
-  public static DlnaInterface getHelper(Context context) {
-    if (INSTANCE == null) {
-      // ensure application context is used to prevent leaks
-      INSTANCE = new ClingDlnaHelper(context.getApplicationContext());
-    }
-    return INSTANCE;
-  }
-
   public ClingDlnaHelper(Context context) {
     this.context = context;
   }
@@ -157,6 +139,7 @@ public class ClingDlnaHelper implements DlnaInterface {
 
   }
 
+  @NonNull
   @Override
   public List<DlnaObjects.UpnpDevice> getDeviceList(@Nullable ContentObserver observer, boolean showAllDevices) {
     List<DlnaObjects.UpnpDevice> devices = new ArrayList<>();
@@ -231,7 +214,10 @@ public class ClingDlnaHelper implements DlnaInterface {
 
       @Override
       public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {
-        Log.e(TAG, "Browse failure: " + defaultMsg + ".");
+        Log.e(TAG, "Browse failure: " + defaultMsg);
+        synchronized (children) {
+          children.notifyAll();
+        }
       }
 
       @Override
@@ -256,7 +242,7 @@ public class ClingDlnaHelper implements DlnaInterface {
 
       @Override
       public void updateStatus(Status status) {
-        Log.d(TAG, "Browse status updated: " + status.getDefaultMessage());
+        Log.d(TAG, "Browse status: " + status.getDefaultMessage());
       }
     };
     upnpService.getControlPoint().execute(browse);
@@ -273,7 +259,7 @@ public class ClingDlnaHelper implements DlnaInterface {
     return (List<T>) children;
   }
 
-  DlnaObjects.DlnaObject parseDidlItem(DIDLObject object) {
+  private DlnaObjects.DlnaObject parseDidlItem(DIDLObject object) {
     String clazz = object.getClazz().getValue();
     try {
       DlnaObjects.DlnaObject dlnaObject = DlnaObjects.DlnaClass.newInstance(clazz);
@@ -326,27 +312,6 @@ public class ClingDlnaHelper implements DlnaInterface {
       e.printStackTrace();
     } catch (InstantiationException e) {
       e.printStackTrace();
-    }
-    return null;
-  }
-
-  @NonNull
-  @Override
-  public List<DlnaObjects.VideoBroadcast> getChannels(@NonNull String udn, @Nullable ContentObserver contentObserver) {
-    return getChildren(udn, "0/Channels", DlnaObjects.VideoBroadcast.class, contentObserver, false);
-  }
-
-  @Override
-  public DlnaObjects.VideoProgram getCurrentEpgProgram(String udn, DlnaObjects.VideoBroadcast channel) {
-    DateFormat format = new SimpleDateFormat("M-d");
-    Date now = new Date();
-    String day = format.format(now);
-    List<DlnaObjects.VideoProgram> shows = getChildren(udn, "0/EPG/" + channel.getChannelId() + "/" + day, DlnaObjects.VideoProgram.class, null, true);
-    for (DlnaObjects.VideoProgram show : shows) {
-      if (show.getScheduledStartTime().before(now) && show.getScheduledEndTime().after(now)) {
-        // show found
-        return show;
-      }
     }
     return null;
   }

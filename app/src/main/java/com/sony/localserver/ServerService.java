@@ -4,6 +4,8 @@ import android.app.IntentService;
 import android.content.Intent;
 import android.util.Log;
 
+import java.io.IOException;
+
 /**
  * Service to host EPG grid browsing via HTML.
  */
@@ -36,10 +38,9 @@ public class ServerService extends IntentService {
     Log.d(TAG, "Service Intent: " + intent.getAction());
     if (intent.getAction().equals(START)) {
       start();
-      sendBroadcast(new Intent(SERVICE_STARTED));
+
     } else if (intent.getAction().equals(STOP)) {
       stop();
-      sendBroadcast(new Intent(SERVICE_STOPPED));
     }
     if (intent.hasExtra(EXTRA_UDN)) {
       String udn = intent.getStringExtra(EXTRA_UDN);
@@ -59,7 +60,12 @@ public class ServerService extends IntentService {
       String host = "127.0.0.1";
       if (webSocketServer == null) {
         webSocketServer = new WebServer(host, port, getApplicationContext());
-        ServerRunner.executeInstance(webSocketServer);
+        try {
+          webSocketServer.start();
+          sendBroadcast(new Intent(SERVICE_STARTED));
+        } catch (IOException e) {
+          Log.e(TAG, "Error starting server: " + e);
+        }
       }
     } else {
       Log.w(TAG, "Server already started.");
@@ -71,6 +77,7 @@ public class ServerService extends IntentService {
       Log.d(TAG, "ServerService::stop");
       webSocketServer.stop();
       webSocketServer = null;
+      sendBroadcast(new Intent(SERVICE_STOPPED));
     } else {
       Log.w(TAG, "Stop issued but server not started.");
     }

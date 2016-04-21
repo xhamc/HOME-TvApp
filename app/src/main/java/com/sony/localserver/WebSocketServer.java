@@ -84,7 +84,7 @@ public class WebSocketServer extends NanoWSD {
         }
       } else if (payload.contains("browseEPGData")) {
         Log.d(TAG, "Browse EPG data.");
-        new Thread(new Runnable() {
+        Thread t = new Thread(new Runnable() {
           @Override
           public void run() {
             String json = processEpgRequest(message.getTextPayload());
@@ -96,7 +96,9 @@ public class WebSocketServer extends NanoWSD {
               }
             }
           }
-        }).start();
+        });
+        t.setPriority(Thread.MIN_PRIORITY);
+        t.start();
       } else if (payload.equals("browseEPGStations")) {
         new Thread(new Runnable() {
           @Override
@@ -157,7 +159,9 @@ public class WebSocketServer extends NanoWSD {
           // iterate programs and generate map entries
           Map<String, VideoProgram> programMap = new LinkedHashMap<>();
           for (VideoProgram program : programs) {
-            programMap.put(String.valueOf(program.getScheduledStartTime().getTime()), program);
+            if (program.getScheduledStartTime().getTime() <= endDate.getTime() && program.getScheduledEndTime().getTime() >= startDate.getTime()) {
+              programMap.put(String.valueOf(program.getScheduledStartTime().getTime()), program);
+            }
           }
           // add programs to the day map
           dayMap.put(day, programMap);

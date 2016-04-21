@@ -24,10 +24,7 @@ import com.sony.sel.util.NetworkHelper;
 import com.sony.sel.util.ObserverSet;
 
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -35,13 +32,11 @@ import java.util.Map;
 
 import static com.sony.sel.tvapp.util.DlnaObjects.DlnaObject;
 import static com.sony.sel.tvapp.util.DlnaObjects.UpnpDevice;
-import static com.sony.sel.tvapp.util.DlnaObjects.VideoBroadcast;
-import static com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 
 /**
  * DLNA implementation based on Huey libraries.
  */
-public class HueyDlnaHelper implements DlnaInterface {
+public class HueyDlnaHelper extends BaseDlnaHelper {
 
   public static final String TAG = HueyDlnaHelper.class.getSimpleName();
 
@@ -186,13 +181,6 @@ public class HueyDlnaHelper implements DlnaInterface {
     }
   }
 
-  /**
-   * Get the current list of known UPnP devices.
-   *
-   * @param observer       Oberver to receive notification if the device list changes after this query.
-   * @param showAllDevices Show all UpnP devices, or only media servers?
-   * @return The device list, or an empty list when no devices are found.
-   */
   @Override
   public List<UpnpDevice> getDeviceList(@Nullable ContentObserver observer, boolean showAllDevices) {
     List<UpnpDevice> devices = new ArrayList<>();
@@ -219,17 +207,6 @@ public class HueyDlnaHelper implements DlnaInterface {
     return devices;
   }
 
-  /**
-   * Get all DLNA child objects for a given parent.
-   *
-   * @param udn             UDN of the DLNA server to query.
-   * @param parentId        Parent object ID (use {@link #DLNA_ROOT} for the top level)
-   * @param childClass      Class of child objects expected. Used to define query columns.
-   * @param contentObserver Observer to receive notifications if the contents of the parent object changes.
-   * @param <T>             Class of child object.
-   * @param useCache        Use cached content if available? Use with caution, DLNA nodes whose contents change often are not useful to cache.
-   * @return List of children, or an empty list if no children were found.
-   */
   @Override
   @NonNull
   public <T extends DlnaObject> List<T> getChildren(String udn, String parentId, Class<T> childClass, @Nullable ContentObserver contentObserver, boolean useCache) {
@@ -284,42 +261,6 @@ public class HueyDlnaHelper implements DlnaInterface {
       }
     }
     return children;
-  }
-
-  /**
-   * Return the list of channels.
-   *
-   * @param udn             Server UDN.
-   * @param contentObserver Optional ContentObserver to receive notification when channel list changes.
-   * @return List of channels, or an empty list if no channels found.
-   */
-  @Override
-  @NonNull
-  public List<VideoBroadcast> getChannels(@NonNull String udn, @Nullable ContentObserver
-      contentObserver) {
-    return getChildren(udn, "0/Channels", VideoBroadcast.class, contentObserver, false);
-  }
-
-  /**
-   * Return the EPG program on the requested channel for the current date/time.
-   *
-   * @param udn     Server UDN.
-   * @param channel Channel to get EPG data for.
-   * @return The current program, or null if no program found.
-   */
-  @Override
-  public VideoProgram getCurrentEpgProgram(String udn, VideoBroadcast channel) {
-    DateFormat format = new SimpleDateFormat("M-d");
-    Date now = new Date();
-    String day = format.format(now);
-    List<VideoProgram> shows = getChildren(udn, "0/EPG/" + channel.getChannelId() + "/" + day, VideoProgram.class, null, true);
-    for (VideoProgram show : shows) {
-      if (show.getScheduledStartTime().before(now) && show.getScheduledEndTime().after(now)) {
-        // show found
-        return show;
-      }
-    }
-    return null;
   }
 
   private Context getDlnaServiceContext() throws PackageManager.NameNotFoundException {
