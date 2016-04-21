@@ -36,6 +36,7 @@ public class StartupActivity extends BaseActivity {
     settingsHelper = SettingsHelper.getHelper(this);
     dlnaHelper = DlnaHelper.getHelper(this);
 
+    serviceConnected = dlnaHelper.isDlnaServiceStarted();
   }
 
   @Override

@@ -4,6 +4,7 @@ import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -255,7 +256,17 @@ public class ChannelInfoFragment extends BaseFragment {
     protected void onPostExecute(List<VideoBroadcast> channels) {
       super.onPostExecute(channels);
       Log.d(TAG, String.format("%d channels found.", channels.size()));
-      setChannels(channels);
+      if (channels.size() > 0) {
+        setChannels(channels);
+      } else {
+        // try again after a delay
+        new Handler().postDelayed(new Runnable() {
+          @Override
+          public void run() {
+            new GetChannelsTask(udn).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+          }
+        },1000);
+      }
     }
   }
 

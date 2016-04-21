@@ -53,6 +53,12 @@ public class MainActivity extends BaseActivity {
 
   }
 
+  @Override
+  public void onVisibleBehindCanceled() {
+    super.onVisibleBehindCanceled();
+    videoFragment.stop();
+  }
+
   private void initFragments() {
     FragmentManager fragmentManager = getFragmentManager();
     FragmentTransaction transaction = fragmentManager.beginTransaction();

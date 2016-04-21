@@ -1,12 +1,20 @@
 package com.sony.sel.tvapp.fragment;
 
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
+import android.media.MediaMetadata;
 import android.media.MediaPlayer;
+import android.media.session.MediaSession;
+import android.media.session.PlaybackState;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -18,10 +26,14 @@ import android.view.ViewGroup;
 import android.widget.ProgressBar;
 
 import com.sony.sel.tvapp.R;
+import com.sony.sel.tvapp.activity.MainActivity;
 import com.sony.sel.tvapp.activity.SelectChannelVideosActivity;
+import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.squareup.otto.Subscribe;
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
 
 import java.util.List;
 import java.util.Random;
@@ -31,6 +43,7 @@ import butterknife.ButterKnife;
 
 import static com.sony.sel.tvapp.util.DlnaObjects.VideoBroadcast;
 import static com.sony.sel.tvapp.util.DlnaObjects.VideoItem;
+import static com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 
 /**
  * Fragment for displaying video
@@ -45,10 +58,14 @@ public class VideoFragment extends BaseFragment {
   ProgressBar spinner;
 
   private VideoBroadcast currentChannel;
+  private VideoProgram currentProgram;
+
   private Uri videoUri;
   private MediaPlayer mediaPlayer;
   private SurfaceHolder surfaceHolder;
   private PlayVideoTask playVideoTask;
+  private MediaSession mediaSession;
+  private Bitmap mediaArtwork;
 
   @Nullable
   @Override
@@ -59,7 +76,10 @@ public class VideoFragment extends BaseFragment {
     ButterKnife.bind(this, contentView);
 
     // current EPG channel from settings
-    currentChannel = SettingsHelper.getHelper(getActivity()).getCurrentChannel();
+    setCurrentChannel(SettingsHelper.getHelper(getActivity()).getCurrentChannel());
+
+    // create media session
+    createMediaSession();
 
     return contentView;
   }
@@ -67,7 +87,18 @@ public class VideoFragment extends BaseFragment {
   @Override
   public void onPause() {
     super.onPause();
-    stop();
+    if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+      // Argument equals true to notify the system that the activity
+      // wishes to be visible behind other translucent activities
+      if (!getActivity().requestVisibleBehind(true)) {
+        // App-specific method to stop playback and release resources
+        // because call to requestVisibleBehind(true) failed
+        stop();
+      }
+    } else {
+      // Argument equals false because the activity is not playing
+      getActivity().requestVisibleBehind(false);
+    }
   }
 
   @Override
@@ -76,7 +107,7 @@ public class VideoFragment extends BaseFragment {
     if (mediaPlayer != null) {
       // resume play
       play();
-    } else {
+    } else if (currentChannel != null) {
       // pick a channel video to play
       changeChannel();
     }
@@ -86,6 +117,7 @@ public class VideoFragment extends BaseFragment {
   public void onDestroy() {
     super.onDestroy();
     stop();
+    releaseMediaSession();
   }
 
   /**
@@ -142,11 +174,7 @@ public class VideoFragment extends BaseFragment {
       // cancel a playback task in progress
       playVideoTask.cancel(true);
     }
-    if (mediaPlayer != null) {
-      // stop & release currently playing video
-      mediaPlayer.release();
-      mediaPlayer = null;
-    }
+    stop();
     if (uri != null) {
       showSpinner();
       // create & execute async task for video playback
@@ -182,6 +210,7 @@ public class VideoFragment extends BaseFragment {
   public void pause() {
     if (mediaPlayer != null && mediaPlayer.isPlaying()) {
       mediaPlayer.pause();
+      updateMediaPlaybackState();
     }
   }
 
@@ -192,6 +221,7 @@ public class VideoFragment extends BaseFragment {
     if (mediaPlayer != null) {
       mediaPlayer.release();
       mediaPlayer = null;
+      updateMediaPlaybackState();
     }
   }
 
@@ -312,6 +342,172 @@ public class VideoFragment extends BaseFragment {
       VideoFragment.this.mediaPlayer = mediaPlayer;
       videoUri = uri;
       playVideoTask = null;
+      mediaSession.setActive(true);
+      updateMediaPlaybackState();
+      new FetchEpgTask().executeOnExecutor(THREAD_POOL_EXECUTOR);
     }
   }
+
+  private class MediaSessionCallback extends MediaSession.Callback {
+    @Override
+    public void onPause() {
+      pause();
+    }
+
+    @Override
+    public void onPlay() {
+      play();
+    }
+
+    @Override
+    public void onStop() {
+      stop();
+      mediaSession.setActive(false);
+    }
+
+    @Override
+    public void onSkipToNext() {
+      // TODO real channel change
+      changeChannel();
+    }
+
+    @Override
+    public void onSkipToPrevious() {
+      // TODO real channe change
+      changeChannel();
+    }
+  }
+
+  private void setCurrentChannel(VideoBroadcast channel) {
+    currentChannel = channel;
+    mediaArtwork = null;
+    currentProgram = null;
+    if (currentChannel != null) {
+      if (currentChannel.getIcon() != null) {
+        // need to fetch the icon ourselves, image urls not working for metadata
+        Picasso.with(getActivity()).load(currentChannel.getIcon()).into(new Target() {
+          @Override
+          public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+            mediaArtwork = bitmap;
+            updateMediaMetadata();
+          }
+
+          @Override
+          public void onBitmapFailed(Drawable errorDrawable) {
+
+          }
+
+          @Override
+          public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+          }
+        });
+      }
+      changeChannel();
+      updateMediaMetadata();
+    }
+  }
+
+  private void setCurrentProgram(VideoProgram program) {
+    if (program != null) {
+      currentProgram = program;
+      if (program.getIcon() != null) {
+        // need to fetch the icon ourselves, image urls not working for metadata
+        Picasso.with(getActivity()).load(currentProgram.getIcon()).into(new Target() {
+          @Override
+          public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+            mediaArtwork = bitmap;
+            updateMediaMetadata();
+          }
+
+          @Override
+          public void onBitmapFailed(Drawable errorDrawable) {
+
+          }
+
+          @Override
+          public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+          }
+        });
+      }
+      updateMediaMetadata();
+    }
+  }
+
+  private void createMediaSession() {
+    // new session
+    mediaSession = new MediaSession(getActivity(), "TVApp");
+    // set up callback
+    mediaSession.setCallback(new MediaSessionCallback(), new Handler(Looper.getMainLooper()));
+    // set flags, the transport control flags enable the now playing tile on home screen
+    mediaSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
+    // intent for returning to playback in progress: jump straight to MainActivity
+    mediaSession.setSessionActivity(PendingIntent.getActivity(getActivity(), 0, new Intent(getActivity(), MainActivity.class), 0));
+    // intent for returning to playback in progress: jump straight to MainActivity
+    mediaSession.setMediaButtonReceiver(PendingIntent.getActivity(getActivity(), 0, new Intent(getActivity(), MainActivity.class), 0));
+    // update state of player
+    updateMediaPlaybackState();
+    // update state of channel or program
+    updateMediaMetadata();
+  }
+
+  private void updateMediaPlaybackState() {
+    if (mediaSession != null && mediaPlayer != null) {
+      long position = PlaybackState.PLAYBACK_POSITION_UNKNOWN;
+      if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+        position = mediaPlayer.getCurrentPosition();
+      }
+      PlaybackState.Builder stateBuilder = new PlaybackState.Builder()
+          .setActions(
+              PlaybackState.ACTION_PLAY_PAUSE
+                  | (mediaPlayer.isPlaying() ? PlaybackState.ACTION_PAUSE : PlaybackState.ACTION_PLAY)
+                  | PlaybackState.ACTION_PLAY_FROM_MEDIA_ID
+                  | PlaybackState.ACTION_PLAY_FROM_SEARCH
+                  | PlaybackState.ACTION_SKIP_TO_NEXT
+                  | PlaybackState.ACTION_SKIP_TO_PREVIOUS
+                  | PlaybackState.ACTION_STOP
+          )
+          .setState(mediaPlayer != null ? mediaPlayer.isPlaying() ? PlaybackState.STATE_PLAYING : PlaybackState.STATE_PAUSED : PlaybackState.STATE_STOPPED, position, 1.0f);
+      mediaSession.setPlaybackState(stateBuilder.build());
+    }
+  }
+
+  private void updateMediaMetadata() {
+    if (currentChannel != null && mediaSession != null) {
+      MediaMetadata.Builder metadataBuilder = new MediaMetadata.Builder();
+      // To provide most control over how an item is displayed set the
+      // display fields in the metadata
+      metadataBuilder.putString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE, currentProgram != null ? currentProgram.getTitle() : currentChannel.getCallSign());
+      metadataBuilder.putString(MediaMetadata.METADATA_KEY_TITLE, currentProgram != null ? currentProgram.getTitle() : currentChannel.getCallSign());
+      metadataBuilder.putBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON, mediaArtwork);
+      // TODO more metadata?
+      mediaSession.setMetadata(metadataBuilder.build());
+    }
+  }
+
+  private void releaseMediaSession() {
+    if (mediaSession != null) {
+      mediaSession.release();
+      mediaSession = null;
+    }
+  }
+
+  private class FetchEpgTask extends AsyncTask<Void, Void, VideoProgram> {
+
+    @Override
+    protected VideoProgram doInBackground(Void... params) {
+      return DlnaHelper.getHelper(getActivity()).getCurrentEpgProgram(
+          SettingsHelper.getHelper(getActivity()).getEpgServer(),
+          currentChannel
+      );
+    }
+
+    @Override
+    protected void onPostExecute(VideoProgram videoProgram) {
+      super.onPostExecute(videoProgram);
+      setCurrentProgram(videoProgram);
+    }
+  }
+
 }
