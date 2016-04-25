@@ -1,58 +1,106 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<com.sony.sel.tvapp.view.ChannelEpgView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="horizontal"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom"
     >
 
-    <LinearLayout
-        android:layout_width="wrap_content"
+    <HorizontalScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginRight="10dp"
-        android:orientation="vertical"
+        android:clipChildren="false"
+        android:scrollbars="none"
         >
-
-        <TextView
-            style="@style/titleText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
-            android:text="Now Playing"
-            />
-
-        <include layout="@layout/program_info_view"/>
-
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        >
-
-        <TextView
-            style="@style/titleText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
-            android:text="Up Next"
-            />
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="5000dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_gravity="left"
+            android:layout_margin="10dp"
+            android:clipChildren="false"
+            android:orientation="horizontal"
+            >
 
-            <include layout="@layout/program_info_view_small"/>
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="20dp"
+                android:clipChildren="false"
+                android:orientation="vertical"
+                >
 
-            <include layout="@layout/program_info_view_small"/>
+                <TextView
+                    android:id="@+id/nowPlaying"
+                    style="@style/titleText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:text="Now Playing"
+                    />
 
-            <include layout="@layout/program_info_view_small"/>
+                <include
+                    android:id="@+id/currentProgram"
+                    layout="@layout/program_info_view"
+                    android:layout_width="500dp"
+                    android:layout_height="match_parent"
+                    />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:clipChildren="false"
+                android:orientation="vertical"
+                >
+
+                <TextView
+                    android:id="@+id/upNext"
+                    style="@style/titleText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:text="Up Next"
+                    />
+
+                <LinearLayout
+                    android:id="@+id/upNextLayout"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="10"
+                    android:clipChildren="false"
+                    android:orientation="horizontal"
+                    >
+
+                    <include
+                        layout="@layout/program_info_view_small"
+                        android:layout_width="240dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="10dp"
+                        />
+
+                    <include
+                        layout="@layout/program_info_view_small"
+                        android:layout_width="240dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="10dp"
+                        />
+
+                    <include
+                        layout="@layout/program_info_view_small"
+                        android:layout_width="240dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="10dp"
+                        />
+
+                </LinearLayout>
+
+            </LinearLayout>
 
         </LinearLayout>
 
-    </LinearLayout>
+    </HorizontalScrollView>
 
-</LinearLayout>
+</com.sony.sel.tvapp.view.ChannelEpgView>

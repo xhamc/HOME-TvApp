@@ -77,5 +77,6 @@ public class EpgFragment extends BaseFragment {
 
   private void onWebServiceStarted() {
     webView.loadUrl("http://127.0.0.1:9000/guide/index.html");
+    webView.requestFocus();
   }
 }

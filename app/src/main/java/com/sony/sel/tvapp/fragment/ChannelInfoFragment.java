@@ -17,10 +17,16 @@ import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.SettingsHelper;
+import com.sony.sel.tvapp.view.ChannelEpgView;
 import com.sony.sel.tvapp.view.ProgramInfoView;
 import com.squareup.otto.Subscribe;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,12 +44,12 @@ public class ChannelInfoFragment extends BaseFragment {
 
   public static final String TAG = ChannelInfoFragment.class.getSimpleName();
 
-  @Bind(R.id.programInfo)
-  ProgramInfoView programInfo;
+  @Bind(R.id.channelEpgInfo)
+  ChannelEpgView channelEpgInfo;
 
   private List<VideoBroadcast> channels = new ArrayList<>();
   private VideoBroadcast currentChannel;
-  private Map<String, VideoProgram> currentPrograms = new HashMap<>();
+  private Map<String, List<VideoProgram>> currentPrograms = new HashMap<>();
 
   private GetCurrentProgramsTask epgTask;
 
@@ -58,36 +64,6 @@ public class ChannelInfoFragment extends BaseFragment {
     // inflate view
     View contentView = inflater.inflate(R.layout.channel_info_fragment, null);
     ButterKnife.bind(this, contentView);
-
-    // keep program info hidden until loaded
-    programInfo.setAlpha(0.0f);
-
-    // listen for channel change key events
-    contentView.setOnKeyListener(new View.OnKeyListener() {
-      @Override
-      public boolean onKey(View v, int keyCode, KeyEvent event) {
-        if (KeyEvent.ACTION_DOWN == event.getAction()) {
-          switch (keyCode) {
-            case KeyEvent.KEYCODE_CHANNEL_UP:
-              previousChannel();
-              return true;
-            case KeyEvent.KEYCODE_CHANNEL_DOWN:
-              nextChannel();
-              return true;
-            case KeyEvent.KEYCODE_DPAD_CENTER:
-            case KeyEvent.KEYCODE_BACK:
-              if (programInfo.isVisible()) {
-                programInfo.hide();
-                return true;
-              }
-          }
-        }
-        return false;
-      }
-    });
-
-    // request focus to receive key events
-    contentView.requestFocus();
 
     // start fetching channels
     getChannels();
@@ -122,6 +98,7 @@ public class ChannelInfoFragment extends BaseFragment {
 
   /**
    * Refresh the list of channels after loading.
+   *
    * @param channels New channel list.
    */
   private void setChannels(List<VideoBroadcast> channels) {
@@ -135,7 +112,7 @@ public class ChannelInfoFragment extends BaseFragment {
         // default to first channel
         channel = channels.get(0);
       }
-      setCurrentChannel(channel);
+      EventBus.getInstance().post(new EventBus.ChannelChangedEvent(channel));
 
       // fetch current programs for all channels
       if (epgTask != null) {
@@ -158,10 +135,27 @@ public class ChannelInfoFragment extends BaseFragment {
   }
 
   private void updateChannelInfo() {
-    if (currentChannel != null && currentPrograms != null) {
-      VideoProgram program = currentPrograms.get(currentChannel.getChannelId());
-      programInfo.bind(program, currentChannel);
+    if (currentChannel != null) {
+      channelEpgInfo.bind(currentChannel, currentPrograms.get(currentChannel.getChannelId()));
     }
+  }
+
+  public void requestFocus() {
+    channelEpgInfo.requestFocus();
+  }
+
+  private VideoProgram getCurrentProgram() {
+    Date now = new Date();
+    List<VideoProgram> programs = currentPrograms.get(currentChannel.getChannelId());
+    if (programs != null) {
+      for (VideoProgram program : programs) {
+        if (program.getScheduledStartTime().before(now) && program.getScheduledEndTime().after(now)) {
+          return program;
+        }
+      }
+    }
+    // not found
+    return null;
   }
 
   public void nextChannel() {
@@ -193,12 +187,18 @@ public class ChannelInfoFragment extends BaseFragment {
     @Override
     protected Void doInBackground(Void... params) {
       String udn = SettingsHelper.getHelper(getActivity()).getEpgServer();
+      Calendar calendar = Calendar.getInstance();
+      calendar.add(Calendar.HOUR_OF_DAY, -12);
+      Date start = calendar.getTime();
+      calendar.add(Calendar.HOUR_OF_DAY, 24);
+      Date end = calendar.getTime();
       for (VideoBroadcast channel : channels) {
-        Log.d(TAG, "Channel: " + channel.toString());
-        VideoProgram currentProgram = dlnaHelper.getCurrentEpgProgram(udn, channel);
-        if (currentProgram != null) {
-          Log.d(TAG, "Current program: " + currentProgram.toString());
-          publishProgress(currentProgram);
+        Log.d(TAG, "Get EPG for channel " + channel.getCallSign() + ".");
+        List<VideoProgram> epgData = dlnaHelper.getEpgPrograms(udn, channel, start, end);
+        if (epgData != null && epgData.size() > 0) {
+          Log.d(TAG, String.format("%d programs found.", epgData.size()));
+          VideoProgram[] programs = new VideoProgram[epgData.size()];
+          publishProgress(epgData.toArray(programs));
         } else {
           Log.e(TAG, "No current program found.");
         }
@@ -213,11 +213,10 @@ public class ChannelInfoFragment extends BaseFragment {
     @Override
     protected void onProgressUpdate(VideoProgram... values) {
       super.onProgressUpdate(values);
-      for (VideoProgram program : values) {
-        currentPrograms.put(program.getChannelId(), program);
-        if (currentChannel != null && currentChannel.getChannelId().equals(program.getChannelId())) {
-          updateChannelInfo();
-        }
+      List<VideoProgram> programs = Arrays.asList(values);
+      currentPrograms.put(values[0].getChannelId(), programs);
+      if (currentChannel != null && currentChannel.getChannelId().equals(values[0].getChannelId())) {
+        updateChannelInfo();
       }
     }
   }
@@ -265,7 +264,7 @@ public class ChannelInfoFragment extends BaseFragment {
           public void run() {
             new GetChannelsTask(udn).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
           }
-        },1000);
+        }, 1000);
       }
     }
   }

@@ -44,8 +44,11 @@ public abstract class BaseDlnaHelper implements DlnaInterface {
     List<DlnaObjects.VideoProgram> shows = new ArrayList<>();
     DateFormat format = new SimpleDateFormat("M-d");
     // use a Calendar to iterate
+    // we need to expand the date range at both ends by 24 hours to account for all possible time zones
+    long ONE_DAY_MS = 1000 * 60 * 60 * 24;
     Calendar calendar = Calendar.getInstance();
-    for (calendar.setTime(startDate); calendar.getTimeInMillis() < endDate.getTime(); calendar.add(Calendar.DAY_OF_MONTH,1)) {
+    calendar.add(Calendar.DAY_OF_MONTH, - 1);
+    for (calendar.setTime(startDate); calendar.getTimeInMillis() < endDate.getTime()+ONE_DAY_MS; calendar.add(Calendar.DAY_OF_MONTH,1)) {
       String day = format.format(calendar.getTime());
       List<DlnaObjects.VideoProgram> dayShows = getChildren(udn, "0/EPG/" + channel.getChannelId() + "/" + day, DlnaObjects.VideoProgram.class, null, true);
       for (DlnaObjects.VideoProgram show : dayShows) {

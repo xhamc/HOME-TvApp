@@ -2,14 +2,16 @@
 <com.sony.sel.tvapp.view.ProgramInfoView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="horizontal"
-    android:background="@color/menuBackground"
-    android:layout_width="wrap_content"
+    android:background="@drawable/cell_background"
+    android:layout_width="500dp"
     android:layout_height="wrap_content"
     android:elevation="2dp"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
     >
 
     <LinearLayout
-        android:layout_width="600dp"
+        android:layout_width="match_parent"
         android:layout_height="160dp"
         android:orientation="horizontal">
 
@@ -34,7 +36,9 @@
                 style="@style/normalText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Program Title"
+                android:text="Program Title that might become very long"
+                android:lines="1"
+                android:ellipsize="end"
                 />
 
             <TextView

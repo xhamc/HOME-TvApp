@@ -7,12 +7,12 @@
     >
 
     <include
-        android:id="@+id/programInfo"
-        layout="@layout/program_info_view"
+        android:id="@+id/channelEpgInfo"
+        layout="@layout/channel_details"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="left|bottom"
-        android:layout_margin="10dp"
+        android:alpha="0.0"
         />
 
 </FrameLayout>

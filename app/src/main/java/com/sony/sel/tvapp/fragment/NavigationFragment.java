@@ -1,6 +1,5 @@
 package com.sony.sel.tvapp.fragment;
 
-import android.animation.Animator;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -12,7 +11,9 @@ import android.view.ViewGroup;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.ui.NavigationItem;
+import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.view.NavigationCell;
+import com.squareup.otto.Subscribe;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +33,7 @@ public class NavigationFragment extends BaseFragment {
 
   NavigationAdapter adapter;
   Context appContext;
+  NavigationItem currentNavItem;
 
   @Nullable
   @Override
@@ -42,8 +44,6 @@ public class NavigationFragment extends BaseFragment {
 
     ButterKnife.bind(this, root);
 
-    root.setTranslationY(-1.0f);
-
     if (adapter == null) {
       // fragment is recycled, so only make new adapter the first time
       adapter = new NavigationAdapter();
@@ -51,87 +51,26 @@ public class NavigationFragment extends BaseFragment {
     recyclerView.setAdapter(adapter);
     recyclerView.setLayoutManager(new LinearLayoutManager(appContext, LinearLayoutManager.HORIZONTAL, false));
 
-    root.setFocusable(true);
-    root.setFocusableInTouchMode(true);
-    // recyclerView.setDescendantFocusability(ViewGroup.FOCUS_BEFORE_DESCENDANTS);
-
-    root.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-      @Override
-      public void onFocusChange(View v, boolean hasFocus) {
-        if (hasFocus) {
-          View navItem = recyclerView.getLayoutManager().findViewByPosition(0);
-          if (navItem != null) {
-            navItem.requestFocus();
-          }
-        }
-      }
-    });
-
     adapter.setup();
 
     return root;
   }
 
-  public void show() {
-      final View v = getView();
-      v.setTranslationY(-v.getMeasuredHeight());
-      v.setVisibility(View.VISIBLE);
-      v.animate().y(0.0f).setListener(new Animator.AnimatorListener() {
-        @Override
-        public void onAnimationStart(Animator animation) {
-
-        }
-
-        @Override
-        public void onAnimationEnd(Animator animation) {
-          v.requestFocus();
-        }
-
-        @Override
-        public void onAnimationCancel(Animator animation) {
-
-        }
-
-        @Override
-        public void onAnimationRepeat(Animator animation) {
-
-        }
-      }).start();
-  }
-
-  public void hide() {
-      final View v = getView();
-      v.setY(0.0f);
-      v.animate().translationY(-v.getMeasuredHeight()).setListener(new Animator.AnimatorListener() {
-        @Override
-        public void onAnimationStart(Animator animation) {
-
-        }
-
-        @Override
-        public void onAnimationEnd(Animator animation) {
-          // hide the nav bar to release focus
-          v.setVisibility(View.GONE);
-        }
-
-        @Override
-        public void onAnimationCancel(Animator animation) {
-
-        }
-
-        @Override
-        public void onAnimationRepeat(Animator animation) {
-
-        }
-      }).start();
-  }
-
-  public boolean isShown() {
-    if (getView() != null) {
-      return getView().getVisibility() == View.VISIBLE;
-    } else {
-      return false;
+  public void requestFocus() {
+    int index = 0;
+    if (currentNavItem != null) {
+      index = adapter.indexOf(currentNavItem);
     }
+    RecyclerView.ViewHolder holder = recyclerView.findViewHolderForAdapterPosition(index);
+    if (holder != null && holder.itemView != null) {
+      holder.itemView.requestFocus();
+    }
+
+  }
+
+  @Subscribe
+  public void onNavigationFocusChanged(EventBus.NavigationFocusedEvent event) {
+    currentNavItem = event.getItem();
   }
 
   private class NavigationAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
@@ -179,6 +118,10 @@ public class NavigationFragment extends BaseFragment {
         case R.id.navigationCell: {
           NavigationCell cell = (NavigationCell) holder.itemView;
           cell.bind(navigationItems.get(position));
+          if (currentNavItem == null) {
+            currentNavItem = navigationItems.get(position);
+            cell.requestFocus();
+          }
         }
         break;
         default:
@@ -189,6 +132,10 @@ public class NavigationFragment extends BaseFragment {
     @Override
     public int getItemCount() {
       return navigationItems.size();
+    }
+
+    public int indexOf(NavigationItem item) {
+      return navigationItems.indexOf(item);
     }
   }
 }

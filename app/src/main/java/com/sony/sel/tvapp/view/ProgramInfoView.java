@@ -3,6 +3,7 @@ package com.sony.sel.tvapp.view;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Handler;
+import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -25,7 +26,7 @@ import static com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 /**
  * View for displaying the channel data overlay.
  */
-public class ProgramInfoView extends FrameLayout  {
+public class ProgramInfoView extends FrameLayout {
 
   public static final String TAG = ProgramInfoView.class.getSimpleName();
 
@@ -35,23 +36,17 @@ public class ProgramInfoView extends FrameLayout  {
   ImageView icon;
   @Bind(R.id.programTitle)
   TextView title;
+  @Nullable
   @Bind(R.id.programChannel)
   TextView channelNumber;
   @Bind(R.id.programTime)
   TextView time;
+  @Nullable
   @Bind(R.id.programDescription)
   TextView description;
 
   private VideoProgram program;
   private VideoBroadcast channel;
-
-  private Handler handler = new Handler();
-  private Runnable timeoutRunnable = new Runnable() {
-    @Override
-    public void run() {
-      hide();
-    }
-  };
 
   public ProgramInfoView(Context context) {
     super(context);
@@ -99,8 +94,10 @@ public class ProgramInfoView extends FrameLayout  {
       // title
       title.setText(program.getTitle());
 
-      // number
-      channelNumber.setText(channel.getCallSign());
+      if (channelNumber != null) {
+        // number
+        channelNumber.setText(channel.getCallSign());
+      }
 
       // start/end time
       DateFormat format = new SimpleDateFormat("h:mm");
@@ -108,8 +105,10 @@ public class ProgramInfoView extends FrameLayout  {
       time.setText(programTime);
       time.setVisibility(View.VISIBLE);
 
-      // long description
-      description.setText(program.getLongDescription());
+      if (description != null) {
+        // long description
+        description.setText(program.getLongDescription());
+      }
 
     } else if (channel != null) {
 
@@ -125,54 +124,44 @@ public class ProgramInfoView extends FrameLayout  {
       // channel name
       title.setText(channel.getCallSign());
 
-      // call sign
-      channelNumber.setText(channel.getChannelNumber());
+      if (channelNumber != null) {
+        // call sign
+        channelNumber.setText(channel.getChannelNumber());
+      }
 
       // hide time
       time.setVisibility(View.GONE);
+      if (description != null) {
+        // use description if available
+        description.setText(channel.getDescription());
+      }
 
-      // use description if available
-      description.setText(channel.getDescription());
     }
-    // show or keep showing
-    show();
   }
 
   /**
    * Set up the icon as a program/show thumbnail.
+   *
    * @param uri Icon uri.
    */
   private void setProgramIcon(String uri) {
     icon.setVisibility(View.VISIBLE);
     icon.setScaleType(ImageView.ScaleType.CENTER_CROP);
-    icon.setPadding(0,0,0,0);
+    icon.setPadding(0, 0, 0, 0);
     Picasso.with(getContext()).load(Uri.parse(uri)).into(icon);
   }
 
   /**
    * Set up the icon as a channel ID thumbnail.
+   *
    * @param uri Icon uri.
    */
   private void setChannelIcon(String uri) {
     icon.setVisibility(View.VISIBLE);
     icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
     int padding = getResources().getDimensionPixelSize(R.dimen.channelThumbPadding);
-    icon.setPadding(padding,padding,padding,padding);
+    icon.setPadding(padding, padding, padding, padding);
     Picasso.with(getContext()).load(Uri.parse(uri)).into(icon);
-  }
-
-  public void show() {
-    this.animate().alpha(1.0f).start();
-    handler.removeCallbacks(timeoutRunnable);
-    handler.postDelayed(timeoutRunnable, HIDE_TIMEOUT);
-  }
-
-  public boolean isVisible() {
-    return getAlpha() == 1.0f;
-  }
-
-  public void hide() {
-    this.animate().alpha(0.0f).start();
   }
 
 }

@@ -75,10 +75,7 @@ public class VideoFragment extends BaseFragment {
     View contentView = inflater.inflate(R.layout.video_fragment, null);
     ButterKnife.bind(this, contentView);
 
-    // current EPG channel from settings
-    setCurrentChannel(SettingsHelper.getHelper(getActivity()).getCurrentChannel());
-
-    // create media session
+   // create media session
     createMediaSession();
 
     return contentView;
@@ -266,6 +263,7 @@ public class VideoFragment extends BaseFragment {
   private class PlayVideoTask extends AsyncTask<Void, Void, MediaPlayer> {
 
     private final Uri uri;
+    private Throwable error;
 
     public PlayVideoTask(Uri uri) {
       this.uri = uri;
@@ -282,8 +280,8 @@ public class VideoFragment extends BaseFragment {
       try {
         // create, set data source and prepare media player with one call
         mediaPlayer = MediaPlayer.create(getActivity(), uri);
-        if (isCancelled()) {
-          // don't continue if canceled while preparing
+        if (isCancelled() || mediaPlayer == null) {
+          // don't continue if canceled while preparing or an error occurs
           return mediaPlayer;
         }
         mediaPlayer.setDisplay(surfaceHolder);
@@ -309,18 +307,7 @@ public class VideoFragment extends BaseFragment {
         });
         mediaPlayer.start();
       } catch (Throwable e) {
-        new AlertDialog.Builder(getActivity())
-            .setTitle(R.string.error)
-            .setMessage("Error playing video:" + uri + ": " + e.toString())
-            .setNeutralButton(getString(android.R.string.ok), null)
-            .setPositiveButton(getString(R.string.selectChannelVideos), new DialogInterface.OnClickListener() {
-              @Override
-              public void onClick(DialogInterface dialog, int which) {
-                startActivity(new Intent(getActivity(), SelectChannelVideosActivity.class));
-              }
-            })
-            .create()
-            .show();
+        error = e;
       }
       return mediaPlayer;
     }
@@ -337,16 +324,46 @@ public class VideoFragment extends BaseFragment {
     @Override
     protected void onPostExecute(MediaPlayer mediaPlayer) {
       super.onPostExecute(mediaPlayer);
-      Log.d(TAG, "Play video task completed for " + uri + ".");
-      hideSpinner();
-      VideoFragment.this.mediaPlayer = mediaPlayer;
-      videoUri = uri;
-      playVideoTask = null;
-      mediaSession.setActive(true);
-      updateMediaPlaybackState();
-      new FetchEpgTask().executeOnExecutor(THREAD_POOL_EXECUTOR);
+      if (error != null) {
+        Log.e(TAG, "Error starting video playback: " + error);
+        new AlertDialog.Builder(getActivity())
+            .setTitle(R.string.error)
+            .setMessage("Error starting video: " + uri + ": " + error.toString())
+            .setNeutralButton(getString(android.R.string.ok), null)
+            .setPositiveButton(getString(R.string.selectChannelVideos), new DialogInterface.OnClickListener() {
+              @Override
+              public void onClick(DialogInterface dialog, int which) {
+                startActivity(new Intent(getActivity(), SelectChannelVideosActivity.class));
+              }
+            })
+            .create()
+            .show();
+      } else if (mediaPlayer == null) {
+        new AlertDialog.Builder(getActivity())
+            .setTitle(R.string.error)
+            .setMessage("Error starting video: " + uri + ".")
+            .setNeutralButton(getString(android.R.string.ok), null)
+            .setPositiveButton(getString(R.string.selectChannelVideos), new DialogInterface.OnClickListener() {
+              @Override
+              public void onClick(DialogInterface dialog, int which) {
+                startActivity(new Intent(getActivity(), SelectChannelVideosActivity.class));
+              }
+            })
+            .create()
+            .show();
+      } else {
+        Log.d(TAG, "Play video task completed for " + uri + ".");
+        hideSpinner();
+        VideoFragment.this.mediaPlayer = mediaPlayer;
+        videoUri = uri;
+        playVideoTask = null;
+        mediaSession.setActive(true);
+        updateMediaPlaybackState();
+        new FetchEpgTask().executeOnExecutor(THREAD_POOL_EXECUTOR);
+      }
     }
   }
+
 
   private class MediaSessionCallback extends MediaSession.Callback {
     @Override
@@ -480,7 +497,12 @@ public class VideoFragment extends BaseFragment {
       // display fields in the metadata
       metadataBuilder.putString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE, currentProgram != null ? currentProgram.getTitle() : currentChannel.getCallSign());
       metadataBuilder.putString(MediaMetadata.METADATA_KEY_TITLE, currentProgram != null ? currentProgram.getTitle() : currentChannel.getCallSign());
+      metadataBuilder.putBitmap(MediaMetadata.METADATA_KEY_ART, mediaArtwork);
+      metadataBuilder.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, mediaArtwork);
       metadataBuilder.putBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON, mediaArtwork);
+      metadataBuilder.putString(MediaMetadata.METADATA_KEY_ART_URI, currentProgram != null ? currentProgram.getIcon() : currentChannel.getIcon());
+      metadataBuilder.putString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI, currentProgram != null ? currentProgram.getIcon() : currentChannel.getIcon());
+      metadataBuilder.putString(MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI, currentProgram != null ? currentProgram.getIcon() : currentChannel.getIcon());
       // TODO more metadata?
       mediaSession.setMetadata(metadataBuilder.build());
     }

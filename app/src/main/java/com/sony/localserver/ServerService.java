@@ -69,6 +69,7 @@ public class ServerService extends IntentService {
       }
     } else {
       Log.w(TAG, "Server already started.");
+      sendBroadcast(new Intent(SERVICE_STARTED));
     }
   }
 
@@ -80,6 +81,7 @@ public class ServerService extends IntentService {
       sendBroadcast(new Intent(SERVICE_STOPPED));
     } else {
       Log.w(TAG, "Stop issued but server not started.");
+      sendBroadcast(new Intent(SERVICE_STOPPED));
     }
   }
 }
