@@ -48,9 +48,19 @@ public class ProgramInfoView extends FrameLayout {
   @Nullable
   @Bind(R.id.favorite)
   ImageView favorite;
+  @Nullable
+  @Bind(R.id.recordProgram)
+  ImageView recordProgram;
+  @Nullable
+  @Bind(R.id.recordSeries)
+  ImageView recordSeries;
+  @Nullable
+  @Bind(R.id.popupAlignView)
+  View popupAlignView;
 
   private VideoProgram program;
   private VideoBroadcast channel;
+  private SettingsHelper settingsHelper;
 
   public ProgramInfoView(Context context) {
     super(context);
@@ -74,7 +84,20 @@ public class ProgramInfoView extends FrameLayout {
     if (isInEditMode()) {
       return;
     }
+    settingsHelper = SettingsHelper.getHelper(getContext());
     ButterKnife.bind(this);
+  }
+
+  public VideoProgram getProgram() {
+    return program;
+  }
+
+  public VideoBroadcast getChannel() {
+    return channel;
+  }
+
+  public View getPopupAlignView() {
+    return popupAlignView != null ? popupAlignView : this;
   }
 
   public void bind(VideoProgram program, DlnaObjects.VideoBroadcast channel) {
@@ -143,11 +166,27 @@ public class ProgramInfoView extends FrameLayout {
     }
 
     if (channel != null && favorite != null) {
-      if (SettingsHelper.getHelper(getContext()).getFavoriteChannels().contains(channel.getChannelId())) {
+      if (settingsHelper.getFavoriteChannels().contains(channel.getChannelId())) {
         favorite.setVisibility(View.VISIBLE);
       } else {
         favorite.setVisibility(View.GONE);
       }
+    }
+
+    if (program != null && recordProgram != null && recordSeries != null) {
+      if (settingsHelper.getSeriesToRecord().contains(program.getTitle())) {
+        recordSeries.setVisibility(View.VISIBLE);
+        recordProgram.setVisibility(View.GONE);
+      } else if (settingsHelper.getProgramsToRecord().contains(program.getId())) {
+        recordSeries.setVisibility(View.GONE);
+        recordProgram.setVisibility(View.VISIBLE);
+      } else {
+        recordSeries.setVisibility(View.GONE);
+        recordProgram.setVisibility(View.GONE);
+      }
+    } else {
+      recordSeries.setVisibility(View.GONE);
+      recordProgram.setVisibility(View.GONE);
     }
   }
 

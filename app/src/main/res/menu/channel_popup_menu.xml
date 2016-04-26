@@ -14,8 +14,23 @@
         />
 
     <item
-        android:id="@+id/recordNow"
-        android:title="@string/recordNow"
+        android:id="@+id/recordProgram"
+        android:title="@string/recordProgram"
+        />
+
+    <item
+        android:id="@+id/recordSeries"
+        android:title="@string/recordSeries"
+        />
+
+    <item
+        android:id="@+id/cancelProgramRecording"
+        android:title="@string/cancelProgramRecording"
+        />
+
+    <item
+        android:id="@+id/cancelSeriesRecording"
+        android:title="@string/cancelSeriesRecording"
         />
 
 </menu>

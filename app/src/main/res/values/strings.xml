@@ -40,9 +40,10 @@
 
     <!-- menu items -->
     <string name="addToFavoriteChannels">Add to favorite channels</string>
-    <string name="recordNow">Record now</string>
+    <string name="removeFromFavoriteChannels">Remove from favorite channels</string>
     <string name="recordProgram">Record program</string>
     <string name="recordSeries">Record entire series</string>
-    <string name="removeFromFavoriteChannels">Remove from favorite channels</string>
+    <string name="cancelProgramRecording">Cancel recording</string>
+    <string name="cancelSeriesRecording">Cancel series recording</string>
 
 </resources>

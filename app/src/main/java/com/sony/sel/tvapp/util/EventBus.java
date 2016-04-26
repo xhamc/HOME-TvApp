@@ -54,6 +54,12 @@ public class EventBus extends Bus {
     }
   }
 
+  /**
+   * Event to tell the UI timer to stop waiting to hide the UI.
+   */
+  public static class CancelUiTimerEvent {
+
+  }
 
   private static EventBus instance;
 

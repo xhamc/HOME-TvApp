@@ -5,6 +5,7 @@ import android.graphics.Rect;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,6 +16,7 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import com.sony.sel.tvapp.R;
+import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.FocusHelper;
 import com.sony.sel.tvapp.util.SettingsHelper;
 
@@ -86,13 +88,15 @@ public class ChannelEpgView extends FrameLayout {
     epgData = data;
 
     // configure the current program
-    VideoProgram currentProgram = getCurrentProgram();
+    final VideoProgram currentProgram = getCurrentProgram();
     nowPlaying.setVisibility(currentProgram != null ? View.VISIBLE : View.INVISIBLE);
     programInfoView.bind(currentProgram, channel);
+    final View alignView = programInfoView.getPopupAlignView();
     programInfoView.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View v) {
-        showChannelPopup(v, channel);
+        showPopup(alignView, channel, currentProgram);
+        EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
       }
     });
 
@@ -105,7 +109,8 @@ public class ChannelEpgView extends FrameLayout {
       upNext.setOnClickListener(new OnClickListener() {
         @Override
         public void onClick(View v) {
-          showProgramPopup(v, program);
+          showPopup(v, channel, program);
+          EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
         }
       });
       upNext.bind(program, channel);
@@ -113,7 +118,13 @@ public class ChannelEpgView extends FrameLayout {
       params.setMarginEnd(getResources().getDimensionPixelSize(R.dimen.channelThumbPadding));
       upNextLayout.addView(upNext, params);
       final OnFocusChangeListener listener = FocusHelper.getHelper().createFocusZoomListener(FocusHelper.FocusZoomAlignment.CENTER, FOCUS_ZOOM, 1.0f);
-      upNext.setOnFocusChangeListener(listener);
+      upNext.setOnFocusChangeListener(new OnFocusChangeListener() {
+        @Override
+        public void onFocusChange(View v, boolean hasFocus) {
+          listener.onFocusChange(v,hasFocus);
+          EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
+        }
+      });
     }
     // focus the main view
     programInfoView.requestFocus();
@@ -121,7 +132,7 @@ public class ChannelEpgView extends FrameLayout {
     scrollView.scrollTo(0, 0);
   }
 
-  private void showChannelPopup(View v, final VideoBroadcast channel) {
+  private void showPopup(View v, final VideoBroadcast channel, final VideoProgram program) {
     PopupMenu menu = new PopupMenu(getContext(), v);
     menu.inflate(R.menu.channel_popup_menu);
     if (settingsHelper.getFavoriteChannels().contains(channel.getChannelId())) {
@@ -129,19 +140,52 @@ public class ChannelEpgView extends FrameLayout {
     } else {
       menu.getMenu().removeItem(R.id.removeFromFavoriteChannels);
     }
+    if (program != null) {
+      if (settingsHelper.getSeriesToRecord().contains(program.getTitle())) {
+        menu.getMenu().removeItem(R.id.recordProgram);
+        menu.getMenu().removeItem(R.id.cancelProgramRecording);
+        menu.getMenu().removeItem(R.id.recordSeries);
+      } else if (settingsHelper.getProgramsToRecord().contains(program.getId())) {
+        menu.getMenu().removeItem(R.id.recordProgram);
+        menu.getMenu().removeItem(R.id.cancelSeriesRecording);
+      } else {
+        menu.getMenu().removeItem(R.id.cancelProgramRecording);
+        menu.getMenu().removeItem(R.id.cancelSeriesRecording);
+      }
+    } else {
+      // no current program
+      menu.getMenu().removeItem(R.id.recordProgram);
+      menu.getMenu().removeItem(R.id.recordSeries);
+      menu.getMenu().removeItem(R.id.cancelProgramRecording);
+      menu.getMenu().removeItem(R.id.cancelSeriesRecording);
+    }
     menu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
       @Override
       public boolean onMenuItemClick(MenuItem item) {
         switch (item.getItemId()) {
           case R.id.addToFavoriteChannels:
             settingsHelper.addFavoriteChannel(channel.getChannelId());
-            // re-bind to update UI
-            programInfoView.bind(getCurrentProgram(),channel);
+            rebindAllPrograms();
             return true;
           case R.id.removeFromFavoriteChannels:
             settingsHelper.removeFavoriteChannel(channel.getChannelId());
-            // re-bind to update UI
-            programInfoView.bind(getCurrentProgram(),channel);
+            rebindAllPrograms();
+            return true;
+          case R.id.recordProgram:
+            settingsHelper.addRecording(program.getId());
+            rebindAllPrograms();
+            return true;
+          case R.id.recordSeries:
+            settingsHelper.addSeriesRecording(program.getTitle());
+            rebindAllPrograms();
+            return true;
+          case R.id.cancelProgramRecording:
+            settingsHelper.removeRecording(program.getId());
+            rebindAllPrograms();
+            return true;
+          case R.id.cancelSeriesRecording:
+            settingsHelper.removeSeriesRecording(program.getTitle());
+            rebindAllPrograms();
             return true;
         }
         return false;
@@ -150,10 +194,15 @@ public class ChannelEpgView extends FrameLayout {
     menu.show();
   }
 
-  private void showProgramPopup(View v, VideoProgram program) {
-    PopupMenu menu = new PopupMenu(getContext(), v);
-    menu.inflate(R.menu.program_popup_menu);
-    menu.show();
+  /**
+   * Rebind all the data to ProgramInfoViews to refresh the display.
+   */
+  private void rebindAllPrograms() {
+    programInfoView.bind(programInfoView.getProgram(),programInfoView.getChannel());
+    for(int i = 0; i<upNextLayout.getChildCount(); i++) {
+      ProgramInfoView upNext = (ProgramInfoView) upNextLayout.getChildAt(i);
+      upNext.bind(upNext.getProgram(),upNext.getChannel());
+    }
   }
 
   @Override

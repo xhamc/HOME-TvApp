@@ -34,15 +34,35 @@
                 android:layout_height="50dp"
                 android:src="@drawable/star"
                 android:layout_gravity="top|right"
+                android:layout_margin="5dp"
+                />
+
+            <ImageView
+                android:id="@+id/recordProgram"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/record"
+                android:layout_gravity="bottom|right"
+                android:layout_margin="10dp"
+                />
+
+            <ImageView
+                android:id="@+id/recordSeries"
+                android:layout_width="60dp"
+                android:layout_height="30dp"
+                android:src="@drawable/series_record"
+                android:layout_gravity="bottom|right"
+                android:layout_margin="10dp"
                 />
 
         </FrameLayout>
 
         <LinearLayout
+            android:id="@+id/popupAlignView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:layout_margin="10dp"
+            android:padding="10dp"
             >
 
             <TextView

@@ -22,6 +22,8 @@ public class SettingsHelper {
   private static final String CURRENT_CHANNEL = "CurrentChannel";
   private static final String CHANNEL_VIDEOS = "ChannelVideos";
   private static final String FAVORITE_CHANNELS = "FavoriteChannels";
+  private static final String RECORD_PROGRAMS = "RecordPrograms";
+  private static final String RECORD_SERIES = "RecordSeries";
 
   private static SettingsHelper INSTANCE;
   private List<VideoItem> channelVideos;
@@ -143,11 +145,7 @@ public class SettingsHelper {
   }
 
   public Set<String> getFavoriteChannels() {
-    Set<String> channelList = getSharedPreferences().getStringSet(FAVORITE_CHANNELS, null);
-    if (channelList == null) {
-      channelList = new HashSet<>();
-    }
-    return channelList;
+    return getSharedPreferences().getStringSet(FAVORITE_CHANNELS, new HashSet<String>());
   }
 
   public void addFavoriteChannel(String channelId) {
@@ -168,4 +166,47 @@ public class SettingsHelper {
     editor.commit();
   }
 
+  public Set<String> getProgramsToRecord() {
+    return getSharedPreferences().getStringSet(RECORD_PROGRAMS, new HashSet<String>());
+  }
+
+  public void addRecording(String programId) {
+    Set<String> recordings = getProgramsToRecord();
+    recordings.add(programId);
+    SharedPreferences prefs = getSharedPreferences();
+    SharedPreferences.Editor editor = prefs.edit();
+    editor.putStringSet(RECORD_PROGRAMS, recordings);
+    editor.commit();
+  }
+
+  public void removeRecording(String programId) {
+    Set<String> recordings = getProgramsToRecord();
+    recordings.remove(programId);
+    SharedPreferences prefs = getSharedPreferences();
+    SharedPreferences.Editor editor = prefs.edit();
+    editor.putStringSet(RECORD_PROGRAMS, recordings);
+    editor.commit();
+  }
+
+  public Set<String> getSeriesToRecord() {
+    return getSharedPreferences().getStringSet(RECORD_SERIES, new HashSet<String>());
+  }
+
+  public void addSeriesRecording(String seriesId) {
+    Set<String> recordings = getSeriesToRecord();
+    recordings.add(seriesId);
+    SharedPreferences prefs = getSharedPreferences();
+    SharedPreferences.Editor editor = prefs.edit();
+    editor.putStringSet(RECORD_SERIES, recordings);
+    editor.commit();
+  }
+
+  public void removeSeriesRecording(String seriesId) {
+    Set<String> recordings = getSeriesToRecord();
+    recordings.remove(seriesId);
+    SharedPreferences prefs = getSharedPreferences();
+    SharedPreferences.Editor editor = prefs.edit();
+    editor.putStringSet(RECORD_SERIES, recordings);
+    editor.commit();
+  }
 }

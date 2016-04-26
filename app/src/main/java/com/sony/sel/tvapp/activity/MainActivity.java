@@ -156,7 +156,7 @@ public class MainActivity extends BaseActivity {
     transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
     transaction.commit();
 
-    stopUiTimer();
+    cancelUiTimer();
   }
 
   private void hideCurrentFragment() {
@@ -249,7 +249,12 @@ public class MainActivity extends BaseActivity {
     handler.postDelayed(runnable, HIDE_UI_TIMEOUT);
   }
 
-  void stopUiTimer() {
+  @Subscribe
+  public void onCancelUiTimer(EventBus.CancelUiTimerEvent event) {
+    cancelUiTimer();
+  }
+
+  void cancelUiTimer() {
     handler.removeCallbacks(runnable);
   }
 
