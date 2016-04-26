@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +15,7 @@ import android.webkit.WebView;
 
 import com.sony.localserver.ServerService;
 import com.sony.sel.tvapp.R;
+import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.SettingsHelper;
 
 /**
@@ -46,6 +48,9 @@ public class EpgFragment extends BaseFragment {
 
     startWebService();
 
+    // long UI hiding
+    EventBus.getInstance().post(new EventBus.ResetUiTimerLongEvent());
+
     return contentView;
   }
 
@@ -55,6 +60,15 @@ public class EpgFragment extends BaseFragment {
     webView.loadUrl("about:blank");
     stopWebService();
     getActivity().unregisterReceiver(receiver);
+  }
+
+  @Override
+  public void onHiddenChanged(boolean hidden) {
+    super.onHiddenChanged(hidden);
+    if (!hidden) {
+      // long UI hiding
+      EventBus.getInstance().post(new EventBus.ResetUiTimerLongEvent());
+    }
   }
 
   private void startWebService() {

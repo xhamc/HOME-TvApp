@@ -34,7 +34,12 @@ public class MainActivity extends BaseActivity {
   private BaseFragment currentFragment;
   private NavigationFragment navigationFragment;
 
+  /// short timeout for hiding UI after quick interactions
   public static final long HIDE_UI_TIMEOUT = 5000;
+
+  /// long timeout allows time for more viewing/longer processes but still times out eventually
+  public static final long HIDE_UI_TIMEOUT_LONG = 30000;
+
   private Handler handler = new Handler();
   private Runnable runnable = new Runnable() {
     @Override
@@ -156,7 +161,6 @@ public class MainActivity extends BaseActivity {
     transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
     transaction.commit();
 
-    cancelUiTimer();
   }
 
   private void hideCurrentFragment() {
@@ -239,14 +243,17 @@ public class MainActivity extends BaseActivity {
           break;
       }
     }
-    // keep ui visible after any key press
-    resetUiTimer();
     return handled ? handled : super.onKeyDown(keyCode, event);
   }
 
-  void resetUiTimer() {
+  @Subscribe
+  public void onResetUiTimer(EventBus.ResetUiTimerEvent event) {
+    resetUiTimer(event.getDelay());
+  }
+
+  void resetUiTimer(long ms) {
     handler.removeCallbacks(runnable);
-    handler.postDelayed(runnable, HIDE_UI_TIMEOUT);
+    handler.postDelayed(runnable, ms);
   }
 
   @Subscribe
@@ -268,6 +275,7 @@ public class MainActivity extends BaseActivity {
     transaction.hide(navigationFragment);
     if (currentFragment != null) {
       transaction.hide(currentFragment);
+      currentFragment = null;
     }
     transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
     transaction.commit();
@@ -280,7 +288,7 @@ public class MainActivity extends BaseActivity {
     fragmentTransaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
     fragmentTransaction.commit();
     navigationFragment.requestFocus();
-    resetUiTimer();
+    resetUiTimer(HIDE_UI_TIMEOUT);
   }
 
   void showChannelInfo() {
@@ -293,7 +301,7 @@ public class MainActivity extends BaseActivity {
     }
     fragmentTransaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
     fragmentTransaction.commit();
-    resetUiTimer();
+    resetUiTimer(HIDE_UI_TIMEOUT);
     channelInfoFragment.requestFocus();
   }
 

@@ -17,6 +17,7 @@ import com.sony.sel.tvapp.adapter.TvAppAdapter;
 import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.DlnaObjects;
+import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.sony.sel.tvapp.view.ServerCell;
 import com.sony.sel.util.ViewUtils;
@@ -55,7 +56,19 @@ public class SelectServerFragment extends BaseFragment {
     adapter.setLoading();
     getDevices();
 
+    // disable UI timeout
+    EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
+
     return contentView;
+  }
+
+  @Override
+  public void onHiddenChanged(boolean hidden) {
+    super.onHiddenChanged(hidden);
+    if (!hidden) {
+      // disable UI timeout
+      EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
+    }
   }
 
   @Override

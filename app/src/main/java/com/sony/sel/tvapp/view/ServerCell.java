@@ -1,6 +1,7 @@
 package com.sony.sel.tvapp.view;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.util.AttributeSet;
 import android.view.View;
@@ -145,5 +146,9 @@ public class ServerCell extends BaseListCell<UpnpDevice> {
     Picasso.with(getContext()).load(uri).into(icon);
   }
 
-
+  @Override
+  protected void onFocusChanged(boolean hasFocus, int direction, Rect previouslyFocusedRect) {
+    super.onFocusChanged(hasFocus, direction, previouslyFocusedRect);
+    EventBus.getInstance().post(new EventBus.ResetUiTimerShortEvent());
+  }
 }

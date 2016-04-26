@@ -1,6 +1,7 @@
 package com.sony.sel.tvapp.view;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.util.AttributeSet;
 import android.view.MenuItem;
@@ -10,6 +11,7 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import com.sony.sel.tvapp.R;
+import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.squareup.picasso.Picasso;
 
@@ -127,10 +129,19 @@ public class ChannelCell extends BaseListCell<VideoBroadcast> {
       }
     });
     menu.show();
+    // keep ui alive longer if popup is selected
+    EventBus.getInstance().post(new EventBus.ResetUiTimerLongEvent());
   }
 
   @Override
   public VideoBroadcast getData() {
     return channel;
+  }
+
+  @Override
+  protected void onFocusChanged(boolean hasFocus, int direction, Rect previouslyFocusedRect) {
+    super.onFocusChanged(hasFocus, direction, previouslyFocusedRect);
+    // keep the UI alive
+    EventBus.getInstance().post(new EventBus.ResetUiTimerShortEvent());
   }
 }

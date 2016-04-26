@@ -5,7 +5,6 @@ import android.graphics.Rect;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -122,7 +121,7 @@ public class ChannelEpgView extends FrameLayout {
         @Override
         public void onFocusChange(View v, boolean hasFocus) {
           listener.onFocusChange(v,hasFocus);
-          EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
+          EventBus.getInstance().post(new EventBus.ResetUiTimerShortEvent());
         }
       });
     }
@@ -134,7 +133,7 @@ public class ChannelEpgView extends FrameLayout {
 
   private void showPopup(View v, final VideoBroadcast channel, final VideoProgram program) {
     PopupMenu menu = new PopupMenu(getContext(), v);
-    menu.inflate(R.menu.channel_popup_menu);
+    menu.inflate(R.menu.program_popup_menu);
     if (settingsHelper.getFavoriteChannels().contains(channel.getChannelId())) {
       menu.getMenu().removeItem(R.id.addToFavoriteChannels);
     } else {

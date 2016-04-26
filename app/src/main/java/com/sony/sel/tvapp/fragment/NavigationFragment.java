@@ -71,6 +71,8 @@ public class NavigationFragment extends BaseFragment {
   @Subscribe
   public void onNavigationFocusChanged(EventBus.NavigationFocusedEvent event) {
     currentNavItem = event.getItem();
+    // reset UI timer while navigating the menu items
+    EventBus.getInstance().post(new EventBus.ResetUiTimerShortEvent());
   }
 
   private class NavigationAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {

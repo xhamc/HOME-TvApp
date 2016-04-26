@@ -1,5 +1,6 @@
 package com.sony.sel.tvapp.util;
 
+import com.sony.sel.tvapp.activity.MainActivity;
 import com.sony.sel.tvapp.ui.NavigationItem;
 import com.squareup.otto.Bus;
 import com.squareup.otto.ThreadEnforcer;
@@ -59,6 +60,37 @@ public class EventBus extends Bus {
    */
   public static class CancelUiTimerEvent {
 
+  }
+
+  public static class ResetUiTimerEvent {
+    private final long delay;
+
+    public ResetUiTimerEvent(long delay) {
+      this.delay = delay;
+    }
+
+    public long getDelay() {
+      return delay;
+    }
+  }
+
+  /**
+   * Reset the UI timer to keep the UI visible for a standard (short) interval.
+   */
+  public static class ResetUiTimerShortEvent extends ResetUiTimerEvent {
+    public ResetUiTimerShortEvent() {
+      super(MainActivity.HIDE_UI_TIMEOUT);
+    }
+  }
+
+  /**
+   * Set the UI "long timer" to keep the UI visible for a longer interval.
+   */
+  public static class ResetUiTimerLongEvent extends ResetUiTimerEvent {
+
+    public ResetUiTimerLongEvent() {
+      super(MainActivity.HIDE_UI_TIMEOUT_LONG);
+    }
   }
 
   private static EventBus instance;
