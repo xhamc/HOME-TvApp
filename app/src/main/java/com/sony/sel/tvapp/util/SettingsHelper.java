@@ -106,6 +106,8 @@ public class SettingsHelper {
           item.setRes(video);
           channelVideos.add(item);
         }
+      } else {
+        channelVideos = new ArrayList<>();
       }
     }
     return channelVideos;
