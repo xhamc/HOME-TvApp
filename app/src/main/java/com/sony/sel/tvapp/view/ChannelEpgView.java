@@ -5,15 +5,18 @@ import android.graphics.Rect;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.util.FocusHelper;
+import com.sony.sel.tvapp.util.SettingsHelper;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -48,6 +51,8 @@ public class ChannelEpgView extends FrameLayout {
   @Bind(R.id.scrollView)
   HorizontalScrollView scrollView;
 
+  private SettingsHelper settingsHelper;
+
   public ChannelEpgView(Context context) {
     super(context);
   }
@@ -71,12 +76,13 @@ public class ChannelEpgView extends FrameLayout {
       return;
     }
     ButterKnife.bind(this);
+    settingsHelper = SettingsHelper.getHelper(getContext());
     programInfoView.setOnFocusChangeListener(
         FocusHelper.getHelper().createFocusZoomListener(FocusHelper.FocusZoomAlignment.CENTER, FOCUS_ZOOM, 1.0f)
     );
   }
 
-  public void bind(VideoBroadcast channel, List<VideoProgram> data) {
+  public void bind(final VideoBroadcast channel, List<VideoProgram> data) {
     epgData = data;
 
     // configure the current program
@@ -86,7 +92,7 @@ public class ChannelEpgView extends FrameLayout {
     programInfoView.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View v) {
-
+        showChannelPopup(v, channel);
       }
     });
 
@@ -94,12 +100,12 @@ public class ChannelEpgView extends FrameLayout {
     List<VideoProgram> nextPrograms = getNextPrograms();
     upNext.setVisibility(nextPrograms.size() > 0 ? View.VISIBLE : View.INVISIBLE);
     upNextLayout.removeAllViews();
-    for (VideoProgram program : nextPrograms) {
-      ProgramInfoView upNext = (ProgramInfoView) View.inflate(getContext(), R.layout.program_info_view_small, null);
+    for (final VideoProgram program : nextPrograms) {
+      final ProgramInfoView upNext = (ProgramInfoView) View.inflate(getContext(), R.layout.program_info_view_small, null);
       upNext.setOnClickListener(new OnClickListener() {
         @Override
         public void onClick(View v) {
-
+          showProgramPopup(v, program);
         }
       });
       upNext.bind(program, channel);
@@ -112,14 +118,49 @@ public class ChannelEpgView extends FrameLayout {
     // focus the main view
     programInfoView.requestFocus();
     // reset scroll
-    scrollView.scrollTo(0,0);
+    scrollView.scrollTo(0, 0);
+  }
+
+  private void showChannelPopup(View v, final VideoBroadcast channel) {
+    PopupMenu menu = new PopupMenu(getContext(), v);
+    menu.inflate(R.menu.channel_popup_menu);
+    if (settingsHelper.getFavoriteChannels().contains(channel.getChannelId())) {
+      menu.getMenu().removeItem(R.id.addToFavoriteChannels);
+    } else {
+      menu.getMenu().removeItem(R.id.removeFromFavoriteChannels);
+    }
+    menu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+      @Override
+      public boolean onMenuItemClick(MenuItem item) {
+        switch (item.getItemId()) {
+          case R.id.addToFavoriteChannels:
+            settingsHelper.addFavoriteChannel(channel.getChannelId());
+            // re-bind to update UI
+            programInfoView.bind(getCurrentProgram(),channel);
+            return true;
+          case R.id.removeFromFavoriteChannels:
+            settingsHelper.removeFavoriteChannel(channel.getChannelId());
+            // re-bind to update UI
+            programInfoView.bind(getCurrentProgram(),channel);
+            return true;
+        }
+        return false;
+      }
+    });
+    menu.show();
+  }
+
+  private void showProgramPopup(View v, VideoProgram program) {
+    PopupMenu menu = new PopupMenu(getContext(), v);
+    menu.inflate(R.menu.program_popup_menu);
+    menu.show();
   }
 
   @Override
   public boolean requestFocus(int direction, Rect previouslyFocusedRect) {
     boolean result = super.requestFocus(direction, previouslyFocusedRect);
     programInfoView.requestFocus();
-    scrollView.scrollTo(0,0);
+    scrollView.scrollTo(0, 0);
     return result;
   }
 

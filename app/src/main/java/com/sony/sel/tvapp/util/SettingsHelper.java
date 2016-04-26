@@ -6,7 +6,9 @@ import android.content.SharedPreferences;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.sony.sel.tvapp.util.DlnaObjects.VideoItem;
 
@@ -19,6 +21,7 @@ public class SettingsHelper {
   private static final String EPG_SERVER = "EpgServer";
   private static final String CURRENT_CHANNEL = "CurrentChannel";
   private static final String CHANNEL_VIDEOS = "ChannelVideos";
+  private static final String FAVORITE_CHANNELS = "FavoriteChannels";
 
   private static SettingsHelper INSTANCE;
   private List<VideoItem> channelVideos;
@@ -108,14 +111,14 @@ public class SettingsHelper {
     return channelVideos;
   }
 
-    private void saveChannelVideos() {
-      if (channelVideos != null) {
-        SharedPreferences prefs = getSharedPreferences();
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putString(CHANNEL_VIDEOS, new Gson().toJson(channelVideos));
-        editor.commit();
-      }
+  private void saveChannelVideos() {
+    if (channelVideos != null) {
+      SharedPreferences prefs = getSharedPreferences();
+      SharedPreferences.Editor editor = prefs.edit();
+      editor.putString(CHANNEL_VIDEOS, new Gson().toJson(channelVideos));
+      editor.commit();
     }
+  }
 
   public void addChannelVideo(VideoItem video) {
     List<VideoItem> videos = getChannelVideos();
@@ -136,4 +139,31 @@ public class SettingsHelper {
     editor.commit();
     channelVideos = new ArrayList<>();
   }
+
+  public Set<String> getFavoriteChannels() {
+    Set<String> channelList = getSharedPreferences().getStringSet(FAVORITE_CHANNELS, null);
+    if (channelList == null) {
+      channelList = new HashSet<>();
+    }
+    return channelList;
+  }
+
+  public void addFavoriteChannel(String channelId) {
+    Set<String> channelList = getFavoriteChannels();
+    channelList.add(channelId);
+    SharedPreferences prefs = getSharedPreferences();
+    SharedPreferences.Editor editor = prefs.edit();
+    editor.putStringSet(FAVORITE_CHANNELS, channelList);
+    editor.commit();
+  }
+
+  public void removeFavoriteChannel(String channelId) {
+    Set<String> channelList = getFavoriteChannels();
+    channelList.remove(channelId);
+    SharedPreferences prefs = getSharedPreferences();
+    SharedPreferences.Editor editor = prefs.edit();
+    editor.putStringSet(FAVORITE_CHANNELS, channelList);
+    editor.commit();
+  }
+
 }

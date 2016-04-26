@@ -201,11 +201,9 @@ public class MainActivity extends BaseActivity {
         }
         break;
         case KeyEvent.KEYCODE_CHANNEL_UP:
-        case KeyEvent.KEYCODE_DPAD_UP:
           channelInfoFragment.nextChannel();
           handled = true;
           break;
-        case KeyEvent.KEYCODE_DPAD_DOWN:
         case KeyEvent.KEYCODE_CHANNEL_DOWN:
           channelInfoFragment.previousChannel();
           handled = true;

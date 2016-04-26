@@ -12,6 +12,7 @@ import android.widget.TextView;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.util.DlnaObjects;
+import com.sony.sel.tvapp.util.SettingsHelper;
 import com.squareup.picasso.Picasso;
 
 import java.text.DateFormat;
@@ -44,6 +45,9 @@ public class ProgramInfoView extends FrameLayout {
   @Nullable
   @Bind(R.id.programDescription)
   TextView description;
+  @Nullable
+  @Bind(R.id.favorite)
+  ImageView favorite;
 
   private VideoProgram program;
   private VideoBroadcast channel;
@@ -136,6 +140,14 @@ public class ProgramInfoView extends FrameLayout {
         description.setText(channel.getDescription());
       }
 
+    }
+
+    if (channel != null && favorite != null) {
+      if (SettingsHelper.getHelper(getContext()).getFavoriteChannels().contains(channel.getChannelId())) {
+        favorite.setVisibility(View.VISIBLE);
+      } else {
+        favorite.setVisibility(View.GONE);
+      }
     }
   }
 
