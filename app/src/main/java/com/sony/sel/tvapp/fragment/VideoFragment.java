@@ -294,18 +294,7 @@ public class VideoFragment extends BaseFragment {
         mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
           @Override
           public boolean onError(MediaPlayer mp, int what, int extra) {
-            new AlertDialog.Builder(getActivity())
-                .setTitle(R.string.error)
-                .setMessage("Player error: code = " + what + ", extra = " + extra + ".")
-                .setNeutralButton(getString(android.R.string.ok), null)
-                .setPositiveButton(getString(R.string.selectChannelVideos), new DialogInterface.OnClickListener() {
-                  @Override
-                  public void onClick(DialogInterface dialog, int which) {
-                    startActivity(new Intent(getActivity(), SelectChannelVideosActivity.class));
-                  }
-                })
-                .create()
-                .show();
+            Log.e(TAG, "Player error: " + what + ". Extra = " + extra + ".");
             return false;
           }
         });
@@ -336,6 +325,7 @@ public class VideoFragment extends BaseFragment {
     @Override
     protected void onPostExecute(MediaPlayer mediaPlayer) {
       super.onPostExecute(mediaPlayer);
+      hideSpinner();
       if (error != null) {
         Log.e(TAG, "Error starting video playback: " + error);
         new AlertDialog.Builder(getActivity())
@@ -365,7 +355,6 @@ public class VideoFragment extends BaseFragment {
             .show();
       } else {
         Log.d(TAG, "Play video task completed for " + uri + ".");
-        hideSpinner();
         VideoFragment.this.mediaPlayer = mediaPlayer;
         videoUri = uri;
         playVideoTask = null;

@@ -381,6 +381,9 @@ public class DlnaObjects {
     @ColumnName("upnp:icon")
     private String icon;
 
+    private String resMimeType;
+    private String resAdditionalInfo;
+
     public String getTitle() {
       return title;
     }
@@ -419,6 +422,22 @@ public class DlnaObjects {
 
     public void setIcon(String icon) {
       this.icon = icon;
+    }
+
+    public String getResMimeType() {
+      return resMimeType;
+    }
+
+    public void setResMimeType(String resMimeType) {
+      this.resMimeType = resMimeType;
+    }
+
+    public String getResAdditionalInfo() {
+      return resAdditionalInfo;
+    }
+
+    public void setResAdditionalInfo(String resAdditionalInfo) {
+      this.resAdditionalInfo = resAdditionalInfo;
     }
   }
 

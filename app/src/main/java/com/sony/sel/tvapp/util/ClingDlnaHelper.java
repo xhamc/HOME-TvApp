@@ -39,6 +39,7 @@ import org.fourthline.cling.support.model.item.VideoItem;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -270,6 +271,8 @@ public class ClingDlnaHelper extends BaseDlnaHelper {
         Res res = object.getResources().get(0);
         dlnaObject.setRes(res.getValue());
         dlnaObject.setProtocolInfo(res.getProtocolInfo().toString());
+        dlnaObject.setResMimeType(res.getProtocolInfo().getContentFormat());
+        dlnaObject.setResAdditionalInfo(res.getProtocolInfo().getAdditionalInfo());
       }
       if (dlnaObject instanceof DlnaObjects.VideoItem) {
         VideoItem source = (VideoItem) object;
