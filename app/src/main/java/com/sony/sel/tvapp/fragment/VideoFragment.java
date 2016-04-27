@@ -75,7 +75,7 @@ public class VideoFragment extends BaseFragment {
     View contentView = inflater.inflate(R.layout.video_fragment, null);
     ButterKnife.bind(this, contentView);
 
-   // create media session
+    // create media session
     createMediaSession();
 
     return contentView;
@@ -271,7 +271,12 @@ public class VideoFragment extends BaseFragment {
 
     @Override
     protected MediaPlayer doInBackground(Void... params) {
-      Log.d(TAG, "Starting play video task for " + uri + ".");
+      Uri videoUri = uri;
+      if (videoUri.getScheme().equals("http")) {
+        // transform to a DLNA URI
+        videoUri = Uri.parse("dlna://URI=" + uri.toString());
+      }
+      Log.d(TAG, "Starting play video task for " + videoUri + ".");
       if (isCancelled()) {
         // don't do anything if canceled
         return null;
@@ -279,7 +284,7 @@ public class VideoFragment extends BaseFragment {
       MediaPlayer mediaPlayer = null;
       try {
         // create, set data source and prepare media player with one call
-        mediaPlayer = MediaPlayer.create(getActivity(), uri);
+        mediaPlayer = MediaPlayer.create(getActivity(), videoUri);
         if (isCancelled() || mediaPlayer == null) {
           // don't continue if canceled while preparing or an error occurs
           return mediaPlayer;
