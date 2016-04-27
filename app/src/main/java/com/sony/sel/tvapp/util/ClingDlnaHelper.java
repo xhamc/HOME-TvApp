@@ -276,6 +276,11 @@ public class ClingDlnaHelper extends BaseDlnaHelper {
         DlnaObjects.VideoItem dest = (DlnaObjects.VideoItem) dlnaObject;
         dest.setDescription(source.getDescription());
         dest.setLongDescription(source.getLongDescription());
+        for (DIDLObject.Property property : source.getProperties()) {
+          if (property.getDescriptorName().equals("channelID")) {
+            dest.setChannelId(property.getValue().toString());
+          }
+        }
       }
       if (dlnaObject instanceof DlnaObjects.VideoBroadcast) {
         VideoBroadcast source = (VideoBroadcast) object;
@@ -308,11 +313,19 @@ public class ClingDlnaHelper extends BaseDlnaHelper {
             dest.setProgramId(property.getValue().toString());
           } else if (property.getDescriptorName().equals("seriesID")) {
             dest.setSeriesId(property.getValue().toString());
+          } else if (property.getDescriptorName().equals("episodeNumber")) {
+            dest.setEpisodeNumber(property.getValue().toString());
+          } else if (property.getDescriptorName().equals("episodeSeason")) {
+            dest.setEpisodeSeason(property.getValue().toString());
+          } else if (property.getDescriptorName().equals("episodeType")) {
+            dest.setEpisodeType(property.getValue().toString());
+          } else if (property.getDescriptorName().equals("channelID")) {
+            dest.setChannelId(property.getValue().toString());
           }
         }
         dest.setChannelId(source.getParentID().split("/")[2]);
       }
-    return dlnaObject;
+      return dlnaObject;
     } catch (IllegalAccessException e) {
       e.printStackTrace();
     } catch (InstantiationException e) {

@@ -10,8 +10,6 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.sony.huey.dlna.IconList;
 
-import org.fourthline.cling.support.model.DIDLObject;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -23,9 +21,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 
 /**
@@ -35,7 +31,7 @@ public class DlnaObjects {
 
   /**
    * Annotation for tagging data fields to extract from a cursor
-   * <p>
+   * <p/>
    * Usage: @ColumnName(NAME) String field
    */
   @Target(ElementType.FIELD)
@@ -100,7 +96,7 @@ public class DlnaObjects {
    * Base class for objects that can be extracted from Cursors.
    * The {@link com.sony.sel.tvapp.util.DlnaObjects.ColumnName} annotation is used
    * to specify the column name in the cursor that should be extracted for the member contents.
-   * <p>
+   * <p/>
    * The constructor takes care of parsing all data fields from the cursor.
    */
   public static class CursorObject {
@@ -457,13 +453,13 @@ public class DlnaObjects {
     private String programTitle;
     @ColumnName("upnp:seriesTitle")
     private String seriesTitle;
-        @ColumnName("upnp:programID")
+    @ColumnName("upnp:programID")
     private String programId;
-//    @ColumnName("pnp:programID@type")
+    //    @ColumnName("pnp:programID@type")
 //    private String programIdType;
     @ColumnName("upnp:seriesID")
     private String seriesId;
-//    @ColumnName("upnp:seriesID@type")
+    //    @ColumnName("upnp:seriesID@type")
 //    private String seriesIdType;
     @ColumnName("upnp:channelID")
     private String channelId;
@@ -471,9 +467,11 @@ public class DlnaObjects {
 //    private String channelIdType;
 //    @ColumnName("upnp:episodeCount")
 //    private String eposodeCount;
-//    @ColumnName("upnp:episodeNumber")
-//    private String episodeNumber;
-//    @ColumnName("upnp:programCode")
+    @ColumnName("upnp:episodeNumber")
+    private String episodeNumber;
+    @ColumnName("upnp:episodeSeason")
+    private String episodeSeason;
+    //    @ColumnName("upnp:programCode")
 //    private String programCode;
 //    @ColumnName("upnp:programCode@type")
 //    private String programCodeType;
@@ -481,8 +479,8 @@ public class DlnaObjects {
     private String rating;
     //    @ColumnName("upnp:rating@type")
 //    private String ratingType;
-//    @ColumnName("upnp:episodeType")
-//    private String episodeType;
+    @ColumnName("upnp:episodeType")
+    private String episodeType;
     @ColumnName("upnp:genre")
     private String genre;
     //    @ColumnName("upnp:genre@id")
@@ -675,6 +673,32 @@ public class DlnaObjects {
     public void setSeriesId(String seriesId) {
       this.seriesId = seriesId;
     }
+
+    public String getEpisodeNumber() {
+      return episodeNumber;
+    }
+
+    public void setEpisodeNumber(String episodeNumber) {
+      this.episodeNumber = episodeNumber;
+    }
+
+    public String getEpisodeSeason() {
+      return episodeSeason;
+    }
+
+    public void setEpisodeSeason(String episodeSeason) {
+      this.episodeSeason = episodeSeason;
+    }
+
+    public String getEpisodeType() {
+      return episodeType;
+    }
+
+    public void setEpisodeType(String episodeType) {
+      this.episodeType = episodeType;
+    }
+
+
   }
 
   /**
@@ -722,7 +746,7 @@ public class DlnaObjects {
 //    private String director;
     @ColumnName("dc:description")
     private String description;
-//    @ColumnName("dc:publisher")
+    //    @ColumnName("dc:publisher")
 //    private String publisher;
 //    @ColumnName("dc:language")
 //    private String language;
@@ -738,6 +762,8 @@ public class DlnaObjects {
 //    private String recordedDayOfWeek;
 //    @ColumnName("upnp:srsRecordScheduleID")
 //    private String srsRecordScheduleId;
+    @ColumnName("upnp:channelID")
+    private String channelId;
 
     public String getLongDescription() {
       return longDescription;
@@ -753,6 +779,14 @@ public class DlnaObjects {
 
     public void setDescription(String description) {
       this.description = description;
+    }
+
+    public String getChannelId() {
+      return channelId;
+    }
+
+    public void setChannelId(String channelId) {
+      this.channelId = channelId;
     }
   }
 
@@ -789,13 +823,6 @@ public class DlnaObjects {
         return callSign.substring(1);
       }
       return callSign;
-    }
-
-    public String getChannelId() {
-      if (getId() != null) {
-        return getId().split("/")[2];
-      }
-      return null;
     }
 
     public void setChannelNumber(String channelNumber) {
@@ -856,9 +883,9 @@ public class DlnaObjects {
 //    private String channelName;
 //    @ColumnName("upnp:channelNr")
 //    private String channelNr;
-//    @ColumnName("upnp:channelID")
-//    private String channelId;
-//    @ColumnName("upnp:channelID@type")
+    @ColumnName("upnp:channelID")
+    private String channelId;
+    //    @ColumnName("upnp:channelID@type")
 //    private String channelIdType;
 //    @ColumnName("upnp:radioCallSign")
 //    private String radioCallSign;
@@ -911,6 +938,14 @@ public class DlnaObjects {
         }
       }
       return null;
+    }
+
+    public String getChannelId() {
+      return channelId;
+    }
+
+    public void setChannelId(String channelId) {
+      this.channelId = channelId;
     }
   }
 }
