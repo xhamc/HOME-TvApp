@@ -6,6 +6,7 @@ import android.support.annotation.Nullable;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Interface to DLNA helpers.
@@ -118,4 +119,10 @@ public interface DlnaInterface {
    */
   @NonNull
   List<DlnaObjects.VideoProgram> getEpgPrograms(String udn, DlnaObjects.VideoBroadcast channel, Date startDate, Date endDate);
+
+  /**
+   * Set the list of favorite channels. Affects the sort order of all subsequent {@link #getChannels(String, ContentObserver)} requests.
+   * @param channelIds
+   */
+  void setFavoriteChannels(Set<String> channelIds);
 }

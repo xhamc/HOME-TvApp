@@ -98,6 +98,14 @@ public class ChannelEpgView extends FrameLayout {
         EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
       }
     });
+    programInfoView.setOnLongClickListener(new OnLongClickListener() {
+      @Override
+      public boolean onLongClick(View v) {
+        showPopup(alignView, channel, currentProgram);
+        EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
+        return true;
+      }
+    });
 
     // configure the "up next" programs
     List<VideoProgram> nextPrograms = getNextPrograms();
@@ -112,6 +120,14 @@ public class ChannelEpgView extends FrameLayout {
           EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
         }
       });
+      upNext.setOnLongClickListener(new OnLongClickListener() {
+        @Override
+        public boolean onLongClick(View v) {
+          showPopup(v, channel, program);
+          EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
+          return true;
+        }
+      });
       upNext.bind(program, channel);
       LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
       params.setMarginEnd(getResources().getDimensionPixelSize(R.dimen.channelThumbPadding));
@@ -120,7 +136,7 @@ public class ChannelEpgView extends FrameLayout {
       upNext.setOnFocusChangeListener(new OnFocusChangeListener() {
         @Override
         public void onFocusChange(View v, boolean hasFocus) {
-          listener.onFocusChange(v,hasFocus);
+          listener.onFocusChange(v, hasFocus);
           EventBus.getInstance().post(new EventBus.ResetUiTimerShortEvent());
         }
       });
@@ -197,10 +213,10 @@ public class ChannelEpgView extends FrameLayout {
    * Rebind all the data to ProgramInfoViews to refresh the display.
    */
   private void rebindAllPrograms() {
-    programInfoView.bind(programInfoView.getProgram(),programInfoView.getChannel());
-    for(int i = 0; i<upNextLayout.getChildCount(); i++) {
+    programInfoView.bind(programInfoView.getProgram(), programInfoView.getChannel());
+    for (int i = 0; i < upNextLayout.getChildCount(); i++) {
       ProgramInfoView upNext = (ProgramInfoView) upNextLayout.getChildAt(i);
-      upNext.bind(upNext.getProgram(),upNext.getChannel());
+      upNext.bind(upNext.getProgram(), upNext.getChannel());
     }
   }
 

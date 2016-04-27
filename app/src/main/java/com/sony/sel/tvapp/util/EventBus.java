@@ -5,6 +5,8 @@ import com.sony.sel.tvapp.ui.NavigationItem;
 import com.squareup.otto.Bus;
 import com.squareup.otto.ThreadEnforcer;
 
+import java.util.Set;
+
 public class EventBus extends Bus {
 
   public static class EpgServerChangedEvent {
@@ -90,6 +92,18 @@ public class EventBus extends Bus {
 
     public ResetUiTimerLongEvent() {
       super(MainActivity.HIDE_UI_TIMEOUT_LONG);
+    }
+  }
+
+  public static class FavoriteChannelsChangedEvent {
+    private final Set<String> favoriteChannels;
+
+    public FavoriteChannelsChangedEvent(Set<String> favoriteChannels) {
+      this.favoriteChannels = favoriteChannels;
+    }
+
+    public Set<String> getFavoriteChannels() {
+      return favoriteChannels;
     }
   }
 

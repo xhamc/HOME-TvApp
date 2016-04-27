@@ -28,6 +28,7 @@ import org.fourthline.cling.registry.Registry;
 import org.fourthline.cling.registry.RegistryListener;
 import org.fourthline.cling.support.contentdirectory.callback.Browse;
 import org.fourthline.cling.support.model.BrowseFlag;
+import org.fourthline.cling.support.model.DIDLAttribute;
 import org.fourthline.cling.support.model.DIDLContent;
 import org.fourthline.cling.support.model.DIDLObject;
 import org.fourthline.cling.support.model.Res;
@@ -51,7 +52,6 @@ public class ClingDlnaHelper extends BaseDlnaHelper {
 
   private static final String TAG = ClingDlnaHelper.class.getSimpleName();
 
-  private final Context context;
   private ObserverSet<DlnaServiceObserver> serviceObservers = new ObserverSet<>(DlnaServiceObserver.class);
   private ContentObserver deviceObserver;
   private Map<String, List<DlnaObjects.DlnaObject>> dlnaCache = new HashMap<>();
@@ -108,7 +108,7 @@ public class ClingDlnaHelper extends BaseDlnaHelper {
   private List<Device> deviceList = new ArrayList<>();
 
   public ClingDlnaHelper(Context context) {
-    this.context = context;
+    super(context);
   }
 
   @Override
@@ -117,8 +117,8 @@ public class ClingDlnaHelper extends BaseDlnaHelper {
       serviceObservers.add(observer);
     }
     // This will start the UPnP service if it wasn't already started
-    context.bindService(
-        new Intent(context, AndroidUpnpServiceImpl.class),
+    getContext().bindService(
+        new Intent(getContext(), AndroidUpnpServiceImpl.class),
         serviceConnection,
         Context.BIND_AUTO_CREATE
     );
@@ -131,7 +131,7 @@ public class ClingDlnaHelper extends BaseDlnaHelper {
 
   @Override
   public void stopDlnaService() {
-    context.unbindService(serviceConnection);
+    getContext().unbindService(serviceConnection);
   }
 
   @Override
@@ -302,6 +302,8 @@ public class ClingDlnaHelper extends BaseDlnaHelper {
             dest.setScheduledEndTime(property.getValue().toString());
           } else if (property.getDescriptorName().equals("longDescription")) {
             dest.setLongDescription(property.getValue().toString());
+          } else if (property.getDescriptorName().equals("programTitle")) {
+            dest.setProgramTitle(property.getValue().toString());
           }
         }
         dest.setChannelId(source.getParentID().split("/")[2]);

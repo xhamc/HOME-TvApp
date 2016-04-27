@@ -155,6 +155,7 @@ public class SettingsHelper {
     SharedPreferences.Editor editor = prefs.edit();
     editor.putStringSet(FAVORITE_CHANNELS, channelList);
     editor.commit();
+    EventBus.getInstance().post(new EventBus.FavoriteChannelsChangedEvent(channelList));
   }
 
   public void removeFavoriteChannel(String channelId) {
@@ -164,6 +165,7 @@ public class SettingsHelper {
     SharedPreferences.Editor editor = prefs.edit();
     editor.putStringSet(FAVORITE_CHANNELS, channelList);
     editor.commit();
+    EventBus.getInstance().post(new EventBus.FavoriteChannelsChangedEvent(channelList));
   }
 
   public Set<String> getProgramsToRecord() {

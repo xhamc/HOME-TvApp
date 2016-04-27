@@ -96,6 +96,12 @@ public class ChannelInfoFragment extends BaseFragment {
     new GetChannelsTask(udn).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
   }
 
+  @Subscribe
+  public void onFavoriteChannelsChanged(EventBus.FavoriteChannelsChangedEvent event) {
+    // refresh the channel list
+    this.channels = dlnaHelper.getChannels(SettingsHelper.getHelper(getActivity()).getEpgServer(),null);
+  }
+
   /**
    * Refresh the list of channels after loading.
    *

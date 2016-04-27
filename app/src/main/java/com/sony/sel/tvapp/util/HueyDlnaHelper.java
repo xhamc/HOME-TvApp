@@ -46,7 +46,6 @@ public class HueyDlnaHelper extends BaseDlnaHelper {
   // name of DLNA service
   private static final String HUEY_PACKAGE = "com.sony.huey.dlna.module";
 
-  private Context context;
   private ContentResolver contentResolver;
   private NetworkHelper networkHelper;
   private Map<Uri, List<DlnaObject>> dlnaCache = new HashMap<>();
@@ -80,9 +79,9 @@ public class HueyDlnaHelper extends BaseDlnaHelper {
   private ObserverSet<DlnaServiceObserver> serviceObservers = new ObserverSet<DlnaServiceObserver>(DlnaServiceObserver.class);
 
   public HueyDlnaHelper(Context context) {
-    this.context = context.getApplicationContext();
+    super(context);
     this.contentResolver = context.getContentResolver();
-    networkHelper = NetworkHelper.getHelper(this.context);
+    networkHelper = NetworkHelper.getHelper(getContext());
   }
 
   /**
@@ -111,11 +110,11 @@ public class HueyDlnaHelper extends BaseDlnaHelper {
     try {
 
       // start background service
-      context.startService(getDlnaServiceIntent());
+      getContext().startService(getDlnaServiceIntent());
 
       // bind the service
       Intent hueyIntent = new Intent(getDlnaServiceContext(), UpnpServiceCp.class);
-      context.bindService(hueyIntent, hueyConnection, Context.BIND_AUTO_CREATE);
+      getContext().bindService(hueyIntent, hueyConnection, Context.BIND_AUTO_CREATE);
 
     } catch (PackageManager.NameNotFoundException e) {
       Log.e(TAG, "Error starting DLNA service: " + e);
@@ -125,7 +124,7 @@ public class HueyDlnaHelper extends BaseDlnaHelper {
       serviceObservers.proxy().onError(e);
     }
 
-    Cursor c = context.getContentResolver().query(UpnpServiceCp.CONTENT_URI,
+    Cursor c = getContext().getContentResolver().query(UpnpServiceCp.CONTENT_URI,
         UpnpServiceCp.PROJECTION,
         true ?
             UpnpServiceCp.DEVICE_TYPE + " LIKE '%'" :
@@ -173,7 +172,7 @@ public class HueyDlnaHelper extends BaseDlnaHelper {
     try {
       Context serviceContext = getDlnaServiceContext();
       Intent intent = new Intent(serviceContext, UpnpServiceCp.class);
-      context.stopService(intent);
+      getContext().stopService(intent);
       return;
     } catch (PackageManager.NameNotFoundException e) {
       Log.e(TAG, "Error stopping DLNA service: " + e);
@@ -264,7 +263,7 @@ public class HueyDlnaHelper extends BaseDlnaHelper {
   }
 
   private Context getDlnaServiceContext() throws PackageManager.NameNotFoundException {
-    return context.createPackageContext(HUEY_PACKAGE, 0);
+    return getContext().createPackageContext(HUEY_PACKAGE, 0);
   }
 
   private Intent getDlnaServiceIntent() throws PackageManager.NameNotFoundException, IOException {

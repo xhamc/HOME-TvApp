@@ -52,7 +52,7 @@ public class VideoFragment extends BaseFragment {
 
   public static final String TAG = VideoFragment.class.getSimpleName();
 
-  @Bind(R.id.surfaceView)
+  @Bind(R.id.videoSurfaceView)
   SurfaceView surfaceView;
   @Bind(R.id.spinner)
   ProgressBar spinner;
@@ -286,7 +286,6 @@ public class VideoFragment extends BaseFragment {
         }
         mediaPlayer.setDisplay(surfaceHolder);
         mediaPlayer.setScreenOnWhilePlaying(true);
-        mediaPlayer.setLooping(true);
         mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
           @Override
           public boolean onError(MediaPlayer mp, int what, int extra) {
@@ -303,6 +302,14 @@ public class VideoFragment extends BaseFragment {
                 .create()
                 .show();
             return false;
+          }
+        });
+        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+          @Override
+          public void onCompletion(MediaPlayer mp) {
+            // loop when done
+            mp.seekTo(0);
+            mp.start();
           }
         });
         mediaPlayer.start();

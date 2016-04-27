@@ -123,7 +123,7 @@ public class ProgramInfoView extends FrameLayout {
 
       if (channelNumber != null) {
         // number
-        channelNumber.setText(channel.getCallSign());
+        channelNumber.setText(channel.getChannelNumber() + " " + channel.getCallSign());
       }
 
       // start/end time
