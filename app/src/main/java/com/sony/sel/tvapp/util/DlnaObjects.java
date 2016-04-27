@@ -627,7 +627,20 @@ public class DlnaObjects {
     }
 
     public void setRating(String rating) {
-      this.rating = rating;
+      // transform certain ratings for EPG grid
+      switch (rating) {
+        case "AO":
+          this.rating = "Adult";
+          break;
+        case "PG-13":
+          this.rating = "PG13";
+          break;
+        case "TVM":
+          this.rating = "TVMA";
+          break;
+        default:
+          this.rating = rating;
+      }
     }
 
     public void setGenre(String genre) {
@@ -717,6 +730,7 @@ public class DlnaObjects {
         obj.addProperty("length", String.valueOf(src.getScheduledEndTime().getTime() - src.getScheduledStartTime().getTime()));
         obj.addProperty("description", src.getLongDescription());
         obj.addProperty("programIcon", src.getIcon());
+        obj.addProperty("type", src.getEpisodeType());
         return obj;
       }
     }
