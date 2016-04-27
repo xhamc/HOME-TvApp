@@ -35,8 +35,11 @@ public class ProgramInfoView extends FrameLayout {
 
   @Bind(R.id.programIcon)
   ImageView icon;
-  @Bind(R.id.programTitle)
+  @Bind(R.id.title)
   TextView title;
+  @Nullable
+  @Bind(R.id.programTitle)
+  TextView programTitle;
   @Nullable
   @Bind(R.id.programChannel)
   TextView channelNumber;
@@ -121,6 +124,16 @@ public class ProgramInfoView extends FrameLayout {
       // title
       title.setText(program.getTitle());
 
+      // hide program title
+      if (programTitle != null) {
+        if (program.getProgramTitle() != null && program.getProgramTitle().length() > 0) {
+          programTitle.setText(program.getProgramTitle());
+          programTitle.setVisibility(View.VISIBLE);
+        } else {
+          programTitle.setVisibility(View.GONE);
+        }
+      }
+
       if (channelNumber != null) {
         // number
         channelNumber.setText(channel.getChannelNumber() + " " + channel.getCallSign());
@@ -150,6 +163,11 @@ public class ProgramInfoView extends FrameLayout {
 
       // channel name
       title.setText(channel.getCallSign());
+
+      // hide program title
+      if (programTitle != null) {
+        programTitle.setVisibility(View.GONE);
+      }
 
       if (channelNumber != null) {
         // call sign

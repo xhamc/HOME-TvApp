@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.sony.sel.tvapp.view.ProgramInfoView
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="horizontal"
-    android:background="@drawable/cell_background"
     android:layout_width="500dp"
     android:layout_height="wrap_content"
+    android:background="@drawable/cell_background"
     android:elevation="2dp"
     android:focusable="true"
     android:focusableInTouchMode="true"
+    android:orientation="horizontal"
     >
 
     <LinearLayout
@@ -24,35 +24,35 @@
                 android:id="@+id/programIcon"
                 android:layout_width="240dp"
                 android:layout_height="match_parent"
-                android:scaleType="fitCenter"
                 android:background="@android:color/white"
+                android:scaleType="fitCenter"
                 />
 
             <ImageView
                 android:id="@+id/favorite"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
-                android:src="@drawable/star"
                 android:layout_gravity="top|right"
                 android:layout_margin="5dp"
+                android:src="@drawable/star"
                 />
 
             <ImageView
                 android:id="@+id/recordProgram"
                 android:layout_width="30dp"
                 android:layout_height="30dp"
-                android:src="@drawable/record"
                 android:layout_gravity="bottom|right"
                 android:layout_margin="10dp"
+                android:src="@drawable/record"
                 />
 
             <ImageView
                 android:id="@+id/recordSeries"
                 android:layout_width="60dp"
                 android:layout_height="30dp"
-                android:src="@drawable/series_record"
                 android:layout_gravity="bottom|right"
                 android:layout_margin="10dp"
+                android:src="@drawable/series_record"
                 />
 
         </FrameLayout>
@@ -66,13 +66,24 @@
             >
 
             <TextView
-                android:id="@+id/programTitle"
+                android:id="@+id/title"
                 style="@style/normalText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Program Title that might become very long"
-                android:lines="1"
                 android:ellipsize="end"
+                android:lines="1"
+                android:text="Title that might become very long"
+                />
+
+            <TextView
+                android:id="@+id/programTitle"
+                style="@style/smallText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:lines="1"
+                android:text="Program Title that also might become very long"
+                android:textSize="16dp"
                 />
 
             <TextView
@@ -96,9 +107,9 @@
                 style="@style/dimmedSmallText"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:text="Long description\nof the program goes here, there can\nbe a lot of text and it shold wrap\nacross multiple lines."
-                android:maxLines="3"
                 android:ellipsize="end"
+                android:maxLines="3"
+                android:text="Long description\nof the program goes here, there can\nbe a lot of text and it shold wrap\nacross multiple lines."
                 />
 
         </LinearLayout>

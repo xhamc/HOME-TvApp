@@ -304,12 +304,15 @@ public class ClingDlnaHelper extends BaseDlnaHelper {
             dest.setLongDescription(property.getValue().toString());
           } else if (property.getDescriptorName().equals("programTitle")) {
             dest.setProgramTitle(property.getValue().toString());
+          } else if (property.getDescriptorName().equals("programID")) {
+            dest.setProgramId(property.getValue().toString());
+          } else if (property.getDescriptorName().equals("seriesID")) {
+            dest.setSeriesId(property.getValue().toString());
           }
         }
         dest.setChannelId(source.getParentID().split("/")[2]);
-        dest.setProgramTitle(source.getTitle());
       }
-      return dlnaObject;
+    return dlnaObject;
     } catch (IllegalAccessException e) {
       e.printStackTrace();
     } catch (InstantiationException e) {

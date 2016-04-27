@@ -457,12 +457,12 @@ public class DlnaObjects {
     private String programTitle;
     @ColumnName("upnp:seriesTitle")
     private String seriesTitle;
-    //    @ColumnName("upnp:programID")
-//    private String programId;
+        @ColumnName("upnp:programID")
+    private String programId;
 //    @ColumnName("pnp:programID@type")
 //    private String programIdType;
-//    @ColumnName("upnp:seriesID")
-//    private String seriesId;
+    @ColumnName("upnp:seriesID")
+    private String seriesId;
 //    @ColumnName("upnp:seriesID@type")
 //    private String seriesIdType;
     @ColumnName("upnp:channelID")
@@ -658,6 +658,22 @@ public class DlnaObjects {
 
     public void setScheduledEndTime(String scheduledEndTime) {
       this.scheduledEndTime = scheduledEndTime;
+    }
+
+    public String getProgramId() {
+      return programId;
+    }
+
+    public void setProgramId(String programId) {
+      this.programId = programId;
+    }
+
+    public String getSeriesId() {
+      return seriesId;
+    }
+
+    public void setSeriesId(String seriesId) {
+      this.seriesId = seriesId;
     }
   }
 
