@@ -10,6 +10,8 @@ import com.sony.localserver.NanoWSD.WebSocketFrame.CloseCode;
 import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.DlnaObjects;
+import com.sony.sel.tvapp.util.EventBus;
+import com.sony.sel.tvapp.util.SettingsHelper;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -19,6 +21,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.sony.sel.tvapp.util.DlnaObjects.VideoBroadcast;
 import static com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
@@ -33,8 +36,9 @@ public class WebSocketServer extends NanoWSD {
   private LocalWebSocket ws;
   private String udn;
   private DlnaInterface dlnaHelper;
+  private SettingsHelper settingsHelper;
 
-  public WebSocketServer(String host, int port, DlnaInterface dlnaHelper) {
+  public WebSocketServer(String host, int port, DlnaInterface dlnaHelper, SettingsHelper settingsHelper) {
     super(host, port);
     this.dlnaHelper = dlnaHelper;
   }
@@ -114,6 +118,25 @@ public class WebSocketServer extends NanoWSD {
             }
           }
         }).start();
+      } else if (payload.startsWith("keepUIVisible:")) {
+        // send event for UI keep-alive
+        String duration = payload.split(":")[1];
+        if ("long".equalsIgnoreCase("duration")) {
+          EventBus.getInstance().post(new EventBus.ResetUiTimerShortEvent());
+        } else if ("short".equalsIgnoreCase(duration)) {
+          EventBus.getInstance().post(new EventBus.ResetUiTimerLongEvent());
+        } else if (Long.valueOf(duration) > 0) {
+          EventBus.getInstance().post(new EventBus.ResetUiTimerEvent(Long.valueOf(duration)));
+        }
+      } else if (payload.startsWith("changeChannel:")) {
+        // send channel change event
+        String channelId = payload.split(":")[1];
+        List<VideoBroadcast> channels = dlnaHelper.getChannels(udn, null);
+        for (VideoBroadcast channel : channels) {
+          if (channel.getChannelId().equals(channelId)) ;
+          settingsHelper.setCurrentChannel(channel);
+          break;
+        }
       }
     }
 

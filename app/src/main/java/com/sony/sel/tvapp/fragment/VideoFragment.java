@@ -346,7 +346,7 @@ public class VideoFragment extends BaseFragment {
       }
 
       try {
-        mediaPlayer = prepareMedia(videoUri);
+        mediaPlayer = prepareMedia(uri);
         if (isCancelled()) {
           return null;
         } else {

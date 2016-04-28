@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.sony.sel.tvapp.util.DlnaHelper;
+import com.sony.sel.tvapp.util.SettingsHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +25,7 @@ public class WebServer extends WebSocketServer {
   private Context context;
 
   public WebServer(String host, int port, Context context) {
-    super(host, port, DlnaHelper.getHelper(context));
+    super(host, port, DlnaHelper.getHelper(context), SettingsHelper.getHelper(context));
     this.context = context;
     iterateFiles(LOCALHOST);
   }
