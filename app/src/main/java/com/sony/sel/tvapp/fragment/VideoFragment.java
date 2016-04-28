@@ -371,7 +371,6 @@ public class VideoFragment extends BaseFragment {
     private MediaPlayer prepareMedia(Uri videoUri) throws IOException, InterruptedException {
       final Object prepareLock = new Object();
       MediaPlayer mediaPlayer = new MediaPlayer();
-      mediaPlayer.setScreenOnWhilePlaying(true);
       mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
         @Override
         public boolean onError(MediaPlayer mp, int what, int extra) {
@@ -466,6 +465,7 @@ public class VideoFragment extends BaseFragment {
       } else {
         Log.d(TAG, "Starting playback.");
         mediaPlayer.setDisplay(surfaceHolder);
+        mediaPlayer.setScreenOnWhilePlaying(true);
         mediaPlayer.start();
         VideoFragment.this.mediaPlayer = mediaPlayer;
         videoUri = uri;
