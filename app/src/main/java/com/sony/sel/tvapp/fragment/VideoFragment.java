@@ -35,6 +35,7 @@ import com.squareup.otto.Subscribe;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Random;
 
@@ -197,6 +198,7 @@ public class VideoFragment extends BaseFragment {
       play(videoUri);
     } else if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
       // resume play
+      Log.d(TAG, "Resuming video playback.");
       mediaPlayer.start();
     }
   }
@@ -206,6 +208,7 @@ public class VideoFragment extends BaseFragment {
    */
   public void pause() {
     if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+      Log.d(TAG, "Pausing video.");
       mediaPlayer.pause();
       updateMediaPlaybackState();
     }
@@ -216,6 +219,7 @@ public class VideoFragment extends BaseFragment {
    */
   public void stop() {
     if (mediaPlayer != null) {
+      Log.d(TAG, "Stopping and releasing video.");
       mediaPlayer.release();
       mediaPlayer = null;
       updateMediaPlaybackState();
@@ -257,58 +261,164 @@ public class VideoFragment extends BaseFragment {
     changeChannel();
   }
 
+
+  private static String decodeMediaStatus(int code) {
+    switch (code) {
+      case 703:
+        return "MEDIA_INFO_NETWORK_BANDWIDTH";
+      case MediaPlayer.MEDIA_INFO_BAD_INTERLEAVING:
+        return "MEDIA_INFO_BAD_INTERLEAVING";
+      case MediaPlayer.MEDIA_INFO_BUFFERING_END:
+        return "MEDIA_INFO_BUFFERING_END";
+      case MediaPlayer.MEDIA_INFO_BUFFERING_START:
+        return "MEDIA_INFO_BUFFERING_START";
+      case MediaPlayer.MEDIA_INFO_METADATA_UPDATE:
+        return "MEDIA_INFO_METADATA_UPDATE";
+      case MediaPlayer.MEDIA_INFO_NOT_SEEKABLE:
+        return "MEDIA_INFO_NOT_SEEKABLE";
+      case MediaPlayer.MEDIA_INFO_SUBTITLE_TIMED_OUT:
+        return "MEDIA_INFO_SUBTITLE_TIMED_OUT";
+      case MediaPlayer.MEDIA_INFO_UNSUPPORTED_SUBTITLE:
+        return "MEDIA_INFO_UNSUPPORTED_SUBTITLE";
+      case MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START:
+        return "MEDIA_INFO_VIDEO_RENDERING_START";
+      case MediaPlayer.MEDIA_INFO_VIDEO_TRACK_LAGGING:
+        return "MEDIA_INFO_VIDEO_TRACK_LAGGING";
+      case MediaPlayer.MEDIA_ERROR_IO:
+        return "MEDIA_ERROR_IO";
+      case MediaPlayer.MEDIA_ERROR_MALFORMED:
+        return "MEDIA_ERROR_MALFORMED";
+      case MediaPlayer.MEDIA_ERROR_NOT_VALID_FOR_PROGRESSIVE_PLAYBACK:
+        return "MEDIA_ERROR_NOT_VALID_FOR_PROGRESSIVE_PLAYBACK";
+      case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
+        return "MEDIA_ERROR_SERVER_DIED";
+      case MediaPlayer.MEDIA_ERROR_TIMED_OUT:
+        return "MEDIA_ERROR_TIMED_OUT";
+      case MediaPlayer.MEDIA_ERROR_UNKNOWN:
+      default:
+        return String.valueOf(code);
+    }
+  }
+
   /**
    * Async task for initializing a MediaPlayer and starting video playback.
    */
   private class PlayVideoTask extends AsyncTask<Void, Void, MediaPlayer> {
 
+    // timeout value for preparing video
+    private final static long PREPARE_TIMEOUT = 10000;
+
     private final Uri uri;
     private Throwable error;
+    private boolean prepared;
 
     public PlayVideoTask(Uri uri) {
       this.uri = uri;
     }
 
     @Override
-    protected MediaPlayer doInBackground(Void... params) {
-      Uri videoUri = uri;
-      if (videoUri.getScheme().equals("http")) {
-        // transform to a DLNA URI
-        videoUri = Uri.parse("dlna://URI=" + uri.toString());
-      }
-      Log.d(TAG, "Starting play video task for " + videoUri + ".");
+    protected MediaPlayer doInBackground(final Void... params) {
+      Log.d(TAG, "Starting play video task for " + uri + ".");
+      MediaPlayer mediaPlayer = null;
       if (isCancelled()) {
         // don't do anything if canceled
         return null;
       }
-      MediaPlayer mediaPlayer = null;
+
+      if (uri.getScheme().equals("http")) {
+        // transform to a DLNA URI
+        Uri videoUri = Uri.parse("dlna://URI=" + uri.toString());
+        try {
+          mediaPlayer = prepareMedia(videoUri);
+          if (isCancelled()) {
+            mediaPlayer.release();
+            return null;
+          } else {
+            return mediaPlayer;
+          }
+        } catch (IOException e) {
+          Log.e(TAG, "Error playing DLNA URI: " + e);
+        } catch (InterruptedException e) {
+          Log.e(TAG, "Error playing DLNA URI: " + e);
+        } catch (Throwable e) {
+          Log.e(TAG, "Error playing DLNA URI: " + e);
+        }
+      }
+
       try {
-        // create, set data source and prepare media player with one call
-        mediaPlayer = MediaPlayer.create(getActivity(), videoUri);
-        if (isCancelled() || mediaPlayer == null) {
-          // don't continue if canceled while preparing or an error occurs
+        mediaPlayer = prepareMedia(videoUri);
+        if (isCancelled()) {
+          return null;
+        } else {
           return mediaPlayer;
         }
-        mediaPlayer.setDisplay(surfaceHolder);
-        mediaPlayer.setScreenOnWhilePlaying(true);
-        mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-          @Override
-          public boolean onError(MediaPlayer mp, int what, int extra) {
-            Log.e(TAG, "Player error: " + what + ". Extra = " + extra + ".");
-            return false;
-          }
-        });
-        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-          @Override
-          public void onCompletion(MediaPlayer mp) {
-            // loop when done
-            mp.seekTo(0);
-            mp.start();
-          }
-        });
-        mediaPlayer.start();
-      } catch (Throwable e) {
+      } catch (IOException e) {
+        Log.e(TAG, "Error preparing video: " + e);
         error = e;
+        return null;
+      } catch (InterruptedException e) {
+        Log.e(TAG, "Error preparing video: " + e);
+        error = e;
+        return null;
+      } catch (Throwable e) {
+        Log.e(TAG, "Error preparing video: " + e);
+        error = e;
+        return null;
+      }
+
+    }
+
+    private MediaPlayer prepareMedia(Uri videoUri) throws IOException, InterruptedException {
+      final Object prepareLock = new Object();
+      MediaPlayer mediaPlayer = new MediaPlayer();
+      mediaPlayer.setScreenOnWhilePlaying(true);
+      mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+        @Override
+        public boolean onError(MediaPlayer mp, int what, int extra) {
+          Log.e(TAG, "Player error: " + decodeMediaStatus(what) + ". Extra = " + extra + ".");
+          return true;
+        }
+      });
+      mediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
+        @Override
+        public void onBufferingUpdate(MediaPlayer mp, int percent) {
+          Log.d(TAG, "Video buffering: " + percent + "%.");
+        }
+      });
+      mediaPlayer.setOnInfoListener(new MediaPlayer.OnInfoListener() {
+        @Override
+        public boolean onInfo(MediaPlayer mp, int what, int extra) {
+          Log.d(TAG, "Video info: what = " + decodeMediaStatus(what) + ", extra = " + extra + '.');
+          return false;
+        }
+      });
+      mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+        @Override
+        public void onCompletion(MediaPlayer mp) {
+          // loop when done
+          Log.d(TAG, "Video complete, restarting.");
+          mp.seekTo(0);
+          mp.start();
+        }
+      });
+      mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+        @Override
+        public void onPrepared(MediaPlayer mp) {
+          Log.d(TAG, "Video prepared.");
+          prepared = true;
+          synchronized (prepareLock) {
+            prepareLock.notifyAll();
+          }
+        }
+      });
+      mediaPlayer.setDataSource(getActivity(), videoUri);
+      Log.d(TAG, "Preparing video: " + videoUri + ".");
+      mediaPlayer.prepareAsync();
+      synchronized (prepareLock) {
+        prepareLock.wait(PREPARE_TIMEOUT);
+        if (!prepared) {
+          throw new InterruptedException("Video prepare timed out after " + PREPARE_TIMEOUT + " ms.");
+        }
       }
       return mediaPlayer;
     }
@@ -343,7 +453,7 @@ public class VideoFragment extends BaseFragment {
       } else if (mediaPlayer == null) {
         new AlertDialog.Builder(getActivity())
             .setTitle(R.string.error)
-            .setMessage("Error starting video: " + uri + ".")
+            .setMessage("Error starting video: " + uri + "." + (error != null ? "\n\n" + error : ""))
             .setNeutralButton(getString(android.R.string.ok), null)
             .setPositiveButton(getString(R.string.selectChannelVideos), new DialogInterface.OnClickListener() {
               @Override
@@ -354,13 +464,16 @@ public class VideoFragment extends BaseFragment {
             .create()
             .show();
       } else {
-        Log.d(TAG, "Play video task completed for " + uri + ".");
+        Log.d(TAG, "Starting playback.");
+        mediaPlayer.setDisplay(surfaceHolder);
+        mediaPlayer.start();
         VideoFragment.this.mediaPlayer = mediaPlayer;
         videoUri = uri;
         playVideoTask = null;
         mediaSession.setActive(true);
         updateMediaPlaybackState();
         new FetchEpgTask().executeOnExecutor(THREAD_POOL_EXECUTOR);
+        Log.d(TAG, "Play video task completed for " + uri + ".");
       }
     }
   }

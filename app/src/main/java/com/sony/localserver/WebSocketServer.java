@@ -172,6 +172,7 @@ public class WebSocketServer extends NanoWSD {
       // convert to JSON with special serializer
       String json = new GsonBuilder().
           registerTypeAdapter(VideoProgram.class, new VideoProgram.WebSerializer())
+          .disableHtmlEscaping()
           .create()
           .toJson(channelMap);
 

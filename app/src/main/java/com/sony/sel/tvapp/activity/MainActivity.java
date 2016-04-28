@@ -16,6 +16,7 @@ import com.sony.sel.tvapp.fragment.ChannelInfoFragment;
 import com.sony.sel.tvapp.fragment.NavigationFragment;
 import com.sony.sel.tvapp.fragment.VideoFragment;
 import com.sony.sel.tvapp.ui.NavigationItem;
+import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.squareup.otto.Subscribe;
@@ -52,6 +53,13 @@ public class MainActivity extends BaseActivity {
   protected void onPause() {
     super.onPause();
     hideUi();
+  }
+
+  @Override
+  protected void onDestroy() {
+    super.onDestroy();
+    // stop the DLNA service on the way out
+    DlnaHelper.getHelper(this).stopDlnaService();
   }
 
   @Override
