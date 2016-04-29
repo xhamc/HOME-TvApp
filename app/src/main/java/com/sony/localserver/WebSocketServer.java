@@ -111,7 +111,7 @@ public class WebSocketServer extends NanoWSD {
             String json = getChannels();
             if (json != null) {
               try {
-                ws.send(json != null ? json : "ERROR");
+                ws.send(json);
               } catch (IOException e) {
                 Log.e(TAG, "Error sending Channels:" + e);
               }
@@ -121,7 +121,7 @@ public class WebSocketServer extends NanoWSD {
       } else if (payload.startsWith("keepUIVisible:")) {
         // send event for UI keep-alive
         String duration = payload.split(":")[1];
-        if ("long".equalsIgnoreCase("duration")) {
+        if ("long".equalsIgnoreCase(duration)) {
           EventBus.getInstance().post(new EventBus.ResetUiTimerShortEvent());
         } else if ("short".equalsIgnoreCase(duration)) {
           EventBus.getInstance().post(new EventBus.ResetUiTimerLongEvent());
@@ -133,9 +133,11 @@ public class WebSocketServer extends NanoWSD {
         String channelId = payload.split(":")[1];
         List<VideoBroadcast> channels = dlnaHelper.getChannels(udn, null);
         for (VideoBroadcast channel : channels) {
-          if (channel.getChannelId().equals(channelId)) ;
-          settingsHelper.setCurrentChannel(channel);
-          break;
+          if (channel.getChannelId().equals(channelId)) {
+
+            settingsHelper.setCurrentChannel(channel);
+            break;
+          }
         }
       }
     }

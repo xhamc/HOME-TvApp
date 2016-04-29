@@ -22,7 +22,7 @@ function GuideController(){
 	var wsopen=false;						//one time flag for opening the websocket;
 
     var ws=new WebsocketController(); if (!ws.supported) return;
-    var gc=new GridController();
+    var gc=new GridController(ws);
 	var originalGridTimeStart=gc.initialize();
 	var MAXTTIME=10*24*3600*1000;	//start with 10 days of maximum data!
 
@@ -51,27 +51,27 @@ function GuideController(){
 		//initialize the channelist data if needed.
 		//TODO: use preferences to turn random STATION_DATA into customized STATION_DATA (could be done from Java side too!)
 /****************************Sort STATION_DATA by ChannelNumber into CHANNELLIST_DATA****************/
-			for (var i=0; i<STATION_DATA.length;i++){
-				var channelNumber=parseInt(STATION_DATA[i].channelNumber);
-				if (CHANNELLIST_DATA.length>0){
-					if (parseInt(CHANNELLIST_DATA[CHANNELLIST_DATA.length-1].channelNumber) < channelNumber ){
-						CHANNELLIST_DATA[CHANNELLIST_DATA.length]=STATION_DATA[i];
-					}else{
-						var j=CHANNELLIST_DATA.length;
-						do{
-							j--;
-							CHANNELLIST_DATA[j+1]=CHANNELLIST_DATA[j];
-						} while (j>0 && parseInt(CHANNELLIST_DATA[j-1].channelNumber) >= channelNumber)
-
-						CHANNELLIST_DATA[j]=STATION_DATA[i];
-
-					}
-
-
-				}else{
-					CHANNELLIST_DATA[0]=STATION_DATA[i];
-				}
-			}
+//			for (var i=0; i<STATION_DATA.length;i++){
+//				var channelNumber=parseInt(STATION_DATA[i].channelNumber);
+//				if (CHANNELLIST_DATA.length>0){
+//					if (parseInt(CHANNELLIST_DATA[CHANNELLIST_DATA.length-1].channelNumber) < channelNumber ){
+//						CHANNELLIST_DATA[CHANNELLIST_DATA.length]=STATION_DATA[i];
+//					}else{
+//						var j=CHANNELLIST_DATA.length;
+//						do{
+//							j--;
+//							CHANNELLIST_DATA[j+1]=CHANNELLIST_DATA[j];
+//						} while (j>0 && parseInt(CHANNELLIST_DATA[j-1].channelNumber) >= channelNumber)
+//
+//						CHANNELLIST_DATA[j]=STATION_DATA[i];
+//
+//					}
+//
+//
+//				}else{
+//					CHANNELLIST_DATA[0]=STATION_DATA[i];
+//				}
+//			}
 /****************************Sort STATION_DATA by ChannelID into CHANNELLIST_DATA****************/
 //			for (var i=0; i<STATION_DATA.length;i++){
 //				var channelNumber=parseInt(STATION_DATA[i].channelId);
@@ -93,6 +93,10 @@ function GuideController(){
 //				}
 //
 //			}
+/****************************Don't Sort STATION_DATA ****************/
+			for (var i=0; i<STATION_DATA.length;i++){
+				CHANNELLIST_DATA[i]=STATION_DATA[i];
+			}
 
 			if (null==currentAvailableDataRange){
 				currentAvailableDataRange=new Array(CHANNELLIST_DATA.length);
