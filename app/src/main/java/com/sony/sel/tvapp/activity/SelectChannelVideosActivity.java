@@ -4,6 +4,8 @@ import android.app.FragmentTransaction;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.fragment.BrowseServersFragment;
@@ -23,6 +25,9 @@ public class SelectChannelVideosActivity extends BaseActivity {
   Button done;
   @Bind(R.id.clear)
   Button clear;
+  @Bind(R.id.channelVid)
+  CheckBox channelVid;
+
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -30,7 +35,11 @@ public class SelectChannelVideosActivity extends BaseActivity {
 
     setContentView(R.layout.browse_dlna_activity);
     ButterKnife.bind(this);
-
+    if (!SettingsHelper.getHelper(getApplicationContext()).useChannelVideosSetting()){
+      channelVid.setChecked(false);
+    }else{
+      channelVid.setChecked(true);
+    }
     done.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
@@ -41,6 +50,13 @@ public class SelectChannelVideosActivity extends BaseActivity {
       @Override
       public void onClick(View v) {
         SettingsHelper.getHelper(getApplicationContext()).clearChannelVideos();
+      }
+    });
+
+    channelVid.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+      @Override
+      public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+        SettingsHelper.getHelper(getApplicationContext()).setToChannelVideoSetting(b);
       }
     });
 

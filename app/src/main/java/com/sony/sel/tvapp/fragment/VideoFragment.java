@@ -239,6 +239,15 @@ public class VideoFragment extends BaseFragment {
    * Change to a random video stream selected from the "channel videos" list in Settings.
    */
   private void changeChannel() {
+    if (SettingsHelper.getHelper(getActivity()).useChannelVideosSetting()){
+      final String res = currentChannel.getResource();
+      if (res != null) {
+        Log.d(TAG, "Changing video channel to " + res + ".");
+        play(Uri.parse(res));
+      }
+      return;
+    }
+
     List<VideoItem> videos = SettingsHelper.getHelper(getActivity()).getChannelVideos();
     if (videos.size() > 0) {
       VideoItem video = videos.get(Math.abs(new Random().nextInt()) % videos.size());

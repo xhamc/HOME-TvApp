@@ -29,13 +29,25 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_weight="10"
-        />
+        >
+
+    </FrameLayout>
 
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="right"
         >
+
+        <CheckBox
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AUTO"
+            android:id="@+id/channelVid"
+            android:layout_gravity="center_horizontal"
+            android:clickable="true"
+            android:enabled="true"
+            android:gravity="center_vertical" />
 
         <Button
             android:id="@+id/clear"

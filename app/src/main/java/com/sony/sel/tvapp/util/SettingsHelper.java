@@ -27,6 +27,7 @@ public class SettingsHelper {
 
   private static SettingsHelper INSTANCE;
   private List<VideoItem> channelVideos;
+  private boolean useChannelVideoItem=false;
 
   private static final String[] DEFAULT_CHANNEL_VIDEOS = null; // { "file:///sdcard/Movies/tvapp.mp4" };
 
@@ -142,6 +143,16 @@ public class SettingsHelper {
     editor.remove(CHANNEL_VIDEOS);
     editor.commit();
     channelVideos = new ArrayList<>();
+    useChannelVideoItem=false;
+
+  }
+
+  public void setToChannelVideoSetting(boolean condition){
+    useChannelVideoItem=condition;
+  }
+
+  public boolean useChannelVideosSetting(){
+    return useChannelVideoItem;
   }
 
   public Set<String> getFavoriteChannels() {
