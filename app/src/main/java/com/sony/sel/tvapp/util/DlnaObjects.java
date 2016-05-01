@@ -653,8 +653,11 @@ public class DlnaObjects {
 
     public void setRating(String rating) {
       // transform certain ratings for EPG grid
+      if (rating.contains("Adult")) {
+        rating="AO";
+      }
       switch (rating) {
-        case "Language, Violence, Adult Situations":
+
         case "AO":
           this.rating = "Adult";
           break;
@@ -755,13 +758,23 @@ public class DlnaObjects {
     public static class WebSerializer implements JsonSerializer<VideoProgram> {
       @Override
       public JsonElement serialize(VideoProgram src, Type typeOfSrc, JsonSerializationContext context) {
+
         JsonObject obj = new Gson().toJsonTree(src).getAsJsonObject();
+        obj.remove("scheduledStartTime");
+        obj.remove("scheduledEndTime");
+        obj.remove("seriesId");
+        obj.remove("resAdditionalInfo");
+        obj.remove("res");
+        obj.remove("resMimeType");
+        obj.remove("protocolInfo");
+        obj.remove("programId");
         obj.addProperty("start", String.valueOf(src.getScheduledStartTime().getTime()));
-//        obj.addProperty("length", String.valueOf(src.getScheduledEndTime().getTime() - src.getScheduledStartTime().getTime()));
-        obj.addProperty("length", String.valueOf(src.getScheduledDurationTime()));
+        obj.addProperty("length", String.valueOf(src.getScheduledEndTime().getTime() - src.getScheduledStartTime().getTime()));
+//        obj.addProperty("length", String.valueOf(src.getScheduledDurationTime()));
         obj.addProperty("description", src.getLongDescription());
         obj.addProperty("programIcon", src.getIcon());
         obj.addProperty("type", src.getEpisodeType());
+
         return obj;
       }
     }
@@ -885,9 +898,16 @@ public class DlnaObjects {
       @Override
       public JsonElement serialize(VideoBroadcast src, Type typeOfSrc, JsonSerializationContext context) {
         JsonObject obj = new Gson().toJsonTree(src).getAsJsonObject();
+        obj.remove("resAdditionalInfo");
+        obj.remove("res");
+        obj.remove("resMimeType");
+        obj.remove("protocolInfo");
         obj.addProperty("callSign", src.getCallSign());
         obj.addProperty("channelID", src.getChannelId());
         obj.addProperty("channelIcon", src.getIcon());
+
+
+
         return obj;
       }
     }

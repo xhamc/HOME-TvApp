@@ -12,6 +12,7 @@ function GuideController(){
 
 //END GLOBALS
 	var GUIDE_FETCH_REQUEST_TIMER=1000;
+	var STATION_FETCH_REQUEST_INT=5;
 	var GUIDE_WEBSOCKET_TIMER=200;
 
 
@@ -140,15 +141,23 @@ function GuideController(){
 			}
 	}
 
-
+	var getStations=STATION_FETCH_REQUEST_INT;
 	function guideDataFetchRequest(){
+
 		console.log("Fetching guide data");
+
 		if (!udpdateEPGinProgress){
-			var updateRequest=getNextTimeAndChannelList();
-			if (null!=updateRequest){
-				var msg=JSON.stringify({"browseEPGData":updateRequest});
-				console.log("msg:"+msg);
-				ws.send(msg, true);
+			getStations--;
+			if (getStations==0){
+				getStations=STATION_FETCH_REQUEST_INT;
+				ws.send("browseEPGStations", true);
+			}else{
+				var updateRequest=getNextTimeAndChannelList();
+				if (null!=updateRequest){
+					var msg=JSON.stringify({"browseEPGData":updateRequest});
+					console.log("msg:"+msg);
+					ws.send(msg, true);
+				}
 			}
 
 		}
