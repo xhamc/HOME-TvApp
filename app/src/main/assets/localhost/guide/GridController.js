@@ -242,16 +242,16 @@ function GridController(ws){
 									drawTextInBox(300+(i-currentChannelGridOffset)*HORIZCELLSIZE+10,y+space/2, HORIZCELLSIZE-20 ,m[j].title, 3, 4, 1 );
 								}else if (space>VERTCELLSIZE/3 && space<=VERTCELLSIZE/2 && !truncated){
 									drawTextInBox(300+(i-currentChannelGridOffset)*HORIZCELLSIZE+10,y+space/2, HORIZCELLSIZE-20 ,m[j].title, 2, 3, 1 );
-								}else if (space>VERTCELLSIZE/2 && space<=VERTCELLSIZE){
+								}else if (space>VERTCELLSIZE/2 && space<=VERTCELLSIZE*1.5){
 									drawTextInBox(300+(i-currentChannelGridOffset)*HORIZCELLSIZE+10,y+space/2, HORIZCELLSIZE-20 ,m[j].title, 1, 2, 1 );
-								} else if (space>VERTCELLSIZE  && space<=VERTCELLSIZE*2){
+								} else if (space>VERTCELLSIZE*1.5  && space<=VERTCELLSIZE*2.5){
 									if (m[j].programTitle=="" ) {
 										drawTextInBox(300+(i-currentChannelGridOffset)*HORIZCELLSIZE+10,y+space/2, HORIZCELLSIZE-20 ,m[j].title, 1, 3, 1 );
 									}else{
 										drawTextInBox(300+(i-currentChannelGridOffset)*HORIZCELLSIZE+10,y+space/3, HORIZCELLSIZE-20 ,m[j].title, 1, 3, 1 );
 										drawTextInBox(300+(i-currentChannelGridOffset)*HORIZCELLSIZE+10,y+2*space/3, HORIZCELLSIZE -20 ,m[j].programTitle, 3, 4, 1);
 									}
-								} else if (space>VERTCELLSIZE*2 && space<=VERTCELLSIZE*3 ){
+								} else if (space>VERTCELLSIZE*2.5 && space<=VERTCELLSIZE*3.5 ){
 									if (m[j].programTitle=="" ){
 										drawTextInBox(300+(i-currentChannelGridOffset)*HORIZCELLSIZE+10,y+space/2, HORIZCELLSIZE-20 ,m[j].title, 1, 3, 2 );
 									}else{
@@ -259,7 +259,7 @@ function GridController(ws){
 										drawTextInBox(300+(i-currentChannelGridOffset)*HORIZCELLSIZE+10,y+2*space/3, HORIZCELLSIZE -20 ,m[j].programTitle, 3, 4, 2);
 									}
 								}
-								else if (space>VERTCELLSIZE*3 ){
+								else if (space>VERTCELLSIZE*3.5 ){
 										if (m[j].programTitle=="" ){
 											drawTextInBox(300+(i-currentChannelGridOffset)*HORIZCELLSIZE+10,y+space/2, HORIZCELLSIZE-20 ,m[j].title, 1, 2, 4 );
 										}else{
