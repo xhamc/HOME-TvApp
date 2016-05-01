@@ -553,6 +553,9 @@ function GridController(ws){
 		var d=getTime(parseInt(m.start));
 		var dateDisplay=d.date.substring(0,d.date.lastIndexOf(' ')) + " " + d.time;
 		var duration=Math.floor(parseInt(m.length)/(60*1000)) +"mins";
+		if (duration>1000){
+			console.log("Unrealistic duration: "+duration);
+		}
 
 		drawTextInBox(x, top+h-100 , HORIZCELLSIZE*3.5-500-20, "Start: "+ dateDisplay +" Duration: "+duration, 3, 3, 1 );
 

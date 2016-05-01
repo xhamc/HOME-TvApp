@@ -619,6 +619,10 @@ public class DlnaObjects {
       }
     }
 
+    public String getScheduledDurationTime(){
+      return scheduledDurationTime;
+    }
+
     public String getGenre() {
       return genre;
     }
@@ -753,7 +757,8 @@ public class DlnaObjects {
       public JsonElement serialize(VideoProgram src, Type typeOfSrc, JsonSerializationContext context) {
         JsonObject obj = new Gson().toJsonTree(src).getAsJsonObject();
         obj.addProperty("start", String.valueOf(src.getScheduledStartTime().getTime()));
-        obj.addProperty("length", String.valueOf(src.getScheduledEndTime().getTime() - src.getScheduledStartTime().getTime()));
+//        obj.addProperty("length", String.valueOf(src.getScheduledEndTime().getTime() - src.getScheduledStartTime().getTime()));
+        obj.addProperty("length", String.valueOf(src.getScheduledDurationTime()));
         obj.addProperty("description", src.getLongDescription());
         obj.addProperty("programIcon", src.getIcon());
         obj.addProperty("type", src.getEpisodeType());
