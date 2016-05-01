@@ -25,7 +25,12 @@ function GridController(ws){
 
     this.initialize=function (){
         canvas = document.getElementById('canvas');
-		window.addEventListener("keydown", keyDown, false);
+        canvas.focus();
+        canvas.onblur=function(){
+			console.log("Lost canvas focus so regain");
+			canvas.focus();
+        };
+		canvas.addEventListener("keydown", keyDown, false);
         width = canvas.width;
         height = canvas.height;
         ctx = canvas.getContext('2d');
@@ -700,7 +705,10 @@ function GridController(ws){
 
 
 		console.log("key pressed: "+e.keyIdentifier);
-		if (e.keyIdentifier == "U+019F" && VIDEO_ENABLED){
+		e.preventDefault();
+
+		if (e.keyIdentifier == "MediaPlayPause" ){
+			if (VIDEO_ENABLED){
 				do{
 					var i=Math.floor(Math.random()*media.length);
 				}while (i==mainVideoIndex);
@@ -716,15 +724,25 @@ function GridController(ws){
                 console.log("Video src set: "+mainVideo.src);
 
                 return;
+			}else{
+				console.log("Changing channel to: "+ CHANNELLIST_DATA[currentProgramSelected.channel].channelId);
+				var changeChannelMsg="changeChannel:"+ CHANNELLIST_DATA[currentProgramSelected.channel].channelId;
+				ws.send(changeChannelMsg,false);
+			}
 		}
-
-		ws.send('keepUIVisible:long', false);
 
 		if (e.keyIdentifier == 'Enter') {
 
 				descriptionBoxDrawFlag=!descriptionBoxDrawFlag;
 				console.log("Return pressed: "+		descriptionBoxDrawFlag);
+				if (descriptionBoxDrawFlag){
+						ws.send('keepUIVisible:40000', false);
+				}else{
+						ws.send('keepUIVisible:20000', false);
+				}
 
+		}else{
+				ws.send('keepUIVisible:20000', false);
 		}
 		if (e.keyIdentifier == 'Left') {
 

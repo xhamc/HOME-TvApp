@@ -46,7 +46,7 @@
                 that.open=true;
                 setInterval (pingWebSocket, 2000);
 
-                ws.send('keepUIVisible:40000', false);
+                ws.send('keepUIVisible:120000', false);
 
             };
 

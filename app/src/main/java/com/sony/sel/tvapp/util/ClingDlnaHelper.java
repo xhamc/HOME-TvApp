@@ -308,8 +308,10 @@ public class ClingDlnaHelper extends BaseDlnaHelper {
             dest.setScheduledStartTime(property.getValue().toString());
           } else if (property.getDescriptorName().equals("scheduledEndTime")) {
             dest.setScheduledEndTime(property.getValue().toString());
-          } else if (property.getDescriptorName().equals("longDescription")) {
-            dest.setLongDescription(property.getValue().toString());
+          } else if (property.getDescriptorName().equals("scheduledDurationTime")){
+            dest.setScheduleDurationTime(property.getValue().toString());
+          } if (property.getDescriptorName().equals("longDescription")) {
+          dest.setLongDescription(property.getValue().toString());
           } else if (property.getDescriptorName().equals("programTitle")) {
             dest.setProgramTitle(property.getValue().toString());
           } else if (property.getDescriptorName().equals("programID")) {

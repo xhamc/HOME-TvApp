@@ -554,6 +554,8 @@ public class DlnaObjects {
     private String scheduledStartTime;
     @ColumnName("upnp:scheduledEndTime")
     private String scheduledEndTime;
+    @ColumnName("upnp:scheduledDurationTime")
+    private String scheduledDurationTime;
 //    @ColumnName("upnp:recordable")
 //    private String recordable;
 
@@ -648,6 +650,7 @@ public class DlnaObjects {
     public void setRating(String rating) {
       // transform certain ratings for EPG grid
       switch (rating) {
+        case "Language, Violence, Adult Situations":
         case "AO":
           this.rating = "Adult";
           break;
@@ -688,6 +691,10 @@ public class DlnaObjects {
 
     public void setScheduledEndTime(String scheduledEndTime) {
       this.scheduledEndTime = scheduledEndTime;
+    }
+
+    public void setScheduleDurationTime(String scheduledDurationTime){
+      this.scheduledDurationTime=scheduledDurationTime;
     }
 
     public String getProgramId() {
