@@ -8,6 +8,7 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.util.DlnaHelper;
+import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.SettingsHelper;
 
 import java.util.List;
@@ -23,7 +24,8 @@ public class StartupActivity extends BaseActivity {
   public static final String LOG_TAG = StartupActivity.class.getSimpleName();
 
   private SettingsHelper settingsHelper;
-  private DlnaHelper dlnaHelper;
+  private DlnaInterface dlnaHelper;
+  private boolean serviceConnected;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -33,26 +35,56 @@ public class StartupActivity extends BaseActivity {
 
     settingsHelper = SettingsHelper.getHelper(this);
     dlnaHelper = DlnaHelper.getHelper(this);
+
+    serviceConnected = dlnaHelper.isDlnaServiceStarted();
   }
 
   @Override
   protected void onResume() {
     super.onResume();
+    startService();
+  }
+
+  void startService() {
+    if (!serviceConnected) {
+      // start the DLNA service when app starts
+      dlnaHelper.startDlnaService(new DlnaInterface.DlnaServiceObserver() {
+        @Override
+        public void onServiceConnected() {
+          serviceConnected = true;
+          checkServer();
+        }
+
+        @Override
+        public void onServiceDisconnected() {
+
+        }
+
+        @Override
+        public void onError(Exception error) {
+
+        }
+      });
+    } else {
+      checkServer();
+    }
+  }
+
+  void checkServer() {
     if (settingsHelper.getEpgServer() == null) {
       // select the server first
       startActivity(new Intent(this, SelectServerActivity.class));
     } else {
       new CheckServerTask(dlnaHelper, settingsHelper.getEpgServer()).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
-
   }
 
   private class CheckServerTask extends AsyncTask<Void, Void, Boolean> {
 
     private String udn;
-    private DlnaHelper dlnaHelper;
+    private DlnaInterface dlnaHelper;
 
-    public CheckServerTask(DlnaHelper dlnaHelper, String udn) {
+    public CheckServerTask(DlnaInterface dlnaHelper, String udn) {
       this.udn = udn;
       this.dlnaHelper = dlnaHelper;
     }
@@ -63,7 +95,7 @@ public class StartupActivity extends BaseActivity {
 
         // browse server root
         Log.d(LOG_TAG, "Checking root of server " + udn + ".");
-        List<Container> root = dlnaHelper.getChildren(udn, DlnaHelper.DLNA_ROOT, Container.class);
+        List<Container> root = dlnaHelper.getChildren(udn, DlnaHelper.DLNA_ROOT, Container.class, null, false);
         Log.d(LOG_TAG, "Root = " + root != null ? new Gson().toJson(root) : "null");
         if (root != null) {
           return true;
@@ -95,39 +127,5 @@ public class StartupActivity extends BaseActivity {
       }
     }
   }
-
-  private static class IterateServerTask extends AsyncTask<Void, Void, Void> {
-
-    public static final String LOG_TAG = "DlnaTest";
-
-    private DlnaHelper helper;
-    private final String udn;
-
-    public IterateServerTask(DlnaHelper helper, String udn) {
-      this.helper = helper;
-      this.udn = udn;
-    }
-
-    @Override
-    protected Void doInBackground(Void... params) {
-      // get channel list
-      int count = iterateChildren("0");
-      Log.d(LOG_TAG, "Iteration complete, count = "+count+" objects.");
-      return null;
-    }
-
-    int iterateChildren(String parentId) {
-      List<DlnaObject> children = helper.getChildren(udn,parentId, DlnaObject.class);
-      int count = children.size();
-      for (DlnaObject child : children) {
-        if (child.getUpnpClass().startsWith(Container.CLASS)) {
-          // drill down
-          count += iterateChildren(child.getId());
-        }
-      }
-      return count;
-    }
-  }
-
 
 }

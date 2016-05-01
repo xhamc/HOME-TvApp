@@ -1,270 +1,272 @@
 package com.sony.localserver;
 
 
-import android.content.Context;
 import android.util.Log;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.annotations.SerializedName;
 import com.sony.localserver.NanoWSD.WebSocketFrame.CloseCode;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.sony.sel.tvapp.util.DlnaHelper;
+import com.sony.sel.tvapp.util.DlnaInterface;
+import com.sony.sel.tvapp.util.DlnaObjects;
+import com.sony.sel.tvapp.util.EventBus;
+import com.sony.sel.tvapp.util.SettingsHelper;
 
 import java.io.IOException;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import static com.sony.sel.tvapp.util.DlnaObjects.VideoBroadcast;
+import static com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 
+/**
+ * Class to serve channel and EPG data via a web socket.
+ */
 public class WebSocketServer extends NanoWSD {
-	public static LocalWebSocket ws;
-	private static final String TAG="CVP-2";
 
-	protected static CDSBrowser cdsContext;
+  public static final String TAG = "CVP-2";
 
+  private LocalWebSocket ws;
+  private String udn;
+  private DlnaInterface dlnaHelper;
+  private SettingsHelper settingsHelper;
 
-    public WebSocketServer(String host, int port, CDSBrowser b){
-    	super(host, port);
-		cdsContext=b;
+  public WebSocketServer(String host, int port, DlnaInterface dlnaHelper, SettingsHelper settingsHelper) {
+    super(host, port);
+    this.dlnaHelper = dlnaHelper;
+  }
 
+  public String getUdn() {
+    return udn;
+  }
+
+  public void setUdn(String udn) {
+    this.udn = udn;
+  }
+
+  @Override
+  protected WebSocket openWebSocket(IHTTPSession handshake) {
+    Log.d(TAG, "OPEN WEBSOCKET");
+    ws = new LocalWebSocket(handshake);
+    return ws;
+  }
+
+  public class LocalWebSocket extends WebSocket {
+
+    public LocalWebSocket(IHTTPSession handshakeRequest) {
+      super(handshakeRequest);
+    }
+
+    @Override
+    protected void onOpen() {
+      Log.d(TAG, "OPEN");
+    }
+
+    @Override
+    protected void onClose(CloseCode code, String reason,
+                           boolean initiatedByRemote) {
+      Log.d(TAG, "CLOSE");
     }
 
 
+    @Override
+    protected void onMessage(final WebSocketFrame message) {
+      Log.d(TAG, "MESSAGE RECEIVED: " + message.getTextPayload());
+      String payload = message.getTextPayload();
+      if (payload.equalsIgnoreCase("Ping")) {
+        try {
+          ws.send("Ping");
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      } else if (payload.contains("browseEPGData")) {
+        Log.d(TAG, "Browse EPG data.");
+        Thread t = new Thread(new Runnable() {
+          @Override
+          public void run() {
+            String json = processEpgRequest(message.getTextPayload());
+            if (json != null) {
+              try {
+                ws.send(json);
+              } catch (IOException e) {
+                e.printStackTrace();
+              }
+            }
+          }
+        });
+        t.setPriority(Thread.MIN_PRIORITY);
+        t.start();
+      } else if (payload.equals("browseEPGStations")) {
+        new Thread(new Runnable() {
+          @Override
+          public void run() {
+            Log.d(TAG, "Browse EPG stations.");
+            String json = getChannels();
+            if (json != null) {
+              try {
+                ws.send(json);
+              } catch (IOException e) {
+                Log.e(TAG, "Error sending Channels:" + e);
+              }
+            }
+          }
+        }).start();
+      } else if (payload.startsWith("keepUIVisible:")) {
+        // send event for UI keep-alive
+        String duration = payload.split(":")[1];
+        if ("long".equalsIgnoreCase(duration)) {
+          EventBus.getInstance().post(new EventBus.ResetUiTimerShortEvent());
+        } else if ("short".equalsIgnoreCase(duration)) {
+          EventBus.getInstance().post(new EventBus.ResetUiTimerLongEvent());
+        } else if (Long.valueOf(duration) > 0) {
+          EventBus.getInstance().post(new EventBus.ResetUiTimerEvent(Long.valueOf(duration)));
+        }
+      } else if (payload.startsWith("changeChannel:")) {
+        // send channel change event
+        String channelId = payload.split(":")[1];
+        List<VideoBroadcast> channels = dlnaHelper.getChannels(udn, null);
+        for (VideoBroadcast channel : channels) {
+          if (channel.getChannelId().equals(channelId)) {
 
-	@Override
-	protected WebSocket openWebSocket(IHTTPSession handshake) {
-		Log.d(TAG, "OPEN WEBSOCKET");
-			ws=new LocalWebSocket(handshake);
-			return ws;
+            settingsHelper.setCurrentChannel(channel);
+            break;
+          }
+        }
+      }
+    }
 
-	}
-	
-	
-	public static class LocalWebSocket extends WebSocket {
-		int localPort;
+    /**
+     * Process a request for EPG data
+     *
+     * @param payload message payload
+     * @return response in JSON format
+     */
+    private String processEpgRequest(String payload) {
+      // parse request from JSON
+      EpgRequest request = new Gson().fromJson(payload, EpgRequest.class);
 
+      // extract dates
+      Date startDate = new Date(Long.parseLong(request.getData().getTimes().get(0)));
+      Date endDate = new Date(Long.parseLong(request.getData().getTimes().get(1)));
 
-		public LocalWebSocket(IHTTPSession handshakeRequest) {
-			super(handshakeRequest);
+      // get data
+      String json = getEpgData(request.getData().getChannels(), startDate, endDate);
+      return json;
+    }
 
-			// TODO Auto-generated constructor stub
-		}
+    /**
+     * Get EPG data for the requested channels and date interval
+     *
+     * @param channels  List of channel IDs
+     * @param startDate Date for data to start
+     * @param endDate   Date for data to end
+     * @return response in JSON format
+     */
+    private String getEpgData(List<String> channels, Date startDate, Date endDate) {
+      // create calendar to iterate dates
+      Calendar calendar = Calendar.getInstance();
+      // the structure we build and return is a map of channelId -> days -> programs
+      Map<String, Map<String, Map<String, VideoProgram>>> channelMap = new LinkedHashMap<>();
+      for (String channelId : channels) {
+        Map<String, Map<String, VideoProgram>> dayMap = new LinkedHashMap<>();
+        for (calendar.setTime(startDate); calendar.getTime().getTime() <= endDate.getTime(); calendar.add(Calendar.DAY_OF_MONTH, 1)) {
+          DateFormat format = new SimpleDateFormat("M-d");
+          String day = format.format(calendar.getTime());
+          // get programs for the requested day
+          List<DlnaObjects.VideoProgram> programs = dlnaHelper.getChildren(udn, "0/EPG/" + channelId + "/" + day, DlnaObjects.VideoProgram.class, null, true);
+          // iterate programs and generate map entries
+          Map<String, VideoProgram> programMap = new LinkedHashMap<>();
+          for (VideoProgram program : programs) {
+            if (program.getScheduledStartTime().getTime() <= endDate.getTime() && program.getScheduledEndTime().getTime() >= startDate.getTime()) {
+              programMap.put(String.valueOf(program.getScheduledStartTime().getTime()), program);
+            }
+          }
+          // add programs to the day map
+          dayMap.put(day, programMap);
+        }
+        // add the day to the channel map
+        channelMap.put(channelId, dayMap);
+      }
+      // convert to JSON with special serializer
+      String json = new GsonBuilder().
+          registerTypeAdapter(VideoProgram.class, new VideoProgram.WebSerializer())
+          .disableHtmlEscaping()
+          .create()
+          .toJson(channelMap);
 
+      // wrap with tag expected by javascript
+      return "{\"EPG\":" + json + "}";
+    }
 
-			// TODO Auto-generated constructor stub
+    /**
+     * Return the list of channels as a JSON string.
+     *
+     * @return Channel list JSON.
+     */
+    String getChannels() {
 
-		@Override
-		protected void onOpen() {
-			// TODO Auto-generated method stub
-			Log.d(TAG, "OPEN");
+      // get channels
+      List<VideoBroadcast> channels = dlnaHelper.getChannels(udn, null);
 
-			
-		}
+      // convert to JSON with special serializer
+      String json = new GsonBuilder().
+          registerTypeAdapter(VideoBroadcast.class, new VideoBroadcast.WebSerializer())
+          .disableHtmlEscaping()
+          .create()
+          .toJson(channels);
 
-		@Override
-		protected void onClose(CloseCode code, String reason,
-				boolean initiatedByRemote) {
-			Log.d(TAG, "CLOSE");
-			// TODO Auto-generated method stub
-			
-		}
-		
+      // wrap with tag expected by javascript
+      return "{\"STATIONS\":" + json + "}";
+    }
 
-		@Override
-		protected void onMessage(WebSocketFrame message) {
-			Log.d(TAG, "MESSAGE RECEIVED from Port: " + localPort + " that says: " + message.getTextPayload());
-			if (message.getTextPayload().equals("Ping")){
+    @Override
+    protected void onPong(WebSocketFrame pong) {
 
-				try {
-					ws.send("Ping");
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-//			} else if (message.getTextPayload().equals("UpdateStations")){
-//
-//				new Thread(new Runnable() {
-//					public void run() {
-//
-////						cdsContext.browseMediaServer(true, false);
-//						updateWebSocketServerStation(ws);
-//					}
-//				}).start();
-//
-//
-//
-//			}else if (message.getTextPayload().equals("UpdateEPG")) {
-//				new Thread(new Runnable() {
-//					public void run() {
-//
-////						cdsContext.browseMediaServer(false, true);
-//						updateWebSocketServerEPG(ws);
-//					}
-//				}).start();
+    }
 
+    @Override
+    protected void onException(IOException exception) {
 
-//			}else if (message.getTextPayload().contains("setChannelList")) {
-//				log("setting channel list...");
-//				try {
-//					JSONObject jo = new JSONObject(message.getTextPayload());
-//					log ("length object: "+jo.length());
-//					JSONArray channelListJSONArray =  jo.getJSONArray("setChannelList");
-//					log ("length array: "+channelListJSONArray.length());
-//					cdsContext.channelList.removeAllElements();
-//					for (int i = 0; i < channelListJSONArray.length(); i++){
-//						log("i: " + i + " value: " + channelListJSONArray.getString(i));
-//						cdsContext.channelList.add(i, channelListJSONArray.getString(i));
-//
-//					}
-//
-//				}catch (Exception e){
-//					log("error: "+e);
-//					e.printStackTrace();
-//				}
-//
-//			}else if (message.getTextPayload().contains("setTimeList")) {
-//
-//				try {
-//					JSONArray timeListJSONArray = (new JSONObject(message.getTextPayload())).getJSONArray("setTimeList");
-//					log("setting timelist...");
-//
-//
-//					for (int i = 0; i < timeListJSONArray.length(); i++) {
-//						cdsContext.timeList[i] = Long.parseLong(timeListJSONArray.getString(i));
-//					}
-//				} catch (Exception e) {
-//					e.printStackTrace();
-//				}
-//			}else if (message.getTextPayload().contains("getChannelList")){
-//				JSONArray ja=new JSONArray();
-//				for (int i=0; i<cdsContext.channelList.size(); i++) {
-//					ja.put(cdsContext.channelList.get(i));
-//
-//				}
-//				JSONObject jo=new JSONObject();
-//				try {
-//					jo.put("channelList",ja);
-//					ws.send(jo.toString());
-//				} catch (Exception e) {
-//					e.printStackTrace();
-//				}
-//
-//			}else if (message.getTextPayload().contains("getTimeList")){
-//				JSONArray ja=new JSONArray();
-//				ja.put (cdsContext.timeList[0]);
-//				ja.put (cdsContext.timeList[1]);
-//				JSONObject jo=new JSONObject();
-//				try {
-//					jo.put("TIMELIST",ja);
-//					ws.send(jo.toString());
-//				} catch (Exception e) {
-//					e.printStackTrace();
-//				}
-//
-			}else if (message.getTextPayload().contains("browseEPGData")){
-				if (message.getTextPayload().startsWith("{") && message.getTextPayload().endsWith("}")){
-					try {
-						JSONObject jo=new JSONObject(message.getTextPayload());
-						JSONObject params=jo.getJSONObject("browseEPGData");
+    }
 
-						JSONArray ja=params.getJSONArray("TIMELIST");
-						for (int i=0; i<ja.length(); i++) {
-							cdsContext.timeList[i] =ja.getLong(i);
-						}
-						JSONArray channelListJSONArray =  params.getJSONArray("CHANNELLIST");
-						log ("length array: "+channelListJSONArray.length());
-						cdsContext.channelList.removeAllElements();
-						for (int i = 0; i < channelListJSONArray.length(); i++){
-							log("i: " + i + " value: " + channelListJSONArray.getString(i));
-							cdsContext.channelList.add(i, channelListJSONArray.getString(i));
+  }
 
-						}
+  /**
+   * Class for parsing incoming epg requests from JSON
+   */
+  private static class EpgRequestData {
+    @SerializedName("CHANNELLIST")
+    List<String> channels;
+    @SerializedName("TIMELIST")
+    List<String> times;
 
+    public List<String> getChannels() {
+      return channels;
+    }
 
-					} catch (JSONException e) {
-						e.printStackTrace();
-					}
+    public List<String> getTimes() {
+      return times;
+    }
+  }
 
+  /**
+   * Class for parsing incoming epg requests from JSON
+   */
+  private static class EpgRequest {
+    @SerializedName("browseEPGData")
+    EpgRequestData data;
 
-				}
-				new Thread(new Runnable() {
-					public void run() {
-
-						cdsContext.browseMediaServer(false, true);
-						updateWebSocketServerEPG(ws);
-					}
-				}).start();
-
-			}else if (message.getTextPayload().equals("browseEPGStations")){
-				new Thread(new Runnable() {
-					public void run() {
-//
-//						cdsContext.browseMediaServer(false, true);
-						cdsContext.browseMediaServer(true, false);
-						updateWebSocketServerStation(ws);
-//						updateWebSocketServerEPG(ws);
-					}
-				}).start();
-			}
-
-		}
-
-		@Override
-		protected void onPong(WebSocketFrame pong) {
-			// TODO Auto-generated method stub
-			
-		}
-
-		@Override
-		protected void onException(IOException exception) {
-			// TODO Auto-generated method stub
-			
-		}
-
-
-		public void updateWebSocketServerEPG(WebSocketServer.LocalWebSocket ws){
-			log("updateWebSocketServerEPG");
-
-
-			if (!cdsContext.jEPGresult.isEmpty()){
-				do{
-					try {
-						log("sending..");
-						ws.send(cdsContext.jEPGresult.elementAt(0).toString());
-						cdsContext.jEPGresult.remove(0);
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-
-				}while (!cdsContext.jEPGresult.isEmpty());
-			}
-
-		}
-
-		public void updateWebSocketServerStation(WebSocketServer.LocalWebSocket ws){
-			log("updateWebSocketServerStation");
-
-			if (!cdsContext.jStationResult.isEmpty()){
-				do{
-					try {
-						log("sending Station Data .." + cdsContext.jStationResult.size() );
-						ws.send(cdsContext.jStationResult.elementAt(0).toString());
-						cdsContext.jStationResult.remove(0);
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-
-				}while (!cdsContext.jStationResult.isEmpty());
-			}
-
-
-		}
-
-
-
-		private void log(String s){
-			Log.d(TAG, s);
-		}
-
-	}
+    public EpgRequestData getData() {
+      return data;
+    }
+  }
 
 
 }

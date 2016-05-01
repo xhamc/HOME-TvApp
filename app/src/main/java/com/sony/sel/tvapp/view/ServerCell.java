@@ -1,6 +1,7 @@
 package com.sony.sel.tvapp.view;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.util.AttributeSet;
 import android.view.View;
@@ -8,25 +9,28 @@ import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.sony.huey.dlna.IconList;
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.SettingsHelper;
-import com.sony.sel.util.SsdpServiceHelper;
 import com.squareup.otto.Subscribe;
 import com.squareup.picasso.Picasso;
+
+import java.util.Arrays;
+import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 
-import static com.sony.sel.util.SsdpServiceHelper.SsdpDeviceInfo;
+import static com.sony.sel.tvapp.util.DlnaObjects.UpnpDevice;
 
-public class ServerCell extends BaseListCell<SsdpDeviceInfo> {
+public class ServerCell extends BaseListCell<UpnpDevice> {
 
-  private SsdpDeviceInfo data;
+  private UpnpDevice data;
 
   @Bind(R.id.icon)
   ImageView icon;
-  @Bind(R.id.friendlyName)
+  @Bind(R.id.title)
   TextView friendlyName;
   @Bind(R.id.deviceInfo)
   TextView deviceInfo;
@@ -70,7 +74,7 @@ public class ServerCell extends BaseListCell<SsdpDeviceInfo> {
   }
 
   @Override
-  public void bind(final SsdpDeviceInfo data) {
+  public void bind(final UpnpDevice data) {
 
     String serverUdn = SettingsHelper.getHelper(getContext()).getEpgServer();
 
@@ -96,48 +100,55 @@ public class ServerCell extends BaseListCell<SsdpDeviceInfo> {
       deviceInfo.setVisibility(View.GONE);
     }
 
-    StringBuilder services = new StringBuilder();
-    for (String type : data.getServiceTypes()) {
-      if (services.length() > 0) {
-        services.append("\n");
-      }
-      services.append(type);
-    }
-    serviceTypes.setText(services.toString());
-    // TODO hide services for now
-    serviceTypes.setVisibility(View.GONE);
-
-    if (data.getIcons().size() > 0) {
-      // TODO select best icon
-      drawIcon(data.getIcons().get(0));
-    } else {
+    String iconUri = data.getIcon();
+    if (iconUri != null) {
+      // use explicitly set icon
       icon.setImageDrawable(null);
+      Picasso.with(getContext()).load(iconUri).into(icon);
+    } else {
+      // else parse icon list
+      IconList iconList = data.getIconList();
+      if (iconList != null && iconList.getCount() > 0) {
+        drawIcon(iconList);
+      } else {
+        icon.setImageDrawable(null);
+      }
     }
 
     check.setChecked(serverUdn != null ? serverUdn.equals(data.getUdn()) : false);
 
     setupFocus(null, 1.02f);
-
-    this.setOnClickListener(new OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        SettingsHelper.getHelper(getContext()).setEpgServer(data.getUdn());
-        // new FindEpgDataTask(getContext(),data.getUdn()).doInBackground();
-      }
-    });
   }
 
   @Override
-  public SsdpDeviceInfo getData() {
+  public UpnpDevice getData() {
     return data;
   }
 
   public static final String LOG_TAG = "DlnaTest";
 
-  void drawIcon(SsdpServiceHelper.IconInfo iconInfo) {
-    Uri uri = Uri.parse(data.getDeviceDescriptorLocation()).buildUpon().path(iconInfo.getUrl()).build();
+  void drawIcon(IconList iconList) {
+    List<String> formats = Arrays.asList(
+        "image/bmp",
+        "image/gif",
+        "image/jpeg",
+        "image/png"
+    );
+    int bestIcon = 0;
+    for (int i = 1; i < iconList.getCount(); i++) {
+      if (formats.indexOf(iconList.getMimetype(i)) > formats.indexOf(iconList.getMimetype(bestIcon))) {
+        bestIcon = i;
+      } else if (iconList.getWidth(i) > iconList.getWidth(bestIcon)) {
+        bestIcon = i;
+      }
+    }
+    Uri uri = Uri.parse(iconList.getUrl(bestIcon));
     Picasso.with(getContext()).load(uri).into(icon);
   }
 
-
+  @Override
+  protected void onFocusChanged(boolean hasFocus, int direction, Rect previouslyFocusedRect) {
+    super.onFocusChanged(hasFocus, direction, previouslyFocusedRect);
+    EventBus.getInstance().post(new EventBus.ResetUiTimerShortEvent());
+  }
 }

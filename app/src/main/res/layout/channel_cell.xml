@@ -53,4 +53,12 @@
 
     </LinearLayout>
 
+    <ImageView
+        android:id="@+id/favorite"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:src="@drawable/star"
+        android:layout_gravity="top|right"
+        />
+
 </com.sony.sel.tvapp.view.ChannelCell>

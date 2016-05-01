@@ -1,8 +1,11 @@
 package com.sony.sel.tvapp.util;
 
+import com.sony.sel.tvapp.activity.MainActivity;
 import com.sony.sel.tvapp.ui.NavigationItem;
 import com.squareup.otto.Bus;
 import com.squareup.otto.ThreadEnforcer;
+
+import java.util.Set;
 
 public class EventBus extends Bus {
 
@@ -54,6 +57,55 @@ public class EventBus extends Bus {
     }
   }
 
+  /**
+   * Event to tell the UI timer to stop waiting to hide the UI.
+   */
+  public static class CancelUiTimerEvent {
+
+  }
+
+  public static class ResetUiTimerEvent {
+    private final long delay;
+
+    public ResetUiTimerEvent(long delay) {
+      this.delay = delay;
+    }
+
+    public long getDelay() {
+      return delay;
+    }
+  }
+
+  /**
+   * Reset the UI timer to keep the UI visible for a standard (short) interval.
+   */
+  public static class ResetUiTimerShortEvent extends ResetUiTimerEvent {
+    public ResetUiTimerShortEvent() {
+      super(MainActivity.HIDE_UI_TIMEOUT);
+    }
+  }
+
+  /**
+   * Set the UI "long timer" to keep the UI visible for a longer interval.
+   */
+  public static class ResetUiTimerLongEvent extends ResetUiTimerEvent {
+
+    public ResetUiTimerLongEvent() {
+      super(MainActivity.HIDE_UI_TIMEOUT_LONG);
+    }
+  }
+
+  public static class FavoriteChannelsChangedEvent {
+    private final Set<String> favoriteChannels;
+
+    public FavoriteChannelsChangedEvent(Set<String> favoriteChannels) {
+      this.favoriteChannels = favoriteChannels;
+    }
+
+    public Set<String> getFavoriteChannels() {
+      return favoriteChannels;
+    }
+  }
 
   private static EventBus instance;
 

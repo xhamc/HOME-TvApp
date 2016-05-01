@@ -3,6 +3,7 @@ package com.sony.sel.tvapp.view;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Handler;
+import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -11,6 +12,7 @@ import android.widget.TextView;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.util.DlnaObjects;
+import com.sony.sel.tvapp.util.SettingsHelper;
 import com.squareup.picasso.Picasso;
 
 import java.text.DateFormat;
@@ -25,7 +27,7 @@ import static com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 /**
  * View for displaying the channel data overlay.
  */
-public class ProgramInfoView extends FrameLayout  {
+public class ProgramInfoView extends FrameLayout {
 
   public static final String TAG = ProgramInfoView.class.getSimpleName();
 
@@ -33,25 +35,35 @@ public class ProgramInfoView extends FrameLayout  {
 
   @Bind(R.id.programIcon)
   ImageView icon;
-  @Bind(R.id.programTitle)
+  @Bind(R.id.title)
   TextView title;
+  @Nullable
+  @Bind(R.id.programTitle)
+  TextView programTitle;
+  @Nullable
   @Bind(R.id.programChannel)
   TextView channelNumber;
   @Bind(R.id.programTime)
   TextView time;
+  @Nullable
   @Bind(R.id.programDescription)
   TextView description;
+  @Nullable
+  @Bind(R.id.favorite)
+  ImageView favorite;
+  @Nullable
+  @Bind(R.id.recordProgram)
+  ImageView recordProgram;
+  @Nullable
+  @Bind(R.id.recordSeries)
+  ImageView recordSeries;
+  @Nullable
+  @Bind(R.id.popupAlignView)
+  View popupAlignView;
 
   private VideoProgram program;
   private VideoBroadcast channel;
-
-  private Handler handler = new Handler();
-  private Runnable timeoutRunnable = new Runnable() {
-    @Override
-    public void run() {
-      hide();
-    }
-  };
+  private SettingsHelper settingsHelper;
 
   public ProgramInfoView(Context context) {
     super(context);
@@ -75,7 +87,20 @@ public class ProgramInfoView extends FrameLayout  {
     if (isInEditMode()) {
       return;
     }
+    settingsHelper = SettingsHelper.getHelper(getContext());
     ButterKnife.bind(this);
+  }
+
+  public VideoProgram getProgram() {
+    return program;
+  }
+
+  public VideoBroadcast getChannel() {
+    return channel;
+  }
+
+  public View getPopupAlignView() {
+    return popupAlignView != null ? popupAlignView : this;
   }
 
   public void bind(VideoProgram program, DlnaObjects.VideoBroadcast channel) {
@@ -99,8 +124,20 @@ public class ProgramInfoView extends FrameLayout  {
       // title
       title.setText(program.getTitle());
 
-      // number
-      channelNumber.setText(channel.getCallSign());
+      // hide program title
+      if (programTitle != null) {
+        if (program.getProgramTitle() != null && program.getProgramTitle().length() > 0) {
+          programTitle.setText(program.getProgramTitle());
+          programTitle.setVisibility(View.VISIBLE);
+        } else {
+          programTitle.setVisibility(View.GONE);
+        }
+      }
+
+      if (channelNumber != null) {
+        // number
+        channelNumber.setText(channel.getChannelNumber() + " " + channel.getCallSign());
+      }
 
       // start/end time
       DateFormat format = new SimpleDateFormat("h:mm");
@@ -108,8 +145,10 @@ public class ProgramInfoView extends FrameLayout  {
       time.setText(programTime);
       time.setVisibility(View.VISIBLE);
 
-      // long description
-      description.setText(program.getLongDescription());
+      if (description != null) {
+        // long description
+        description.setText(program.getLongDescription());
+      }
 
     } else if (channel != null) {
 
@@ -125,54 +164,73 @@ public class ProgramInfoView extends FrameLayout  {
       // channel name
       title.setText(channel.getCallSign());
 
-      // call sign
-      channelNumber.setText(channel.getChannelNr());
+      // hide program title
+      if (programTitle != null) {
+        programTitle.setVisibility(View.GONE);
+      }
+
+      if (channelNumber != null) {
+        // call sign
+        channelNumber.setText(channel.getChannelNumber());
+      }
 
       // hide time
       time.setVisibility(View.GONE);
+      if (description != null) {
+        // use description if available
+        description.setText(channel.getDescription());
+      }
 
-      // use description if available
-      description.setText(channel.getDescription());
     }
-    // show or keep showing
-    show();
+
+    if (channel != null && favorite != null) {
+      if (settingsHelper.getFavoriteChannels().contains(channel.getChannelId())) {
+        favorite.setVisibility(View.VISIBLE);
+      } else {
+        favorite.setVisibility(View.GONE);
+      }
+    }
+
+    if (program != null && recordProgram != null && recordSeries != null) {
+      if (settingsHelper.getSeriesToRecord().contains(program.getTitle())) {
+        recordSeries.setVisibility(View.VISIBLE);
+        recordProgram.setVisibility(View.GONE);
+      } else if (settingsHelper.getProgramsToRecord().contains(program.getId())) {
+        recordSeries.setVisibility(View.GONE);
+        recordProgram.setVisibility(View.VISIBLE);
+      } else {
+        recordSeries.setVisibility(View.GONE);
+        recordProgram.setVisibility(View.GONE);
+      }
+    } else {
+      recordSeries.setVisibility(View.GONE);
+      recordProgram.setVisibility(View.GONE);
+    }
   }
 
   /**
    * Set up the icon as a program/show thumbnail.
+   *
    * @param uri Icon uri.
    */
   private void setProgramIcon(String uri) {
     icon.setVisibility(View.VISIBLE);
     icon.setScaleType(ImageView.ScaleType.CENTER_CROP);
-    icon.setPadding(0,0,0,0);
+    icon.setPadding(0, 0, 0, 0);
     Picasso.with(getContext()).load(Uri.parse(uri)).into(icon);
   }
 
   /**
    * Set up the icon as a channel ID thumbnail.
+   *
    * @param uri Icon uri.
    */
   private void setChannelIcon(String uri) {
     icon.setVisibility(View.VISIBLE);
     icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
     int padding = getResources().getDimensionPixelSize(R.dimen.channelThumbPadding);
-    icon.setPadding(padding,padding,padding,padding);
+    icon.setPadding(padding, padding, padding, padding);
     Picasso.with(getContext()).load(Uri.parse(uri)).into(icon);
-  }
-
-  public void show() {
-    this.animate().alpha(1.0f).start();
-    handler.removeCallbacks(timeoutRunnable);
-    handler.postDelayed(timeoutRunnable, HIDE_TIMEOUT);
-  }
-
-  public boolean isVisible() {
-    return getAlpha() == 1.0f;
-  }
-
-  public void hide() {
-    this.animate().alpha(0.0f).start();
   }
 
 }

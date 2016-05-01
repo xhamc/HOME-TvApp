@@ -10,6 +10,8 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
     <!-- Android TV -->
     <uses-feature
@@ -47,8 +49,8 @@
 
         <activity
             android:name=".activity.MainActivity"
-            android:screenOrientation="landscape"
             android:launchMode="singleInstance"
+            android:screenOrientation="landscape"
             >
         </activity>
 
@@ -58,10 +60,29 @@
             >
         </activity>
 
+        <activity
+            android:name=".activity.EpgActivity"
+            android:screenOrientation="landscape"
+            >
+
+        </activity>
+
+        <activity
+            android:name=".activity.SelectChannelVideosActivity"
+            android:screenOrientation="landscape"
+            >
+
+        </activity>
 
         <!-- web server for EPG -->
         <service
             android:name="com.sony.localserver.ServerService"
+            android:enabled="true"
+            />
+
+        <!-- cling DLNA service -->
+        <service
+            android:name="org.fourthline.cling.android.AndroidUpnpServiceImpl"
             android:enabled="true"
             />
 

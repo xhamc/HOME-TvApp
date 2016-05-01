@@ -7,7 +7,9 @@
     <string name="quit">Quit</string>
     <string name="cancel">Cancel</string>
     <string name="back">Back</string>
+    <string name="done">Done</string>
     <string name="quitConfirmation">Are you sure you want to quit?</string>
+    <string name="noItemsFound">No items were found.</string>
 
     <!-- errors -->
     <string name="error">Error</string>
@@ -26,6 +28,23 @@
     <string name="channels">Channels</string>
     <string name="guide">Guide</string>
     <string name="recordings">Recordings</string>
+    <string name="vod">VOD</string>
     <string name="settings">Settings</string>
+
+    <!-- channel video selection -->
+    <string name="selectChannelVideos">Configure Videos</string>
+    <string name="selectChannelVideosPrompt">Browse local DLNA servers and select channel videos:</string>
+    <string name="clearChannelVideos">Clear Videos</string>
+    <string name="selectVideos">Select Videos</string>
+    <string name="noVideosError">You have not yet selected any videos to play.</string>
+
+    <!-- menu items -->
+    <string name="addToFavoriteChannels">Add to favorite channels</string>
+    <string name="removeFromFavoriteChannels">Remove from favorite channels</string>
+    <string name="recordProgram">Record program</string>
+    <string name="recordSeries">Record entire series</string>
+    <string name="cancelProgramRecording">Cancel recording</string>
+    <string name="cancelSeriesRecording">Cancel series recording</string>
+    <string name="channelVid">Channel Video</string>
 
 </resources>

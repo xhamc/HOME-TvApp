@@ -46,6 +46,8 @@
                 that.open=true;
                 setInterval (pingWebSocket, 2000);
 
+                ws.send('keepUIVisible:120000', false);
+
             };
 
             ws.onmessage = function (evt)
@@ -122,10 +124,9 @@
                                 channel.name=stations[keyStation]["callSign"];
                                 channel.icon_url = stations[keyStation]["channelIcon"];
                                 channel.channelId = stations[keyStation]['channelID'];
+                                channel.channelNumber=stations[keyStation]['channelNumber'];
                                 channel.icon=new Image();
                                 channel.icon.imageloaded=false;
-
-
 
                                 var l=STATION_DATA.length;
                                 var newStation=true;
