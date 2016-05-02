@@ -17,6 +17,7 @@ import com.sony.localserver.ServerService;
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.SettingsHelper;
+import com.squareup.otto.Subscribe;
 
 /**
  * Fragment for displaying the EPG.
@@ -33,6 +34,7 @@ public class EpgFragment extends BaseFragment {
       onWebServiceStarted();
     }
   };
+  private boolean sendBackKeyToEpg = false;
 
   @Nullable
   @Override
@@ -51,7 +53,7 @@ public class EpgFragment extends BaseFragment {
     webView.setOnKeyListener(new View.OnKeyListener() {
       @Override
       public boolean onKey(View v, int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
+        if (keyCode == KeyEvent.KEYCODE_BACK && sendBackKeyToEpg == true) {
           // send the key press back to webview as "B" key
           webView.dispatchKeyEvent(new KeyEvent(event.getAction(), KeyEvent.KEYCODE_B));
           return true;
@@ -66,6 +68,11 @@ public class EpgFragment extends BaseFragment {
     EventBus.getInstance().post(new EventBus.ResetUiTimerLongEvent());
 
     return contentView;
+  }
+
+  @Subscribe
+  public void onSendBackKeyToEpg(EventBus.SendBackKeyToEpgEvent event) {
+    sendBackKeyToEpg = event.shouldSend();
   }
 
   @Override
