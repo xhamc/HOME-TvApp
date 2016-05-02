@@ -649,6 +649,7 @@ function GridController(ws){
 				midSelectionPoint=(start+end)/2;
     		}
 			descriptionBoxDrawFlag=false;
+			ws.send("sendBackKeyToEPG:false");
 //    		descriptionBoxStartTimer=setTimeout(function(){
 //    			descriptionBoxDrawFlag=true;
 //    		},200000);
@@ -734,14 +735,16 @@ function GridController(ws){
 			}
 		}
 
-		if (e.keyIdentifier == 'Enter') {
+		if (e.keyIdentifier == 'Enter' || e.keyIdentifier =="U+0042") {
 
 				descriptionBoxDrawFlag=!descriptionBoxDrawFlag;
 				console.log("Return pressed: "+		descriptionBoxDrawFlag);
 				if (descriptionBoxDrawFlag){
 						ws.send('keepUIVisible:40000', false);
+						ws.send("sendBackKeyToEPG:true");
 				}else{
 						ws.send('keepUIVisible:20000', false);
+						ws.send("sendBackKeyToEPG:false");
 				}
 
 		}else{
