@@ -113,7 +113,8 @@
                         }else if (key=="STATIONS"){
                             var stationData;
                             stations= obj[key];
-
+                            STATION_DATA=[];
+                            stationDataAvailable=true;
                             for (keyStation in stations){
                                 console.log(keyStation);
                                 for (stationData in stations[keyStation]){
@@ -129,17 +130,19 @@
                                 channel.icon.imageloaded=false;
 
                                 var l=STATION_DATA.length;
-                                var newStation=true;
-                                for (var i=0; i<l; i++){
-                                    if (STATION_DATA[i].channelId == channel.channelId ){
-                                        newStation=false;
-                                        break;
-                                    }
-                                }
-                                if (newStation){
-                                    stationDataAvailable=true;
-                                    STATION_DATA[l]=channel;
-                                }
+//                                var newStation=true;
+//                                for (var i=0; i<l; i++){
+//                                    if (STATION_DATA[i].channelId == channel.channelId ){
+//                                        newStation=false;
+//                                        break;
+//                                    }
+//                                }
+//                                if (STATION_DATA[l].channelId != channel.channelId ){
+
+                                STATION_DATA[l]=channel;
+
+                                console.log()
+//                                }
 //                                updateChannelList=false;
                             }
 

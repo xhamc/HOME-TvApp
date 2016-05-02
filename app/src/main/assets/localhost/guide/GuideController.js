@@ -95,6 +95,7 @@ function GuideController(){
 //
 //			}
 /****************************Don't Sort STATION_DATA ****************/
+			console.log("Sorting the channel data");
 			for (var i=0; i<STATION_DATA.length;i++){
 				CHANNELLIST_DATA[i]=STATION_DATA[i];
 			}
@@ -151,6 +152,7 @@ function GuideController(){
 			if (getStations==0){
 				getStations=STATION_FETCH_REQUEST_INT;
 				ws.send("browseEPGStations", true);
+				return;
 			}else{
 				var updateRequest=getNextTimeAndChannelList();
 				if (null!=updateRequest){
