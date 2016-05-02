@@ -46,6 +46,20 @@ public class EpgFragment extends BaseFragment {
     webView.setBackgroundColor(Color.TRANSPARENT);
     webView.setLayerType(WebView.LAYER_TYPE_SOFTWARE, null);
 
+    // on back key, send a "B" keypress to the webview
+    // TODO add switch in sockets server to turn this on/off
+    webView.setOnKeyListener(new View.OnKeyListener() {
+      @Override
+      public boolean onKey(View v, int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+          // send the key press back to webview as "B" key
+          webView.dispatchKeyEvent(new KeyEvent(event.getAction(), KeyEvent.KEYCODE_B));
+          return true;
+        }
+        return false;
+      }
+    });
+
     startWebService();
 
     // long UI hiding
