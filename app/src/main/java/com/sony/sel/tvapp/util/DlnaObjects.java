@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 
 /**
@@ -45,6 +46,9 @@ public class DlnaObjects {
 
   /// Date format for UTC dates/times
   private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'Z");
+
+  /// Time format for duration
+  private static final DateFormat TIME_FORMAT = new SimpleDateFormat("'P'hh:mm:ss");
 
   /**
    * Enumeration of all DLNA data classes.
@@ -619,8 +623,21 @@ public class DlnaObjects {
       }
     }
 
-    public String getScheduledDurationTime(){
-      return scheduledDurationTime;
+    /**
+     * Return duration in milliseconds.
+     */
+    public long getScheduledDurationTime(){
+      if (scheduledDurationTime != null) {
+        try {
+          // need to set time zone to UTC for proper parsing
+          TIME_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
+          return TIME_FORMAT.parse(scheduledDurationTime).getTime();
+        } catch (ParseException e) {
+          return 0;
+        }
+      } else {
+        return 0;
+      }
     }
 
     public String getGenre() {
@@ -769,8 +786,7 @@ public class DlnaObjects {
         obj.remove("protocolInfo");
         obj.remove("programId");
         obj.addProperty("start", String.valueOf(src.getScheduledStartTime().getTime()));
-        obj.addProperty("length", String.valueOf(src.getScheduledEndTime().getTime() - src.getScheduledStartTime().getTime()));
-//        obj.addProperty("length", String.valueOf(src.getScheduledDurationTime()));
+        obj.addProperty("length", String.valueOf(src.getScheduledDurationTime()));
         obj.addProperty("description", src.getLongDescription());
         obj.addProperty("programIcon", src.getIcon());
         obj.addProperty("type", src.getEpisodeType());
