@@ -84,7 +84,6 @@ public abstract class PrepareVideoTask extends AsyncTask<Void, Void, MediaPlayer
       return null;
     } catch (Throwable e) {
       Log.e(TAG, "Error preparing video: " + e);
-      e.printStackTrace();
       error = e;
       return null;
     }
@@ -135,7 +134,7 @@ public abstract class PrepareVideoTask extends AsyncTask<Void, Void, MediaPlayer
     });
     mediaPlayer.setDataSource(context, videoUri);
     Log.d(TAG, "Preparing video: " + videoUri + ".");
-    mediaPlayer.prepare();
+    mediaPlayer.prepareAsync();
     synchronized (prepareLock) {
       prepareLock.wait(timeout);
       if (!prepared) {
