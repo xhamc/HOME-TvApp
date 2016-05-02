@@ -107,6 +107,18 @@ public class EventBus extends Bus {
     }
   }
 
+  public static class SendBackKeyToEpgEvent {
+    private final boolean shouldSend;
+
+    public SendBackKeyToEpgEvent(boolean shouldSend) {
+      this.shouldSend = shouldSend;
+    }
+
+    public boolean shouldSend() {
+      return shouldSend;
+    }
+  }
+
   private static EventBus instance;
 
   public static EventBus getInstance() {

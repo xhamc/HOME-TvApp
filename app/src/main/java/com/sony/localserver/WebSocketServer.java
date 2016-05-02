@@ -139,6 +139,11 @@ public class WebSocketServer extends NanoWSD {
             break;
           }
         }
+      } else if (payload.startsWith("sendBackKeyToEPG:")) {
+        // set whether the web view receives the back key (as a "B" keypress)
+        String value = payload.split(":")[1];
+        // send as an event to EpgFragment
+        EventBus.getInstance().post(new EventBus.SendBackKeyToEpgEvent(value.equalsIgnoreCase("true")));
       }
     }
 
