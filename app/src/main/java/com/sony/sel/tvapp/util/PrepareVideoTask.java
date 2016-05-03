@@ -44,6 +44,7 @@ public abstract class PrepareVideoTask extends AsyncTask<Void, Void, MediaPlayer
     this.context = context;
     this.uri = uri;
     this.timeout = timeout;
+    Log.d(TAG, "Prepare video task created.");
   }
 
   public Uri getUri() {
@@ -60,7 +61,7 @@ public abstract class PrepareVideoTask extends AsyncTask<Void, Void, MediaPlayer
 
   @Override
   protected MediaPlayer doInBackground(final Void... params) {
-    Log.d(TAG, "Starting play video task for " + uri + ".");
+    Log.d(TAG, "Starting prepare video task for " + uri + ".");
     MediaPlayer mediaPlayer = null;
     if (isCancelled()) {
       // don't do anything if canceled
@@ -93,62 +94,68 @@ public abstract class PrepareVideoTask extends AsyncTask<Void, Void, MediaPlayer
   private MediaPlayer prepareMedia(Uri videoUri, long timeout) throws IOException, InterruptedException {
     final Object prepareLock = new Object();
     MediaPlayer mediaPlayer = new MediaPlayer();
-    mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-      @Override
-      public boolean onError(MediaPlayer mp, int what, int extra) {
-        Log.e(TAG, "Player error: " + decodeMediaStatus(what) + ". Extra = " + extra + ".");
-        return true;
-      }
-    });
-    mediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
-      @Override
-      public void onBufferingUpdate(MediaPlayer mp, int percent) {
-        Log.d(TAG, "Video buffering: " + percent + "%.");
-      }
-    });
-    mediaPlayer.setOnInfoListener(new MediaPlayer.OnInfoListener() {
-      @Override
-      public boolean onInfo(MediaPlayer mp, int what, int extra) {
-        Log.d(TAG, "Video info: what = " + decodeMediaStatus(what) + ", extra = " + extra + '.');
-        return false;
-      }
-    });
-    mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-      @Override
-      public void onCompletion(MediaPlayer mp) {
-        // loop when done
-        Log.d(TAG, "Video complete, restarting.");
-        mp.seekTo(0);
-        mp.start();
-      }
-    });
-    mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-      @Override
-      public void onPrepared(MediaPlayer mp) {
-        Log.d(TAG, "Video prepared.");
-        prepared = true;
-        synchronized (prepareLock) {
-          prepareLock.notifyAll();
+    try {
+      mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+        @Override
+        public boolean onError(MediaPlayer mp, int what, int extra) {
+          Log.e(TAG, "Player error: " + decodeMediaStatus(what) + ". Extra = " + extra + ".");
+          return true;
+        }
+      });
+      mediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
+        @Override
+        public void onBufferingUpdate(MediaPlayer mp, int percent) {
+          Log.d(TAG, "Video buffering: " + percent + "%.");
+        }
+      });
+      mediaPlayer.setOnInfoListener(new MediaPlayer.OnInfoListener() {
+        @Override
+        public boolean onInfo(MediaPlayer mp, int what, int extra) {
+          Log.d(TAG, "Video info: what = " + decodeMediaStatus(what) + ", extra = " + extra + '.');
+          return false;
+        }
+      });
+      mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+        @Override
+        public void onCompletion(MediaPlayer mp) {
+          // loop when done
+          Log.d(TAG, "Video complete, restarting.");
+          mp.seekTo(0);
+          mp.start();
+        }
+      });
+      mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+        @Override
+        public void onPrepared(MediaPlayer mp) {
+          Log.d(TAG, "Video prepared.");
+          prepared = true;
+          synchronized (prepareLock) {
+            prepareLock.notifyAll();
+          }
+        }
+      });
+      mediaPlayer.setDataSource(context, videoUri);
+      Log.d(TAG, "Preparing video: " + videoUri + ".");
+      mediaPlayer.prepareAsync();
+      synchronized (prepareLock) {
+        prepareLock.wait(timeout);
+        if (!prepared) {
+          mediaPlayer.release();
+          throw new InterruptedException("Video prepare timed out after " + timeout + " ms.");
         }
       }
-    });
-    mediaPlayer.setDataSource(context, videoUri);
-    Log.d(TAG, "Preparing video: " + videoUri + ".");
-    mediaPlayer.prepareAsync();
-    synchronized (prepareLock) {
-      prepareLock.wait(timeout);
-      if (!prepared) {
-        mediaPlayer.release();
-        throw new InterruptedException("Video prepare timed out after " + timeout + " ms.");
-      }
+      return mediaPlayer;
+    } catch (Throwable e) {
+      // release player on errors and re-throw the error
+      mediaPlayer.release();
+      throw e;
     }
-    return mediaPlayer;
   }
 
   @Override
   protected void onCancelled(MediaPlayer mediaPlayer) {
     super.onCancelled(mediaPlayer);
-    Log.w(TAG, "Play video task canceled for " + uri + ".");
+    Log.w(TAG, "Prepare video task canceled for " + uri + ".");
     if (mediaPlayer != null) {
       mediaPlayer.release();
     }

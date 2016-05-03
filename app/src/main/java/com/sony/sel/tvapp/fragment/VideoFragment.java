@@ -69,6 +69,7 @@ public class VideoFragment extends BaseFragment {
   private PlayVideoTask playVideoTask;
   private MediaSession mediaSession;
   private Bitmap mediaArtwork;
+  private static boolean dlnaPlayerFailed;
 
   private final long PREPARE_DLNA_VIDEO_TIMEOUT = 5000;
   private final long PREPARE_VIDEO_TIMEOUT = 60000;
@@ -173,10 +174,6 @@ public class VideoFragment extends BaseFragment {
       setup(uri);
       return;
     }
-    if (playVideoTask != null) {
-      // cancel a playback task in progress
-      playVideoTask.cancel(true);
-    }
     stop();
     if (uri != null) {
       showSpinner();
@@ -229,6 +226,13 @@ public class VideoFragment extends BaseFragment {
       mediaPlayer = null;
       updateMediaPlaybackState();
     }
+    if (playVideoTask != null) {
+      // cancel a playback task in progress
+      playVideoTask.cancel(true);
+      playVideoTask = null;
+      hideSpinner();
+    }
+
   }
 
   /**
@@ -368,6 +372,7 @@ public class VideoFragment extends BaseFragment {
     protected void onPostExecute(MediaPlayer mediaPlayer) {
       if (mediaPlayer == null && originalUri != null) {
         // not successful preparing DLNA playback
+        dlnaPlayerFailed = true;
         Log.e(TAG, "Error preparing DLNA URI " + getUri() + ". Retrying with normal MediaPlayer.");
         playVideoTask = new PlayVideoTask(getActivity(), originalUri, PREPARE_VIDEO_TIMEOUT);
         playVideoTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
