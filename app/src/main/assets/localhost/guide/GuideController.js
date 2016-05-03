@@ -123,6 +123,8 @@ function GuideController(){
 	function favoriteChannelRequest(){
 		if (!udpdateEPGinProgress){
 			ws.send("getFavorites", true);
+		}else{
+			setTimeout(favoriteChannelRequest(),1000);
 		}
 	}
 
@@ -175,7 +177,7 @@ function GuideController(){
 
 		if (!udpdateEPGinProgress){
 			getStations--;
-			if (getStations==0){
+			if (getStations<=0){
 				getStations=STATION_FETCH_REQUEST_INT;
 				ws.send("browseEPGStations", true);
 				return;
