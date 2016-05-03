@@ -6,7 +6,6 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
-import com.sony.localserver.NanoWSD.WebSocketFrame.CloseCode;
 import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.DlnaObjects;
 import com.sony.sel.tvapp.util.EventBus;
@@ -21,6 +20,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import fi.iki.elonen.NanoWSD;
+
 import static com.sony.sel.tvapp.util.DlnaObjects.VideoBroadcast;
 import static com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 
@@ -29,7 +30,7 @@ import static com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
  */
 public class WebSocketServer extends NanoWSD {
 
-  public static final String TAG = "CVP-2";
+  public static final String TAG = WebSocketServer.class.getSimpleName();
 
   private LocalWebSocket ws;
   private String udn;
@@ -39,6 +40,7 @@ public class WebSocketServer extends NanoWSD {
   public WebSocketServer(String host, int port, DlnaInterface dlnaHelper, SettingsHelper settingsHelper) {
     super(host, port);
     this.dlnaHelper = dlnaHelper;
+    this.settingsHelper = settingsHelper;
   }
 
   public String getUdn() {
@@ -68,9 +70,8 @@ public class WebSocketServer extends NanoWSD {
     }
 
     @Override
-    protected void onClose(CloseCode code, String reason,
-                           boolean initiatedByRemote) {
-      Log.d(TAG, "CLOSE");
+    protected void onClose(WebSocketFrame.CloseCode code, String reason, boolean initiatedByRemote) {
+      Log.d(TAG, "CLOSE WEBSOCKET");
     }
 
 
@@ -132,7 +133,6 @@ public class WebSocketServer extends NanoWSD {
         List<VideoBroadcast> channels = dlnaHelper.getChannels(udn, null);
         for (VideoBroadcast channel : channels) {
           if (channel.getChannelId().equals(channelId)) {
-
             settingsHelper.setCurrentChannel(channel);
             break;
           }
