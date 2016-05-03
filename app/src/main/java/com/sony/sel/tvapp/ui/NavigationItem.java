@@ -6,6 +6,7 @@ import android.content.Context;
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.fragment.ChannelGridFragment;
 import com.sony.sel.tvapp.fragment.EpgFragment;
+import com.sony.sel.tvapp.fragment.SearchFragment;
 import com.sony.sel.tvapp.fragment.SelectServerFragment;
 
 import java.lang.reflect.InvocationTargetException;
@@ -15,7 +16,7 @@ import java.lang.reflect.InvocationTargetException;
  */
 public enum NavigationItem {
 
-  SEARCH(R.string.search, null, null),
+  SEARCH(R.string.search, SearchFragment.class, SearchFragment.TAG),
   CHANNELS(R.string.channels, ChannelGridFragment.class, ChannelGridFragment.TAG),
   GUIDE(R.string.guide, EpgFragment.class, EpgFragment.TAG),
   RECORDINGS(R.string.recordings, null, null),
