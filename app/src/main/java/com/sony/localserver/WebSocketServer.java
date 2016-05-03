@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import fi.iki.elonen.NanoWSD;
 
 import static com.sony.sel.tvapp.util.DlnaObjects.VideoBroadcast;
 import static com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
