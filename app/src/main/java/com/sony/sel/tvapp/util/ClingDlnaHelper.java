@@ -27,6 +27,7 @@ import org.fourthline.cling.registry.DefaultRegistryListener;
 import org.fourthline.cling.registry.Registry;
 import org.fourthline.cling.registry.RegistryListener;
 import org.fourthline.cling.support.contentdirectory.callback.Browse;
+import org.fourthline.cling.support.contentdirectory.callback.Search;
 import org.fourthline.cling.support.model.BrowseFlag;
 import org.fourthline.cling.support.model.DIDLAttribute;
 import org.fourthline.cling.support.model.DIDLContent;
@@ -45,6 +46,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Implementation of DLNA helper based on cling DLNA libraries.
@@ -260,6 +262,68 @@ public class ClingDlnaHelper extends BaseDlnaHelper {
     return (List<T>) children;
   }
 
+  @NonNull
+  @Override
+  public <T extends DlnaObjects.DlnaObject> List<T> search(String udn, String parentId, String searchText, final Class<T> childClass) {
+    String query = "*".equals(searchText) ? "*" : "dc:title contains \""+searchText+"\"";
+    Log.d(TAG, "Search: udn =  " + udn + ", query = " + query + ".");
+    final List<DlnaObjects.DlnaObject> results = new ArrayList<>();
+    Device device = upnpService.getRegistry().getDevice(UDN.valueOf(udn), true);
+    if (device == null) {
+      // device not found
+      return (List<T>) results;
+    }
+    Service service = device.findService(new UDAServiceType("ContentDirectory"));
+    if (service.getAction("Search") == null) {
+      Log.e(TAG, "Server does not support Search action.");
+      return (List<T>) results;
+    }
+    Search search = new Search(service, parentId, query) {
+
+      @Override
+      public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {
+        Log.e(TAG, "Search failure: " + defaultMsg);
+        synchronized (results) {
+          results.notifyAll();
+        }
+      }
+
+      @Override
+      public void received(ActionInvocation actionInvocation, DIDLContent didl) {
+        Log.d(TAG, "Search results received.");
+        synchronized (results) {
+          for (Container item : didl.getContainers()) {
+            DlnaObjects.DlnaObject object = parseDidlItem(item);
+            if (object != null) {
+              results.add(object);
+            }
+          }
+          for (Item item : didl.getItems()) {
+            DlnaObjects.DlnaObject object = parseDidlItem(item);
+            if (object != null) {
+              results.add(object);
+            }
+          }
+          results.notifyAll();
+        }
+      }
+
+      @Override
+      public void updateStatus(Search.Status status) {
+        Log.d(TAG, "Search status: " + status.getDefaultMessage());
+      }
+    };
+    upnpService.getControlPoint().execute(search);
+    synchronized (results) {
+      try {
+        results.wait();
+      } catch (InterruptedException e) {
+        Log.e(TAG, e.getMessage());
+      }
+    }
+    return (List<T>) results;
+  }
+
   private DlnaObjects.DlnaObject parseDidlItem(DIDLObject object) {
     String clazz = object.getClazz().getValue();
     try {
@@ -308,10 +372,10 @@ public class ClingDlnaHelper extends BaseDlnaHelper {
             dest.setScheduledStartTime(property.getValue().toString());
           } else if (property.getDescriptorName().equals("scheduledEndTime")) {
             dest.setScheduledEndTime(property.getValue().toString());
-          } else if (property.getDescriptorName().equals("scheduledDurationTime")){
+          } else if (property.getDescriptorName().equals("scheduledDurationTime")) {
             dest.setScheduleDurationTime(property.getValue().toString());
           } else if (property.getDescriptorName().equals("longDescription")) {
-          dest.setLongDescription(property.getValue().toString());
+            dest.setLongDescription(property.getValue().toString());
           } else if (property.getDescriptorName().equals("programTitle")) {
             dest.setProgramTitle(property.getValue().toString());
           } else if (property.getDescriptorName().equals("programID")) {

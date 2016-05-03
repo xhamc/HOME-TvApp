@@ -88,6 +88,19 @@ public interface DlnaInterface {
   <T extends DlnaObjects.DlnaObject> List<T> getChildren(String udn, String parentId, Class<T> childClass, @Nullable ContentObserver contentObserver, boolean useCache);
 
   /**
+   * Search for items on a DLNA server.
+   *
+   * @param udn        Device UDN.
+   * @param parentId   Parent ID to search. "0" is the "root parent".
+   * @param query      Search query string.
+   * @param childClass Expected {@link com.sony.sel.tvapp.util.DlnaObjects.DlnaObject} subclass of child elements.
+   * @param <T>        Expected class of child elements.
+   * @return List of found items, or empty list if none are found or an error occurs.
+   */
+  @NonNull
+  <T extends DlnaObjects.DlnaObject> List<T> search(String udn, String parentId, String query, final Class<T> childClass);
+
+  /**
    * Return the list of EPG channels.
    *
    * @param udn             Device UDN.
@@ -122,6 +135,7 @@ public interface DlnaInterface {
 
   /**
    * Set the list of favorite channels. Affects the sort order of all subsequent {@link #getChannels(String, ContentObserver)} requests.
+   *
    * @param channelIds
    */
   void setFavoriteChannels(Set<String> channelIds);

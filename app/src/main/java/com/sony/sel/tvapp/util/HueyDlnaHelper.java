@@ -262,6 +262,12 @@ public class HueyDlnaHelper extends BaseDlnaHelper {
     return children;
   }
 
+  @NonNull
+  @Override
+  public <T extends DlnaObject> List<T> search(String udn, String parentId, String query, Class<T> childClass) {
+    return null;
+  }
+
   private Context getDlnaServiceContext() throws PackageManager.NameNotFoundException {
     return getContext().createPackageContext(HUEY_PACKAGE, 0);
   }
