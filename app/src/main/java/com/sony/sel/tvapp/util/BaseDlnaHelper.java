@@ -23,11 +23,9 @@ public abstract class BaseDlnaHelper implements DlnaInterface {
 
   private final Context context;
   private ContentObserver channelObserver;
-  private Set<String> favoriteChannels;
 
   public BaseDlnaHelper(Context context) {
     this.context = context.getApplicationContext();
-    this.favoriteChannels = SettingsHelper.getHelper(context).getFavoriteChannels();
   }
 
   protected Context getContext() {
@@ -39,6 +37,7 @@ public abstract class BaseDlnaHelper implements DlnaInterface {
   public List<DlnaObjects.VideoBroadcast> getChannels(@NonNull String udn, @Nullable ContentObserver contentObserver) {
     channelObserver = contentObserver;
     List<DlnaObjects.VideoBroadcast> channels = getChildren(udn, "0/Channels", DlnaObjects.VideoBroadcast.class, contentObserver, false);
+    final Set<String> favoriteChannels = SettingsHelper.getHelper(getContext()).getFavoriteChannels();
     Collections.sort(channels, new Comparator<DlnaObjects.VideoBroadcast>() {
       @Override
       public int compare(DlnaObjects.VideoBroadcast lhs, DlnaObjects.VideoBroadcast rhs) {
@@ -96,7 +95,6 @@ public abstract class BaseDlnaHelper implements DlnaInterface {
 
   @Override
   public void setFavoriteChannels(Set<String> favoriteChannels) {
-    this.favoriteChannels = favoriteChannels;
     if (channelObserver != null) {
       channelObserver.dispatchChange(false, null);
     }

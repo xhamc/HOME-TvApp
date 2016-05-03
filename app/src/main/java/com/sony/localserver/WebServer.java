@@ -105,7 +105,7 @@ public class WebServer extends WebSocketServer {
         is = context.getAssets().open(uri);
         if (is != null) {
           Log.d(TAG, "Serving out: " + uri + " with mime type: " + assetsHash.get(uri));
-          r = newFixedLengthResponse(assetsHash.get(uri));
+          r = new NanoHTTPD.Response(Response.Status.OK, assetsHash.get(uri), is);
           return r;
         }
 

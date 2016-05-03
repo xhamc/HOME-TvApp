@@ -158,6 +158,14 @@ function GridController(ws){
 
 				drawTextInBox(300+(i-currentChannelGridOffset)*HORIZCELLSIZE+100, VERTOFF+VERTCELLSIZE*3/4, HORIZCELLSIZE-110, CHANNELLIST_DATA[i].name, 0, 2, 1 );
 //				ctx.fillText (CHANNELLIST_DATA[i].name, 300+(i-currentChannelGridOffset)*HORIZCELLSIZE+100, 140+VERTCELLSIZE);
+
+				if (CHANNELLIST_DATA[i].favorite){
+					ctx.save();
+					ctx.fillStyle='#FFFF00';
+					ctx.globalAlpha=0.2*GLOBAL_ALPHA;
+					ctx.fillRect(300+(i-currentChannelGridOffset)*HORIZCELLSIZE,VERTOFF, HORIZCELLSIZE,VERTCELLSIZE);
+					ctx.restore();
+				}
 				ctx.save();
 				ctx.font="20px arial";
 				ctx.fillText(CHANNELLIST_DATA[i].channelNumber, 300+(i-currentChannelGridOffset)*HORIZCELLSIZE+HORIZCELLSIZE*3/4, VERTOFF+VERTCELLSIZE*0.3);

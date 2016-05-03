@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.TimeZone;
 
 
@@ -921,8 +922,6 @@ public class DlnaObjects {
         obj.addProperty("callSign", src.getCallSign());
         obj.addProperty("channelID", src.getChannelId());
         obj.addProperty("channelIcon", src.getIcon());
-
-
 
         return obj;
       }

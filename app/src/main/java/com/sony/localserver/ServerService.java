@@ -1,6 +1,7 @@
 package com.sony.localserver;
 
 import android.app.IntentService;
+import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
@@ -32,10 +33,12 @@ public class ServerService extends IntentService {
   public static final String UDN_UPDATED = "com.sony.localserver.ServerService.UDN_UPDATED";
 
   private static WebSocketServer webSocketServer;
+  public Context applicationContext;
 
   @Override
   public void onHandleIntent(Intent intent) {
     Log.d(TAG, "Service Intent: " + intent.getAction());
+    applicationContext=getApplicationContext();
     if (intent.getAction().equals(START)) {
       start();
 
