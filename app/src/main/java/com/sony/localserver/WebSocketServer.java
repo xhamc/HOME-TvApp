@@ -6,8 +6,6 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
-import com.sony.localserver.NanoWSD.WebSocketFrame.CloseCode;
-import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.DlnaObjects;
 import com.sony.sel.tvapp.util.EventBus;
@@ -26,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import fi.iki.elonen.NanoWSD;
+
 import static com.sony.sel.tvapp.util.DlnaObjects.VideoBroadcast;
 import static com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 
@@ -34,7 +34,7 @@ import static com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
  */
 public class WebSocketServer extends NanoWSD {
 
-  public static final String TAG = "WebSocketServer";
+  public static final String TAG = WebSocketServer.class.getSimpleName();
 
   private LocalWebSocket ws;
   private String udn;
@@ -44,7 +44,7 @@ public class WebSocketServer extends NanoWSD {
   public WebSocketServer(String host, int port, DlnaInterface dlnaHelper, SettingsHelper settingsHelper) {
     super(host, port);
     this.dlnaHelper = dlnaHelper;
-    this.settingsHelper=settingsHelper;
+    this.settingsHelper = settingsHelper;
   }
 
   public String getUdn() {
@@ -74,9 +74,8 @@ public class WebSocketServer extends NanoWSD {
     }
 
     @Override
-    protected void onClose(CloseCode code, String reason,
-                           boolean initiatedByRemote) {
-      Log.d(TAG, "CLOSE");
+    protected void onClose(WebSocketFrame.CloseCode code, String reason, boolean initiatedByRemote) {
+      Log.d(TAG, "CLOSE WEBSOCKET");
     }
 
 
@@ -147,7 +146,7 @@ public class WebSocketServer extends NanoWSD {
         String value = payload.split(":")[1];
         // send as an event to EpgFragment
         EventBus.getInstance().post(new EventBus.SendBackKeyToEpgEvent(value.equalsIgnoreCase("true")));
-      } else if (payload.startsWith("getFavorites")){
+      } else if (payload.startsWith("getFavorites")) {
         try {
           ws.send(getFavorites());
         } catch (IOException e) {
@@ -247,21 +246,19 @@ public class WebSocketServer extends NanoWSD {
      *
      * @return favorite list JSON.
      */
-
-    String getFavorites(){
-      Set<String> favorites=settingsHelper.getFavoriteChannels();
-      JSONObject json=new JSONObject();
-      JSONArray jarray=new JSONArray();
-      for (String fav : favorites){
+    String getFavorites() {
+      Set<String> favorites = settingsHelper.getFavoriteChannels();
+      JSONObject json = new JSONObject();
+      JSONArray jarray = new JSONArray();
+      for (String fav : favorites) {
         jarray.put(fav);
       }
       try {
         json.put("FAVORITES", jarray);
         return json.toString();
-      }
-      catch(Exception e){
-        Log.e(TAG,"Exception parsing json: "+e);
-        return"{FAVORITES:[]}";
+      } catch (Exception e) {
+        Log.e(TAG, "Exception parsing json: " + e);
+        return "{FAVORITES:[]}";
       }
     }
 
