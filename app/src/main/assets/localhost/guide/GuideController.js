@@ -9,6 +9,7 @@ function GuideController(){
 	udpdateEPGinProgress=false;
 	stationDataAvailable=false;
 	epgDataAvailable=false;
+	favoritesAvailable=false;
 
 //END GLOBALS
 	var GUIDE_FETCH_REQUEST_TIMER=1000;
@@ -38,6 +39,11 @@ function GuideController(){
 			console.log("sort");
 			sortChannelListData();
 			stationDataAvailable=false;
+			favoriteChannelRequest();
+		}else if (favoritesAvailable){
+			console.log("favorites");
+			setFavorites();
+			favoritesAvailable=false;
 			guideDataFetchRequest();
 		}else if (epgDataAvailable){
 			console.log("epgData");
@@ -46,6 +52,8 @@ function GuideController(){
 		}
 		setTimeout(guideWebsocketControllerTimer,GUIDE_WEBSOCKET_TIMER);
 	}
+
+
 
 	function sortChannelListData(){
 
@@ -111,6 +119,24 @@ function GuideController(){
 //			for (var i=0; i<CHANNELLIST_DATA.length; i++) { console.log(CHANNELLIST_DATA[i].channelId); }
 ////			lastChannelAvailable=CHANNELLIST_DATA.length-1;
 	}
+
+	function favoriteChannelRequest(){
+		if (!udpdateEPGinProgress){
+			ws.send("getFavorites", true);
+		}
+	}
+
+	function setFavorites(){
+		console.log("Setting favorites");
+		for (var i=0; i<STATION_DATA.length;i++){
+			CHANNELLIST_DATA[i]=STATION_DATA[i];
+			if (CHANNELLIST_DATA[i].favorite==true){
+				console.log("Favorites: "+CHANNELLIST_DATA[i].channelId);
+			}
+		}
+	}
+
+
 
 	function guideDataReceived(){
 

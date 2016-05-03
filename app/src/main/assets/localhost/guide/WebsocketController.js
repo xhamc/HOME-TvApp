@@ -150,6 +150,24 @@
                             console.log("STATION_DATA: udpdateEPGinProgress=false" );
 
 
+                        } else if (key=="FAVORITES"){
+                            var faveChannel;
+                            faveChannel= obj[key];
+                            for (var i=0; i<STATION_DATA.length; i++){
+                                STATION_DATA[i].favorite=false;
+                            }
+                            for (var j=0; j<faveChannel.length; j++){
+
+                                for (var i=0; i<STATION_DATA.length; i++){
+                                    if (STATION_DATA[i].channelId == faveChannel[j]){
+                                        STATION_DATA[i].favorite=true;
+                                        break;
+                                    }
+                                }
+
+                            }
+                            favoritesAvailable=true;
+                            udpdateEPGinProgress=false;
                         }
 
                     }

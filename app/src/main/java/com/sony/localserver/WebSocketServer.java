@@ -13,6 +13,9 @@ import com.sony.sel.tvapp.util.DlnaObjects;
 import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.SettingsHelper;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -31,7 +34,7 @@ import static com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
  */
 public class WebSocketServer extends NanoWSD {
 
-  public static final String TAG = "CVP-2";
+  public static final String TAG = "WebSocketServer";
 
   private LocalWebSocket ws;
   private String udn;
@@ -41,6 +44,7 @@ public class WebSocketServer extends NanoWSD {
   public WebSocketServer(String host, int port, DlnaInterface dlnaHelper, SettingsHelper settingsHelper) {
     super(host, port);
     this.dlnaHelper = dlnaHelper;
+    this.settingsHelper=settingsHelper;
   }
 
   public String getUdn() {
@@ -134,7 +138,6 @@ public class WebSocketServer extends NanoWSD {
         List<VideoBroadcast> channels = dlnaHelper.getChannels(udn, null);
         for (VideoBroadcast channel : channels) {
           if (channel.getChannelId().equals(channelId)) {
-
             settingsHelper.setCurrentChannel(channel);
             break;
           }
@@ -144,6 +147,14 @@ public class WebSocketServer extends NanoWSD {
         String value = payload.split(":")[1];
         // send as an event to EpgFragment
         EventBus.getInstance().post(new EventBus.SendBackKeyToEpgEvent(value.equalsIgnoreCase("true")));
+      } else if (payload.startsWith("getFavorites")){
+        try {
+          ws.send(getFavorites());
+        } catch (IOException e) {
+          Log.e(TAG, "Error sending Channels:" + e);
+        }
+
+
       }
     }
 
@@ -229,6 +240,29 @@ public class WebSocketServer extends NanoWSD {
 
       // wrap with tag expected by javascript
       return "{\"STATIONS\":" + json + "}";
+    }
+
+    /**
+     * Return the list of channels favorite as a JSON string.
+     *
+     * @return favorite list JSON.
+     */
+
+    String getFavorites(){
+      Set<String> favorites=settingsHelper.getFavoriteChannels();
+      JSONObject json=new JSONObject();
+      JSONArray jarray=new JSONArray();
+      for (String fav : favorites){
+        jarray.put(fav);
+      }
+      try {
+        json.put("FAVORITES", jarray);
+        return json.toString();
+      }
+      catch(Exception e){
+        Log.e(TAG,"Exception parsing json: "+e);
+        return"{FAVORITES:[]}";
+      }
     }
 
     @Override
