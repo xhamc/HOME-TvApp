@@ -47,4 +47,8 @@
     <string name="cancelSeriesRecording">Cancel series recording</string>
     <string name="channelVid">Channel Video</string>
 
+    <!-- search -->
+    <string name="searchHint">Search TV shows</string>
+    <string name="searchDescription">TV show names</string>
+
 </resources>

@@ -85,6 +85,14 @@
             android:name="org.fourthline.cling.android.AndroidUpnpServiceImpl"
             android:enabled="true"
             />
+        
+        <!-- EPG search content provider -->
+        <provider
+            android:authorities="com.sony.sel.tvapp.epg"
+            android:name=".provider.EpgSearchContentProvider"
+            android:exported="true"
+            android:enabled="true"
+            />
 
     </application>
 
