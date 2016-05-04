@@ -34,6 +34,7 @@
                 android:focusable="true"
                 android:nextFocusDown="@android:id/list"
                 android:nextFocusRight="@android:id/list"
+                android:lines="1"
                 >
 
             </EditText>

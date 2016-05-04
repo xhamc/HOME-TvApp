@@ -1,5 +1,6 @@
 package com.sony.sel.tvapp.fragment;
 
+import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -9,11 +10,18 @@ import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.PopupMenu;
+import android.widget.TextView;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.adapter.TvAppAdapter;
@@ -39,13 +47,15 @@ public class SearchFragment extends BaseFragment {
 
   public static final String TAG = SearchFragment.class.getSimpleName();
 
-  private DlnaInterface dlnaHelper;
 
   @Bind(R.id.searchView)
   EditText searchView;
-
   @Bind(android.R.id.list)
   RecyclerView list;
+
+  private DlnaInterface dlnaHelper;
+  private SettingsHelper settingsHelper;
+  private SearchTask searchTask;
 
   private VideoProgramAdapter adapter;
 
@@ -54,6 +64,7 @@ public class SearchFragment extends BaseFragment {
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
     dlnaHelper = DlnaHelper.getHelper(getActivity());
+    settingsHelper = SettingsHelper.getHelper(getActivity());
 
     View contentView = inflater.inflate(R.layout.search_fragment, null);
 
@@ -84,7 +95,7 @@ public class SearchFragment extends BaseFragment {
 
       @Override
       public void onTextChanged(CharSequence s, int start, int before, int count) {
-        if (s.length() > 0) {
+        if (s.length() > 1) {
           search(s.toString());
         } else {
           clearSearch();
@@ -94,6 +105,19 @@ public class SearchFragment extends BaseFragment {
       @Override
       public void afterTextChanged(Editable s) {
         // nothing
+      }
+    });
+    searchView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+      @Override
+      public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+        if (actionId == EditorInfo.IME_ACTION_DONE) {
+          // TODO why isn't it hiding?
+          searchView.clearFocus();
+          InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+          imm.hideSoftInputFromWindow(searchView.getWindowToken(), 0);
+          return true;
+        }
+        return false;
       }
     });
 
@@ -115,16 +139,61 @@ public class SearchFragment extends BaseFragment {
 
   private void focusSearchText() {
     searchView.requestFocus();
-    // show the input UI by faking a click on the text view
-    searchView.dispatchTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, 0, 0, 0));
-    searchView.dispatchTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, 0, 0, 0));
+    InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+    imm.showSoftInput(searchView, 0);
+  }
+
+  private void showPopup(SearchResultCell cell, int position) {
+    final VideoProgram program = cell.getData();
+    PopupMenu menu = new PopupMenu(getActivity(), cell);
+    menu.inflate(R.menu.program_popup_menu);
+
+    menu.getMenu().removeItem(R.id.addToFavoriteChannels);
+    menu.getMenu().removeItem(R.id.removeFromFavoriteChannels);
+
+    if (settingsHelper.getSeriesToRecord().contains(program.getTitle())) {
+      menu.getMenu().removeItem(R.id.recordProgram);
+      menu.getMenu().removeItem(R.id.cancelProgramRecording);
+      menu.getMenu().removeItem(R.id.recordSeries);
+    } else if (settingsHelper.getProgramsToRecord().contains(program.getId())) {
+      menu.getMenu().removeItem(R.id.recordProgram);
+      menu.getMenu().removeItem(R.id.cancelSeriesRecording);
+    } else {
+      menu.getMenu().removeItem(R.id.cancelProgramRecording);
+      menu.getMenu().removeItem(R.id.cancelSeriesRecording);
+    }
+    menu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+      @Override
+      public boolean onMenuItemClick(MenuItem item) {
+        switch (item.getItemId()) {
+          case R.id.recordProgram:
+            settingsHelper.addRecording(program.getId());
+            return true;
+          case R.id.recordSeries:
+            settingsHelper.addSeriesRecording(program.getTitle());
+            return true;
+          case R.id.cancelProgramRecording:
+            settingsHelper.removeRecording(program.getId());
+            return true;
+          case R.id.cancelSeriesRecording:
+            settingsHelper.removeSeriesRecording(program.getTitle());
+            return true;
+        }
+        return false;
+      }
+    });
+    menu.show();
   }
 
   /**
    * Search the EPG server for a specified string.
    */
   private void search(String searchText) {
-    new SearchTask(searchText).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    if (searchTask != null) {
+      searchTask.cancel(true);
+    }
+    searchTask = new SearchTask(searchText);
+    searchTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
   }
 
   private void clearSearch() {
@@ -138,7 +207,12 @@ public class SearchFragment extends BaseFragment {
           R.layout.search_result_cell,
           getString(R.string.searching),
           getString(R.string.noItemsFound),
-          null,
+          new OnClickListener<VideoProgram, SearchResultCell>() {
+            @Override
+            public void onClick(SearchResultCell view, int position) {
+              showPopup(view, position);
+            }
+          },
           false
       );
     }
@@ -183,6 +257,7 @@ public class SearchFragment extends BaseFragment {
       }
       list.setAdapter(adapter);
       adapter.setData(results);
+      searchTask = null;
     }
   }
 }

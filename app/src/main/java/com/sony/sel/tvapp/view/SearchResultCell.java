@@ -3,10 +3,8 @@ package com.sony.sel.tvapp.view;
 import android.content.Context;
 import android.net.Uri;
 import android.util.AttributeSet;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import com.sony.sel.tvapp.R;
@@ -103,12 +101,6 @@ public class SearchResultCell extends BaseListCell<VideoProgram> {
       icon.setImageDrawable(null);
     }
 
-    this.setOnClickListener(new OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        showPopup();
-      }
-    });
   }
 
   @Override
@@ -122,44 +114,4 @@ public class SearchResultCell extends BaseListCell<VideoProgram> {
     bind(program);
   }
 
-  private void showPopup() {
-    PopupMenu menu = new PopupMenu(getContext(), this);
-    menu.inflate(R.menu.program_popup_menu);
-
-    menu.getMenu().removeItem(R.id.addToFavoriteChannels);
-    menu.getMenu().removeItem(R.id.removeFromFavoriteChannels);
-
-    if (settingsHelper.getSeriesToRecord().contains(program.getTitle())) {
-      menu.getMenu().removeItem(R.id.recordProgram);
-      menu.getMenu().removeItem(R.id.cancelProgramRecording);
-      menu.getMenu().removeItem(R.id.recordSeries);
-    } else if (settingsHelper.getProgramsToRecord().contains(program.getId())) {
-      menu.getMenu().removeItem(R.id.recordProgram);
-      menu.getMenu().removeItem(R.id.cancelSeriesRecording);
-    } else {
-      menu.getMenu().removeItem(R.id.cancelProgramRecording);
-      menu.getMenu().removeItem(R.id.cancelSeriesRecording);
-    }
-    menu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-      @Override
-      public boolean onMenuItemClick(MenuItem item) {
-        switch (item.getItemId()) {
-          case R.id.recordProgram:
-            settingsHelper.addRecording(program.getId());
-            return true;
-          case R.id.recordSeries:
-            settingsHelper.addSeriesRecording(program.getTitle());
-            return true;
-          case R.id.cancelProgramRecording:
-            settingsHelper.removeRecording(program.getId());
-            return true;
-          case R.id.cancelSeriesRecording:
-            settingsHelper.removeSeriesRecording(program.getTitle());
-            return true;
-        }
-        return false;
-      }
-    });
-    menu.show();
-  }
 }
