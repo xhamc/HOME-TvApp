@@ -50,7 +50,7 @@
     <!-- search -->
     <string name="searchHint">Search TV shows</string>
     <string name="searchDescription">TV show names</string>
-    <string name="searchPrompt">Search for text:</string>
+    <string name="searchPrompt">Search for a program:</string>
     <string name="searching">Searching...</string>
 
 </resources>

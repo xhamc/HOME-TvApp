@@ -106,6 +106,9 @@ public class SearchFragment extends BaseFragment {
     if (!hidden) {
       // disable UI timeout
       EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
+      // reset search text to empty
+      searchView.setText("");
+      // focus search text
       focusSearchText();
     }
   }
@@ -125,7 +128,7 @@ public class SearchFragment extends BaseFragment {
   }
 
   private void clearSearch() {
-    list.setAdapter(null);
+    adapter.setData(new ArrayList<VideoProgram>());
   }
 
   private class VideoProgramAdapter extends TvAppAdapter<VideoProgram, SearchResultCell> {
