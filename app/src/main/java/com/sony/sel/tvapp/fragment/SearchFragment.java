@@ -144,6 +144,9 @@ public class SearchFragment extends BaseFragment {
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
       super.onBindViewHolder(holder, position);
       holder.itemView.setNextFocusLeftId(R.id.searchView);
+      if (position == 0) {
+        holder.itemView.setNextFocusUpId(R.id.searchView);
+      }
     }
   }
 
