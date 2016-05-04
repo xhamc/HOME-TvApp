@@ -221,9 +221,6 @@ public class ChannelInfoFragment extends BaseFragment {
       super.onProgressUpdate(values);
       List<VideoProgram> programs = Arrays.asList(values);
       currentPrograms.put(values[0].getChannelId(), programs);
-      if (currentChannel != null && currentChannel.getChannelId().equals(values[0].getChannelId())) {
-        updateChannelInfo();
-      }
     }
   }
 

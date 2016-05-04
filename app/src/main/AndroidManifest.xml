@@ -74,6 +74,15 @@
 
         </activity>
 
+        <activity
+            android:name=".activity.SearchResultsActivity"
+            android:screenOrientation="landscape"
+            >
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH"/>
+            </intent-filter>
+        </activity>
+
         <!-- web server for EPG -->
         <service
             android:name="com.sony.localserver.ServerService"
@@ -88,7 +97,7 @@
         
         <!-- EPG search content provider -->
         <provider
-            android:authorities="com.sony.sel.tvapp.epg"
+            android:authorities="com.sony.sel.tvapp"
             android:name=".provider.EpgSearchContentProvider"
             android:exported="true"
             android:enabled="true"

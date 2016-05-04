@@ -1,37 +1,39 @@
 package com.sony.sel.tvapp.fragment;
 
-import android.database.ContentObserver;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.adapter.TvAppAdapter;
 import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaInterface;
-import com.sony.sel.tvapp.util.DlnaObjects;
-import com.sony.sel.tvapp.util.DlnaObjects.DlnaObject;
 import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.SettingsHelper;
-import com.sony.sel.tvapp.view.BrowseServerCell;
-import com.sony.sel.tvapp.view.ServerCell;
-import com.sony.sel.util.ViewUtils;
+import com.sony.sel.tvapp.view.SearchResultCell;
 
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import butterknife.Bind;
+import butterknife.ButterKnife;
 
-import static com.sony.sel.tvapp.util.DlnaObjects.UpnpDevice;
+import static com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 
 /**
- * Fragment for choosing the EPG server
+ * Fragment for searching EPG
  */
 public class SearchFragment extends BaseFragment {
 
@@ -39,10 +41,13 @@ public class SearchFragment extends BaseFragment {
 
   private DlnaInterface dlnaHelper;
 
+  @Bind(R.id.searchView)
+  EditText searchView;
+
   @Bind(android.R.id.list)
   RecyclerView list;
 
-  private DeviceAdapter adapter;
+  private VideoProgramAdapter adapter;
 
   @Nullable
   @Override
@@ -52,11 +57,45 @@ public class SearchFragment extends BaseFragment {
 
     View contentView = inflater.inflate(R.layout.search_fragment, null);
 
-    // setup list and adapter
-    list = ViewUtils.findViewById(contentView, android.R.id.list);
+    ButterKnife.bind(this, contentView);
+
     list.setLayoutManager(new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false));
-    adapter = new DeviceAdapter();
-    list.setAdapter(adapter);
+    list.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+      @Override
+      public void onFocusChange(View v, boolean hasFocus) {
+        if (hasFocus) {
+          if (list.getChildAt(0) != null) {
+            list.getChildAt(0).requestFocus();
+          }
+        }
+      }
+    });
+    adapter = new VideoProgramAdapter();
+
+    // disable UI timeout
+    EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
+    focusSearchText();
+
+    searchView.addTextChangedListener(new TextWatcher() {
+      @Override
+      public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        // nothing
+      }
+
+      @Override
+      public void onTextChanged(CharSequence s, int start, int before, int count) {
+        if (s.length() > 0) {
+          search(s.toString());
+        } else {
+          clearSearch();
+        }
+      }
+
+      @Override
+      public void afterTextChanged(Editable s) {
+        // nothing
+      }
+    });
 
     return contentView;
   }
@@ -67,82 +106,77 @@ public class SearchFragment extends BaseFragment {
     if (!hidden) {
       // disable UI timeout
       EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
-      adapter.setLoading();
-      getDevices();
+      focusSearchText();
     }
   }
 
-  @Override
-  public void onDestroy() {
-    super.onDestroy();
-    // stop listening to device list changes
-    dlnaHelper.unregisterContentObserver(contentObserver);
+  private void focusSearchText() {
+    searchView.requestFocus();
+    // show the input UI by faking a click on the text view
+    searchView.dispatchTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, 0, 0, 0));
+    searchView.dispatchTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, 0, 0, 0));
   }
 
   /**
-   * Observer to receive notification of changes to the device list.
+   * Search the EPG server for a specified string.
    */
-  private ContentObserver contentObserver = new ContentObserver(null) {
-    @Override
-    public void onChange(boolean selfChange, Uri uri) {
-      super.onChange(selfChange, uri);
-      // reload channels on content changes
-      Log.d(TAG, "Received notification device list changed.");
-      getDevices();
-    }
-  };
-
-  private void searchServer(String udn) {
-    // test: search for all objects on a server
-    List<DlnaObject> results = DlnaHelper.getHelper(getActivity()).search(udn, "0", "*", DlnaObject.class);
-    Log.d(TAG, String.format("%d item(s) found.", results.size()));
-    for (DlnaObject result : results) {
-      Log.d(TAG, result.toString());
-    }
-
+  private void search(String searchText) {
+    new SearchTask(searchText).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
   }
 
-  /**
-   * Load or reload the device list.
-   */
-  private void getDevices() {
-    new GetDevicesTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+  private void clearSearch() {
+    list.setAdapter(null);
   }
 
-  private class DeviceAdapter extends TvAppAdapter<UpnpDevice, BrowseServerCell> {
-
-    public DeviceAdapter() {
-      super(
-          getActivity(),
-          R.id.server_cell,
-          R.layout.browse_server_cell,
-          getString(R.string.searchingForServers),
-          getString(R.string.noServersFound),
-          new OnClickListener<UpnpDevice, BrowseServerCell>() {
-            @Override
-            public void onClick(BrowseServerCell view, int position) {
-              searchServer(view.getData().getUdn());
-            }
-          }
+  private class VideoProgramAdapter extends TvAppAdapter<VideoProgram, SearchResultCell> {
+    public VideoProgramAdapter() {
+      super(getActivity(),
+          R.id.searchResultCell,
+          R.layout.search_result_cell,
+          getString(R.string.searching),
+          getString(R.string.noItemsFound),
+          null,
+          false
       );
     }
+
+    @Override
+    public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+      super.onBindViewHolder(holder, position);
+      holder.itemView.setNextFocusLeftId(R.id.searchView);
+    }
   }
+
 
   /**
    * Async task to get the device list.
    */
-  private class GetDevicesTask extends AsyncTask<Void, Void, List<UpnpDevice>> {
+  private class SearchTask extends AsyncTask<Void, Void, List<VideoProgram>> {
 
-    @Override
-    protected List<UpnpDevice> doInBackground(Void... params) {
-      Log.d(TAG, "Loading device list.");
-      return DlnaHelper.getHelper(getActivity()).getDeviceList(contentObserver, false);
+    private final String searchText;
+
+    public SearchTask(String searchText) {
+      this.searchText = searchText;
     }
 
     @Override
-    protected void onPostExecute(List<UpnpDevice> deviceList) {
-      super.onPostExecute(deviceList);
-      adapter.setData(deviceList);
+    protected List<VideoProgram> doInBackground(Void... params) {
+      String udn = SettingsHelper.getHelper(getActivity()).getEpgServer();
+      Log.d(TAG, "Searching for \'" + searchText + "\'.");
+      return dlnaHelper.search(udn, "0/EPG", searchText, VideoProgram.class);
+    }
+
+    @Override
+    protected void onPostExecute(List<VideoProgram> searchResults) {
+      List<VideoProgram> results = new ArrayList<>();
+      Date now = new Date();
+      for (VideoProgram program : searchResults) {
+        if (program.getScheduledEndTime().after(now)) {
+          results.add(program);
+        }
+      }
+      list.setAdapter(adapter);
+      adapter.setData(results);
     }
   }
 }

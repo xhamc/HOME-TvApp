@@ -6,12 +6,52 @@
     android:background="@color/menuBackground"
     >
 
-    <android.support.v7.widget.RecyclerView
-        android:id="@android:id/list"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:orientation="horizontal"
         >
 
-    </android.support.v7.widget.RecyclerView>
+        <LinearLayout
+            android:layout_width="300dp"
+            android:layout_height="match_parent"
+            android:layout_margin="10dp"
+            android:orientation="vertical"
+            >
+
+            <TextView
+                style="@style/normalText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/searchPrompt"
+                />
+
+            <EditText
+                android:id="@+id/searchView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:focusable="true"
+                android:nextFocusDown="@android:id/list"
+                android:nextFocusRight="@android:id/list"
+                >
+
+            </EditText>
+
+
+        </LinearLayout>
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@android:id/list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:focusable="true"
+            android:nextFocusLeft="@id/searchView"
+            >
+
+        </android.support.v7.widget.RecyclerView>
+
+    </LinearLayout>
+
 
 </FrameLayout>

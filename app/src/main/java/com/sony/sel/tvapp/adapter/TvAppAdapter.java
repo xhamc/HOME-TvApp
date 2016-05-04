@@ -31,6 +31,7 @@ public abstract class TvAppAdapter<T, V extends View & Bindable<T>> extends Recy
   private Throwable error;
   private final OnClickListener<T, V> onClickListener;
   boolean firstFocus;
+  private boolean autoFocus;
 
   public interface OnClickListener<T, V> {
     void onClick(V view, int position);
@@ -61,6 +62,16 @@ public abstract class TvAppAdapter<T, V extends View & Bindable<T>> extends Recy
     this.cellViewType = cellViewType;
     this.cellLayoutResId = cellLayoutResId;
     this.onClickListener = onItemClickListener;
+  }
+
+  public TvAppAdapter(Context context, int cellViewType, int cellLayoutResId, String loadingMessage, String emptyMessage, OnClickListener<T, V> onItemClickListener, boolean autoFocus) {
+    this.loadingMessage = loadingMessage;
+    this.emptyMessage = emptyMessage;
+    this.appContext = context.getApplicationContext();
+    this.cellViewType = cellViewType;
+    this.cellLayoutResId = cellLayoutResId;
+    this.onClickListener = onItemClickListener;
+    this.autoFocus = autoFocus;
   }
 
   /**
@@ -194,7 +205,7 @@ public abstract class TvAppAdapter<T, V extends View & Bindable<T>> extends Recy
         break;
       default:
         ((V) holder.itemView).bind(data.get(position));
-        if (position == 0 && firstFocus == false) {
+        if (position == 0 && firstFocus == false && autoFocus == true) {
           // focus first item
           holder.itemView.requestFocus();
           firstFocus = true;
