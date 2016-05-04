@@ -11,7 +11,10 @@ import android.widget.TextView;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
+import com.sony.sel.tvapp.util.EventBus;
+import com.sony.sel.tvapp.util.EventBus.RecordingsChangedEvent;
 import com.sony.sel.tvapp.util.SettingsHelper;
+import com.squareup.otto.Subscribe;
 import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
@@ -63,6 +66,18 @@ public class SearchResultCell extends BaseListCell<VideoProgram> {
   }
 
   @Override
+  protected void onAttachedToWindow() {
+    super.onAttachedToWindow();
+    EventBus.getInstance().register(this);
+  }
+
+  @Override
+  protected void onDetachedFromWindow() {
+    super.onDetachedFromWindow();
+    EventBus.getInstance().unregister(this);
+  }
+
+  @Override
   public void bind(VideoProgram data) {
     program = data;
 
@@ -101,6 +116,12 @@ public class SearchResultCell extends BaseListCell<VideoProgram> {
     return program;
   }
 
+  @Subscribe
+  public void onRecordingsChanged(RecordingsChangedEvent event) {
+    // rebind to refresh display
+    bind(program);
+  }
+
   private void showPopup() {
     PopupMenu menu = new PopupMenu(getContext(), this);
     menu.inflate(R.menu.program_popup_menu);
@@ -125,19 +146,15 @@ public class SearchResultCell extends BaseListCell<VideoProgram> {
         switch (item.getItemId()) {
           case R.id.recordProgram:
             settingsHelper.addRecording(program.getId());
-            bind(program);
             return true;
           case R.id.recordSeries:
             settingsHelper.addSeriesRecording(program.getTitle());
-            bind(program);
             return true;
           case R.id.cancelProgramRecording:
             settingsHelper.removeRecording(program.getId());
-            bind(program);
             return true;
           case R.id.cancelSeriesRecording:
             settingsHelper.removeSeriesRecording(program.getTitle());
-            bind(program);
             return true;
         }
         return false;

@@ -12,7 +12,11 @@ import android.widget.TextView;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.util.DlnaObjects;
+import com.sony.sel.tvapp.util.EventBus;
+import com.sony.sel.tvapp.util.EventBus.FavoriteChannelsChangedEvent;
+import com.sony.sel.tvapp.util.EventBus.RecordingsChangedEvent;
 import com.sony.sel.tvapp.util.SettingsHelper;
+import com.squareup.otto.Subscribe;
 import com.squareup.picasso.Picasso;
 
 import java.text.DateFormat;
@@ -89,6 +93,30 @@ public class ProgramInfoView extends FrameLayout {
     }
     settingsHelper = SettingsHelper.getHelper(getContext());
     ButterKnife.bind(this);
+  }
+
+  @Override
+  protected void onAttachedToWindow() {
+    super.onAttachedToWindow();
+    EventBus.getInstance().register(this);
+  }
+
+  @Override
+  protected void onDetachedFromWindow() {
+    super.onDetachedFromWindow();
+    EventBus.getInstance().unregister(this);
+  }
+
+  @Subscribe
+  public void onRecordingsChanged(RecordingsChangedEvent event) {
+    // rebind to refresh display
+    bind(program, channel);
+  }
+
+  @Subscribe
+  public void onFavoriteChannelsChanged(FavoriteChannelsChangedEvent event) {
+    // rebind to refresh display
+    bind(program, channel);
   }
 
   public VideoProgram getProgram() {

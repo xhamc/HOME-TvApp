@@ -180,44 +180,27 @@ public class ChannelEpgView extends FrameLayout {
         switch (item.getItemId()) {
           case R.id.addToFavoriteChannels:
             settingsHelper.addFavoriteChannel(channel.getChannelId());
-            rebindAllPrograms();
             return true;
           case R.id.removeFromFavoriteChannels:
             settingsHelper.removeFavoriteChannel(channel.getChannelId());
-            rebindAllPrograms();
             return true;
           case R.id.recordProgram:
             settingsHelper.addRecording(program.getId());
-            rebindAllPrograms();
             return true;
           case R.id.recordSeries:
             settingsHelper.addSeriesRecording(program.getTitle());
-            rebindAllPrograms();
             return true;
           case R.id.cancelProgramRecording:
             settingsHelper.removeRecording(program.getId());
-            rebindAllPrograms();
             return true;
           case R.id.cancelSeriesRecording:
             settingsHelper.removeSeriesRecording(program.getTitle());
-            rebindAllPrograms();
             return true;
         }
         return false;
       }
     });
     menu.show();
-  }
-
-  /**
-   * Rebind all the data to ProgramInfoViews to refresh the display.
-   */
-  private void rebindAllPrograms() {
-    programInfoView.bind(programInfoView.getProgram(), programInfoView.getChannel());
-    for (int i = 0; i < upNextLayout.getChildCount(); i++) {
-      ProgramInfoView upNext = (ProgramInfoView) upNextLayout.getChildAt(i);
-      upNext.bind(upNext.getProgram(), upNext.getChannel());
-    }
   }
 
   @Override

@@ -190,6 +190,7 @@ public class SettingsHelper {
     SharedPreferences.Editor editor = prefs.edit();
     editor.putStringSet(RECORD_PROGRAMS, recordings);
     editor.commit();
+    EventBus.getInstance().post(new EventBus.RecordingsChangedEvent());
   }
 
   public void removeRecording(String programId) {
@@ -199,6 +200,7 @@ public class SettingsHelper {
     SharedPreferences.Editor editor = prefs.edit();
     editor.putStringSet(RECORD_PROGRAMS, recordings);
     editor.commit();
+    EventBus.getInstance().post(new EventBus.RecordingsChangedEvent());
   }
 
   public Set<String> getSeriesToRecord() {
@@ -212,6 +214,7 @@ public class SettingsHelper {
     SharedPreferences.Editor editor = prefs.edit();
     editor.putStringSet(RECORD_SERIES, recordings);
     editor.commit();
+    EventBus.getInstance().post(new EventBus.RecordingsChangedEvent());
   }
 
   public void removeSeriesRecording(String seriesId) {
@@ -221,5 +224,6 @@ public class SettingsHelper {
     SharedPreferences.Editor editor = prefs.edit();
     editor.putStringSet(RECORD_SERIES, recordings);
     editor.commit();
+    EventBus.getInstance().post(new EventBus.RecordingsChangedEvent());
   }
 }

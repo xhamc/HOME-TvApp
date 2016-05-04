@@ -119,6 +119,10 @@ public class EventBus extends Bus {
     }
   }
 
+  public static class RecordingsChangedEvent {
+
+  }
+
   private static EventBus instance;
 
   public static EventBus getInstance() {
