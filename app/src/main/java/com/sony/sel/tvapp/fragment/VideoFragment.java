@@ -71,7 +71,7 @@ public class VideoFragment extends BaseFragment {
   private Bitmap mediaArtwork;
   private static boolean dlnaPlayerFailed;
 
-  private final long PREPARE_DLNA_VIDEO_TIMEOUT = 5000;
+  private final long PREPARE_DLNA_VIDEO_TIMEOUT = 10000;
   private final long PREPARE_VIDEO_TIMEOUT = 60000;
 
   @Nullable

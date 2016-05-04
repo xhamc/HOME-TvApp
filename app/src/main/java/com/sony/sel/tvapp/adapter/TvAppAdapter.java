@@ -31,7 +31,7 @@ public abstract class TvAppAdapter<T, V extends View & Bindable<T>> extends Recy
   private Throwable error;
   private final OnClickListener<T, V> onClickListener;
   boolean firstFocus;
-  private boolean autoFocus;
+  private boolean autoFocus = true;
 
   public interface OnClickListener<T, V> {
     void onClick(V view, int position);
