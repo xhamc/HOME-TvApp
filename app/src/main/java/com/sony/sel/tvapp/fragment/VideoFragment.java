@@ -64,6 +64,7 @@ public class VideoFragment extends BaseFragment {
   private VideoProgram currentProgram;
 
   private Uri videoUri;
+  private String videoProtocolInfo;
   private MediaPlayer mediaPlayer;
   private SurfaceHolder surfaceHolder;
   private PlayVideoTask playVideoTask;
@@ -71,7 +72,7 @@ public class VideoFragment extends BaseFragment {
   private Bitmap mediaArtwork;
   private static boolean dlnaPlayerFailed;
 
-  private final long PREPARE_DLNA_VIDEO_TIMEOUT = 10000;
+  private final long PREPARE_DLNA_VIDEO_TIMEOUT = 30000;
   private final long PREPARE_VIDEO_TIMEOUT = 60000;
 
   @Nullable
@@ -256,7 +257,7 @@ public class VideoFragment extends BaseFragment {
         Log.d(TAG, "Changing video channel to " + res + ".");
         play(Uri.parse(res));
       }
-    } else {
+    } else if (SettingsHelper.getHelper(getActivity()).useChannelVideosSetting() == false) {
       new AlertDialog.Builder(getActivity())
           .setTitle(R.string.error)
           .setMessage(R.string.noVideosError)

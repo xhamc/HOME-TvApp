@@ -20,7 +20,7 @@ import ch.boye.httpclientandroidlib.impl.client.HttpClientBuilder;
 public class ProtocolInfo {
 
 
-  private static final String TAG = "CVP-2";
+  private static final String TAG = ProtocolInfo.class.getSimpleName();
   private static final String GET_CONTENT_FEATURES = "getcontentFeatures.dlna.org";
   private static final String CONTENT_FEATURES = "contentfeatures.dlna.org";
   private static final String CONTENT_LENGTH = "content-length";
@@ -104,7 +104,7 @@ public class ProtocolInfo {
       if (getPlayerType() == SONY_PB_PLAYER) {
         mUrl = mUrl.replaceFirst("(?i)http", "dlna://URI=http");
         if (USE_URI_METHOD) {
-          mUrl = mUrl.concat(mURLextensions);
+          // mUrl = mUrl.concat(mURLextensions);
         }
         Log.d("CVP-2", "Using Sony PB Player by replacing http with dlna : " + mUrl);
       } else if (getPlayerType() == SONY_PB_PLAYER_DTCP) {
@@ -116,7 +116,7 @@ public class ProtocolInfo {
           insertIntoUrl = insertIntoUrl.concat("dtcpip://URI=http");
         mUrl = mUrl.replaceFirst("(?i)http", insertIntoUrl);
         if (USE_URI_METHOD) {
-          mUrl = mUrl.concat(mURLextensions);
+          //mUrl = mUrl.concat(mURLextensions);
         }
         Log.v(TAG, "URL with DTCP-IP extensions: " + mUrl);
         Log.d("CVP-2", "Using Sony PB Player by replacing http with dtcpip : " + mUrl);

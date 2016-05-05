@@ -53,6 +53,7 @@ public class SelectChannelVideosActivity extends BaseActivity {
       }
     });
 
+    channelVid.setChecked(SettingsHelper.getHelper(getApplicationContext()).useChannelVideosSetting());
     channelVid.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
       @Override
       public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
