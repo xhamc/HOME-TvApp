@@ -17,6 +17,7 @@ import com.sony.sel.tvapp.adapter.TvAppAdapter;
 import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.DlnaObjects;
+import com.sony.sel.tvapp.util.DlnaObjects.VideoBroadcast;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.sony.sel.tvapp.view.ChannelCell;
 import com.sony.sel.util.ViewUtils;
@@ -36,6 +37,9 @@ public class ChannelGridFragment extends BaseFragment {
   private ChannelAdapter adapter;
   private GridLayoutManager layoutManager;
 
+  private VideoBroadcast currentChannel;
+  private boolean currentChannelFocused;
+
   @Nullable
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -52,7 +56,7 @@ public class ChannelGridFragment extends BaseFragment {
     return contentView;
   }
 
-  private class ChannelAdapter extends TvAppAdapter<DlnaObjects.VideoBroadcast, ChannelCell> {
+  private class ChannelAdapter extends TvAppAdapter<VideoBroadcast, ChannelCell> {
 
     public ChannelAdapter() {
       super(
@@ -63,9 +67,34 @@ public class ChannelGridFragment extends BaseFragment {
           getString(R.string.noChannelsFound)
       );
     }
+
+    @Override
+    public void setData(List<VideoBroadcast> data) {
+      super.setData(data);
+      // scroll to position of current channel
+      for (int position = 0; position < data.size(); position++) {
+        if (data.get(position).equals(currentChannel)) {
+          grid.scrollToPosition(position);
+          break;
+        }
+      }
+    }
+
+    @Override
+    public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+      super.onBindViewHolder(holder, position);
+      if (holder.itemView instanceof ChannelCell) {
+        ChannelCell channelCell = (ChannelCell) holder.itemView;
+        if (!currentChannelFocused && currentChannel.equals(channelCell.getData())) {
+          channelCell.requestFocus();
+        }
+      }
+    }
   }
 
   private void getChannels() {
+    currentChannelFocused = false;
+    currentChannel = SettingsHelper.getHelper(getActivity()).getCurrentChannel();
     layoutManager.setSpanCount(1);
     adapter.setLoading();
     new GetChannelsTask(
@@ -99,7 +128,7 @@ public class ChannelGridFragment extends BaseFragment {
   /**
    * Async task to retrieve the channel list.
    */
-  private class GetChannelsTask extends AsyncTask<Void, Void, List<DlnaObjects.VideoBroadcast>> {
+  private class GetChannelsTask extends AsyncTask<Void, Void, List<VideoBroadcast>> {
 
     private final DlnaInterface helper;
     private final String udn;
@@ -110,12 +139,12 @@ public class ChannelGridFragment extends BaseFragment {
     }
 
     @Override
-    protected List<DlnaObjects.VideoBroadcast> doInBackground(Void... params) {
+    protected List<VideoBroadcast> doInBackground(Void... params) {
       return helper.getChannels(udn, channelObserver);
     }
 
     @Override
-    protected void onPostExecute(List<DlnaObjects.VideoBroadcast> channels) {
+    protected void onPostExecute(List<VideoBroadcast> channels) {
       super.onPostExecute(channels);
       layoutManager.setSpanCount(COLUMN_COUNT);
       adapter.setData(channels);
