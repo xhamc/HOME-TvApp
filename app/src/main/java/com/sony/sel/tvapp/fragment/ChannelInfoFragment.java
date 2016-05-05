@@ -143,6 +143,9 @@ public class ChannelInfoFragment extends BaseFragment {
   private void updateChannelInfo() {
     if (currentChannel != null) {
       channelEpgInfo.bind(currentChannel, currentPrograms.get(currentChannel.getChannelId()));
+      if (isVisible()) {
+        channelEpgInfo.requestFocus();
+      }
     }
   }
 
@@ -220,7 +223,11 @@ public class ChannelInfoFragment extends BaseFragment {
     protected void onProgressUpdate(VideoProgram... values) {
       super.onProgressUpdate(values);
       List<VideoProgram> programs = Arrays.asList(values);
-      currentPrograms.put(values[0].getChannelId(), programs);
+      String channelId = programs.get(0).getChannelId();
+      currentPrograms.put(channelId, programs);
+      if (channelId.equals(currentChannel.getChannelId())) {
+        updateChannelInfo();
+      }
     }
   }
 

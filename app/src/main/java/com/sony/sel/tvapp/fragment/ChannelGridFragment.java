@@ -64,7 +64,9 @@ public class ChannelGridFragment extends BaseFragment {
           R.id.channelCell,
           R.layout.channel_cell,
           getString(R.string.loading),
-          getString(R.string.noChannelsFound)
+          getString(R.string.noChannelsFound),
+          null,
+          false
       );
     }
 

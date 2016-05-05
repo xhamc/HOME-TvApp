@@ -141,10 +141,17 @@ public class ChannelEpgView extends FrameLayout {
         }
       });
     }
-    // focus the main view
-    programInfoView.requestFocus();
     // reset scroll
     scrollView.scrollTo(0, 0);
+  }
+
+  @Override
+  protected void onFocusChanged(boolean gainFocus, int direction, Rect previouslyFocusedRect) {
+    super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
+    if (gainFocus) {
+      // send focus to the program info view
+      programInfoView.requestFocus();
+    }
   }
 
   private void showPopup(View v, final VideoBroadcast channel, final VideoProgram program) {
