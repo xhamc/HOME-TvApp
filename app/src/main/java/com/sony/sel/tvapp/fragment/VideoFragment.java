@@ -74,6 +74,10 @@ public class VideoFragment extends BaseFragment {
 
   private final long PREPARE_DLNA_VIDEO_TIMEOUT = 30000;
   private final long PREPARE_VIDEO_TIMEOUT = 60000;
+  private final long CHANNEL_START_DELAY = 500;
+
+  private Handler handler = new Handler();
+  private Runnable channelChangeRunnable;
 
   @Nullable
   @Override
@@ -237,14 +241,16 @@ public class VideoFragment extends BaseFragment {
   }
 
   /**
-   * Change to a random video stream selected from the "channel videos" list in Settings.
+   * Change the video stream to the current channel video, or a random video stream selected
+   * from the "channel videos" list, depending on the {@link SettingsHelper#useChannelVideosSetting()}
+   * setting.
    */
   private void changeChannel() {
     if (SettingsHelper.getHelper(getActivity()).useChannelVideosSetting()) {
       final String res = currentChannel.getResource();
       if (res != null) {
         Log.d(TAG, "Changing video channel to " + res + ".");
-        play(Uri.parse(res));
+        playChannelVideo(Uri.parse(res), CHANNEL_START_DELAY);
       }
       return;
     }
@@ -255,7 +261,7 @@ public class VideoFragment extends BaseFragment {
       final String res = video.getResource();
       if (res != null) {
         Log.d(TAG, "Changing video channel to " + res + ".");
-        play(Uri.parse(res));
+        playChannelVideo(Uri.parse(res), CHANNEL_START_DELAY);
       }
     } else if (SettingsHelper.getHelper(getActivity()).useChannelVideosSetting() == false) {
       new AlertDialog.Builder(getActivity())
@@ -271,6 +277,31 @@ public class VideoFragment extends BaseFragment {
           .create()
           .show();
     }
+  }
+
+  /**
+   * Start playing a channel video after a delay.
+   *
+   * @param uri     Uri to play for channel video.
+   * @param delayMs Delay before playback task is started
+   */
+  private void playChannelVideo(final Uri uri, long delayMs) {
+    if (channelChangeRunnable != null) {
+      // clear the queued runnable
+      handler.removeCallbacks(channelChangeRunnable);
+    }
+    // create new runnable
+    channelChangeRunnable = new Runnable() {
+      @Override
+      public void run() {
+        // clear this runnable
+        channelChangeRunnable = null;
+        // and start playback
+        play(uri);
+      }
+    };
+    // start timer
+    handler.postDelayed(channelChangeRunnable, delayMs);
   }
 
   @Subscribe
