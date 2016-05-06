@@ -1,6 +1,8 @@
 package com.sony.localserver;
 
 
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import com.google.gson.Gson;
@@ -134,9 +136,15 @@ public class WebSocketServer extends NanoWSD {
         // send channel change event
         String channelId = payload.split(":")[1];
         List<VideoBroadcast> channels = dlnaHelper.getChannels(udn, null);
-        for (VideoBroadcast channel : channels) {
+        for (final VideoBroadcast channel : channels) {
           if (channel.getChannelId().equals(channelId)) {
-            settingsHelper.setCurrentChannel(channel);
+            new Handler(Looper.getMainLooper()).post(new Runnable() {
+              @Override
+              public void run() {
+                // send on UI thread
+                settingsHelper.setCurrentChannel(channel);
+              }
+            });
             break;
           }
         }
