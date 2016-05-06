@@ -8,6 +8,7 @@ import com.sony.sel.tvapp.fragment.ChannelGridFragment;
 import com.sony.sel.tvapp.fragment.EpgFragment;
 import com.sony.sel.tvapp.fragment.SearchFragment;
 import com.sony.sel.tvapp.fragment.SelectServerFragment;
+import com.sony.sel.tvapp.fragment.VodFragment;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -20,7 +21,7 @@ public enum NavigationItem {
   CHANNELS(R.string.channels, ChannelGridFragment.class, ChannelGridFragment.TAG),
   GUIDE(R.string.guide, EpgFragment.class, EpgFragment.TAG),
   RECORDINGS(R.string.recordings, null, null),
-  VOD(R.string.vod, null, null),
+  VOD(R.string.vod, VodFragment.class, VodFragment.TAG),
   SETTINGS(R.string.settings, SelectServerFragment.class, SelectServerFragment.TAG);
 
   private final int titleStringId;

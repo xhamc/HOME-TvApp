@@ -95,6 +95,10 @@ public class DlnaObjects {
       throw new InstantiationException("Class not resolved.");
     }
 
+    public boolean isKindOf(DlnaObject compare) {
+      return compare.getUpnpClass().startsWith(this.className);
+    }
+
   }
 
   /**

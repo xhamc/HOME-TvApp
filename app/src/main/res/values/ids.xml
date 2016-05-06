@@ -9,5 +9,6 @@
     <item name="channelCell" type="id" />
     <item name="dlnaCell" type="id" />
     <item name="searchResultCell" type="id"/>
+    <item name="vodCell" type="id"/>
 
 </resources>

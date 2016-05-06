@@ -2,6 +2,7 @@ package com.sony.sel.tvapp.util;
 
 import com.sony.sel.tvapp.activity.MainActivity;
 import com.sony.sel.tvapp.ui.NavigationItem;
+import com.sony.sel.tvapp.util.DlnaObjects.VideoItem;
 import com.squareup.otto.Bus;
 import com.squareup.otto.ThreadEnforcer;
 
@@ -121,6 +122,18 @@ public class EventBus extends Bus {
 
   public static class RecordingsChangedEvent {
 
+  }
+
+  public static class PlayVodEvent {
+    private final VideoItem videoItem;
+
+    public PlayVodEvent(VideoItem videoItem) {
+      this.videoItem = videoItem;
+    }
+
+    public VideoItem getVideoItem() {
+      return videoItem;
+    }
   }
 
   private static EventBus instance;

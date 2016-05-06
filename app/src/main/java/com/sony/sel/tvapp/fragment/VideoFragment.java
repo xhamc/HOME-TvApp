@@ -31,6 +31,8 @@ import com.sony.sel.tvapp.activity.MainActivity;
 import com.sony.sel.tvapp.activity.SelectChannelVideosActivity;
 import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.EventBus;
+import com.sony.sel.tvapp.util.EventBus.ChannelChangedEvent;
+import com.sony.sel.tvapp.util.EventBus.PlayVodEvent;
 import com.sony.sel.tvapp.util.PrepareVideoTask;
 import com.sony.sel.tvapp.util.ProtocolInfo;
 import com.sony.sel.tvapp.util.SettingsHelper;
@@ -305,9 +307,20 @@ public class VideoFragment extends BaseFragment {
   }
 
   @Subscribe
-  public void onChannelChanged(EventBus.ChannelChangedEvent event) {
+  public void onChannelChanged(ChannelChangedEvent event) {
     currentChannel = event.getChannel();
     changeChannel();
+  }
+
+  @Subscribe
+  public void onPlayVod(PlayVodEvent event) {
+    if (SettingsHelper.getHelper(getActivity()).useChannelVideosSetting()) {
+      // play actual VOD item
+      play(Uri.parse(event.getVideoItem().getResource()));
+    } else {
+      // change to simulated channel
+      changeChannel();
+    }
   }
 
   /**

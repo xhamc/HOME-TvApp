@@ -18,6 +18,8 @@ import com.sony.sel.tvapp.fragment.VideoFragment;
 import com.sony.sel.tvapp.ui.NavigationItem;
 import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.EventBus;
+import com.sony.sel.tvapp.util.EventBus.ChannelChangedEvent;
+import com.sony.sel.tvapp.util.EventBus.PlayVodEvent;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.squareup.otto.Subscribe;
 
@@ -184,8 +186,14 @@ public class MainActivity extends BaseActivity {
   }
 
   @Subscribe
-  public void onChannelChanged(EventBus.ChannelChangedEvent event) {
+  public void onChannelChanged(ChannelChangedEvent event) {
     showChannelInfo();
+  }
+
+  @Subscribe
+  public void onPlayVod(PlayVodEvent event) {
+    // hide all UI on VOD playback
+    hideUi();
   }
 
   @Override
