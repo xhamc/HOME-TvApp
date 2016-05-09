@@ -58,7 +58,7 @@ function GridController(ws){
 		ctx.font = "50px arial";
 		ctx.fillStyle='#FFFFFF';
 		var now=getTime();
-		ctx.fillText ('TODAY  |   '+ now.date+ '    '+now.time, VERTOFF*3/4,80);
+		ctx.fillText ('TODAY  |   '+ now.date+ '    '+now.time, 90, VERTOFF*3/4);
 
 
 		//Draw OUTER RECT
@@ -154,35 +154,69 @@ function GridController(ws){
 			ctx.fillStyle='#FFFFFF';
 
 			var gridChannelMax=Math.min(currentChannelGridOffset+5, CHANNELLIST_DATA.length);
+			for (var i=0; i<CHANNELLIST_DATA.length; i++){
+				if (STATION_DATA[CHANNELLIST_DATA[i]].playing){
+					ctx.save();
+					ctx.strokeStyle='#FF0000';
+					ctx.globalAlpha=0.4*GLOBAL_ALPHA;
+					ctx.lineWidth=2;
+					ctx.strokeRect(300+(i-currentChannelGridOffset)*HORIZCELLSIZE,VERTOFF, HORIZCELLSIZE,10*VERTCELLSIZE);
+					var now_playing="CURRENTLY PLAYING           "+ STATION_DATA[CHANNELLIST_DATA[i]].name;
+					ctx.font = "40px arial";
+					ctx.globalAlpha=1*GLOBAL_ALPHA;
+					ctx.fillText(now_playing,1100,70)
+
+					if (isURL(STATION_DATA[CHANNELLIST_DATA[i]].icon_url) &&
+								!STATION_DATA[CHANNELLIST_DATA[i]].icon.imageloaded && STATION_DATA[CHANNELLIST_DATA[i]].icon.src==""){
+						STATION_DATA[CHANNELLIST_DATA[i]].icon.onload=function(){
+							this.imageloaded=true;
+						};
+						STATION_DATA[CHANNELLIST_DATA[i]].icon.src=STATION_DATA[CHANNELLIST_DATA[i]].icon_url;
+					}
+
+					if (STATION_DATA[CHANNELLIST_DATA[i]].icon.imageloaded){
+						ctx.globalAlpha=1*GLOBAL_ALPHA;
+						ctx.fillRect(1520,30, 75,75);
+						ctx.globalAlpha=1*GLOBAL_ALPHA;5
+						ctx.drawImage(STATION_DATA[CHANNELLIST_DATA[i]].icon, 1520, 30, 75,75);
+					}
+
+
+					ctx.restore();
+				}
+			}
 			for (var i=currentChannelGridOffset; i<gridChannelMax; i++){
 
-				drawTextInBox(300+(i-currentChannelGridOffset)*HORIZCELLSIZE+100, VERTOFF+VERTCELLSIZE*3/4, HORIZCELLSIZE-110, CHANNELLIST_DATA[i].name, 0, 2, 1 );
+				drawTextInBox(300+(i-currentChannelGridOffset)*HORIZCELLSIZE+100, VERTOFF+VERTCELLSIZE*3/4, HORIZCELLSIZE-110, STATION_DATA[CHANNELLIST_DATA[i]].name, 0, 2, 1 );
 //				ctx.fillText (CHANNELLIST_DATA[i].name, 300+(i-currentChannelGridOffset)*HORIZCELLSIZE+100, 140+VERTCELLSIZE);
 
-				if (CHANNELLIST_DATA[i].favorite){
+				if (STATION_DATA[CHANNELLIST_DATA[i]].favorite){
 					ctx.save();
 					ctx.fillStyle='#FFFF00';
 					ctx.globalAlpha=0.2*GLOBAL_ALPHA;
 					ctx.fillRect(300+(i-currentChannelGridOffset)*HORIZCELLSIZE,VERTOFF, HORIZCELLSIZE,VERTCELLSIZE);
 					ctx.restore();
 				}
+
+
 				ctx.save();
 				ctx.font="20px arial";
-				ctx.fillText(CHANNELLIST_DATA[i].channelNumber, 300+(i-currentChannelGridOffset)*HORIZCELLSIZE+HORIZCELLSIZE*3/4, VERTOFF+VERTCELLSIZE*0.3);
+				ctx.fillText(STATION_DATA[CHANNELLIST_DATA[i]].channelNumber, 300+(i-currentChannelGridOffset)*HORIZCELLSIZE+HORIZCELLSIZE*3/4, VERTOFF+VERTCELLSIZE*0.3);
 
-				if (isURL(CHANNELLIST_DATA[i].icon_url) && !CHANNELLIST_DATA[i].icon.imageloaded){
-					CHANNELLIST_DATA[i].icon.onload=function(){
+				if (isURL(STATION_DATA[CHANNELLIST_DATA[i]].icon_url) && !STATION_DATA[CHANNELLIST_DATA[i]].icon.imageloaded
+							&& STATION_DATA[CHANNELLIST_DATA[i]].icon.src==""){
+					STATION_DATA[CHANNELLIST_DATA[i]].icon.onload=function(){
 						this.imageloaded=true;
 					};
-					CHANNELLIST_DATA[i].icon.src=CHANNELLIST_DATA[i].icon_url;
+					STATION_DATA[CHANNELLIST_DATA[i]].icon.src=STATION_DATA[CHANNELLIST_DATA[i]].icon_url;
 				}
 
 
-				if (CHANNELLIST_DATA[i].icon.imageloaded){
-					ctx.globalAlpha=0.2*GLOBAL_ALPHA;
+				if (STATION_DATA[CHANNELLIST_DATA[i]].icon.imageloaded){
+					ctx.globalAlpha=1*GLOBAL_ALPHA;
 					ctx.fillRect(300+(i-currentChannelGridOffset)*HORIZCELLSIZE+10,VERTOFF + VERTCELLSIZE-10-75, 75,75);
 					ctx.globalAlpha=1*GLOBAL_ALPHA;
-					ctx.drawImage(CHANNELLIST_DATA[i].icon, 300+(i-currentChannelGridOffset)*HORIZCELLSIZE+10, VERTOFF + VERTCELLSIZE-10-75, 75,75);
+					ctx.drawImage(STATION_DATA[CHANNELLIST_DATA[i]].icon, 300+(i-currentChannelGridOffset)*HORIZCELLSIZE+10, VERTOFF + VERTCELLSIZE-10-75, 75,75);
 				}
 			}
 
@@ -190,10 +224,10 @@ function GridController(ws){
 
 				for (var i=currentChannelGridOffset; i<gridChannelMax; i++){
 
-					if (null!=EPG_DATA[CHANNELLIST_DATA[i].channelId]){
+					if (null!=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[i]].channelId]){
 
 						var j=0;
-						var m=EPG_DATA[CHANNELLIST_DATA[i].channelId].metadata;
+						var m=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[i]].channelId].metadata;
 						while (j<m.length){
 							var start =parseInt(m[j].start);
 							var end =parseInt(m[j].start) + parseInt(m[j].length);
@@ -299,8 +333,8 @@ function GridController(ws){
 				if (null==currentProgramSelected){
 					if (null!=EPG_DATA && null!=CHANNELLIST_DATA){
 						if (null!=CHANNELLIST_DATA[currentChannelGridOffset]){
-							if (null!=EPG_DATA[CHANNELLIST_DATA[currentChannelGridOffset].channelId]){
-								if (null!=EPG_DATA[CHANNELLIST_DATA[currentChannelGridOffset].channelId].metadata){
+							if (null!=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[currentChannelGridOffset]].channelId]){
+								if (null!=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[currentChannelGridOffset]].channelId].metadata){
 									updateSelection(currentChannelGridOffset);
 								}
 							}
@@ -612,8 +646,8 @@ function GridController(ws){
 			channel=currentProgramSelected.channel;
 
 			if (null==CHANNELLIST_DATA[channel]) return {"x":0,"y":0, "h":0, "mid":0};
-			if (null ==EPG_DATA[CHANNELLIST_DATA[channel].channelId].metadata)  return {"x":0,"y":0, "h":0, "mid":0};
-    		var m=EPG_DATA[CHANNELLIST_DATA[channel].channelId].metadata[index];
+			if (null ==EPG_DATA[STATION_DATA[CHANNELLIST_DATA[channel]].channelId].metadata)  return {"x":0,"y":0, "h":0, "mid":0};
+    		var m=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[channel]].channelId].metadata[index];
 			var start =parseInt(m.start);
 			var end =parseInt(m.start) + parseInt(m.length);
 
@@ -641,7 +675,7 @@ function GridController(ws){
 
 
 	function updateSelection(channel, item){
-    		var m=EPG_DATA[CHANNELLIST_DATA[channel].channelId].metadata;
+    		var m=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[channel]].channelId].metadata;
 			if (null==item){
     			var time=getTime().ms;
 
@@ -683,7 +717,7 @@ function GridController(ws){
 			var s=getSelectionParameters();
 			while (s.start>=now.ms || s.end<now.ms) {
 
-				var m=EPG_DATA[CHANNELLIST_DATA[currentProgramSelected.channel].channelId].metadata;
+				var m=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[currentProgramSelected.channel]].channelId].metadata;
 				if(s.start>=now.ms){
 					if (currentProgramSelected.item>0){
 						var item = currentProgramSelected.item - 1;
@@ -737,8 +771,8 @@ function GridController(ws){
 
                 return;
 			}else{
-				console.log("Changing channel to: "+ CHANNELLIST_DATA[currentProgramSelected.channel].channelId);
-				var changeChannelMsg="changeChannel:"+ CHANNELLIST_DATA[currentProgramSelected.channel].channelId;
+				console.log("Changing channel to: "+ STATION_DATA[CHANNELLIST_DATA[currentProgramSelected.channel]].channelId);
+				var changeChannelMsg="changeChannel:"+ STATION_DATA[CHANNELLIST_DATA[currentProgramSelected.channel]].channelId;
 				ws.send(changeChannelMsg,false);
 			}
 		}
@@ -765,7 +799,7 @@ function GridController(ws){
 				if (currentProgramSelected.channel > 0){
 					var channelIndex=currentProgramSelected.channel-1;
 
-					var m=EPG_DATA[CHANNELLIST_DATA[channelIndex].channelId].metadata;
+					var m=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[channelIndex]].channelId].metadata;
 					for (var i=0; i<m.length; i++){
 						var start=parseInt(m[i].start);
 						var end=start + parseInt(m[i].length);
@@ -797,7 +831,7 @@ function GridController(ws){
 
 				if (currentProgramSelected.item>0){
 
-					var m=EPG_DATA[CHANNELLIST_DATA[currentProgramSelected.channel].channelId].metadata;
+					var m=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[currentProgramSelected.channel]].channelId].metadata;
 					var item = currentProgramSelected.item - 1;
 
 					console.log("incrementing index selection to "+item);
@@ -827,7 +861,7 @@ function GridController(ws){
 				if (currentProgramSelected.channel < (CHANNELLIST_DATA.length-1)){
 					var channelIndex=currentProgramSelected.channel+1;
 
-					var m=EPG_DATA[CHANNELLIST_DATA[channelIndex].channelId].metadata;
+					var m=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[channelIndex]].channelId].metadata;
 					for (var i=0; i<m.length; i++){
 						var start=parseInt(m[i].start);
 						var end=start + parseInt(m[i].length);
@@ -858,7 +892,7 @@ function GridController(ws){
 
 
 			if (null!=currentProgramSelected){
-				var m=EPG_DATA[CHANNELLIST_DATA[currentProgramSelected.channel].channelId].metadata;
+				var m=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[currentProgramSelected.channel]].channelId].metadata;
 
 				if (currentProgramSelected.item<(m.length-1)){
 					var item = currentProgramSelected.item + 1;

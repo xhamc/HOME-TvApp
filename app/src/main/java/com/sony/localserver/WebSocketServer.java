@@ -256,16 +256,21 @@ public class WebSocketServer extends NanoWSD {
     String getFavorites() {
       Set<String> favorites = settingsHelper.getFavoriteChannels();
       JSONObject json = new JSONObject();
+      JSONObject result = new JSONObject();
       JSONArray jarray = new JSONArray();
       for (String fav : favorites) {
         jarray.put(fav);
       }
+      String currentplaying = settingsHelper.getCurrentChannel().getChannelId();
       try {
         json.put("FAVORITES", jarray);
-        return json.toString();
+        json.put("CURRENT_PLAYING", currentplaying);
+        result.put("CURRENT", json);
+
+        return result.toString();
       } catch (Exception e) {
         Log.e(TAG, "Exception parsing json: " + e);
-        return "{FAVORITES:[]}";
+        return "{CURRENT:{}}";
       }
     }
 

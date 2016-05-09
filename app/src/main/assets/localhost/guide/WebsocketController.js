@@ -150,17 +150,26 @@
                             console.log("STATION_DATA: udpdateEPGinProgress=false" );
 
 
-                        } else if (key=="FAVORITES"){
-                            var faveChannel;
-                            faveChannel= obj[key];
+                        } else if (key=="CURRENT"){
+
                             for (var i=0; i<STATION_DATA.length; i++){
                                 STATION_DATA[i].favorite=false;
+                                STATION_DATA[i].playing=false;
                             }
+                            var faveChannel= obj[key]["FAVORITES"];
+
                             for (var j=0; j<faveChannel.length; j++){
 
                                 for (var i=0; i<STATION_DATA.length; i++){
                                     if (STATION_DATA[i].channelId == faveChannel[j]){
                                         STATION_DATA[i].favorite=true;
+                                        break;
+                                    }
+                                }
+                                for (var i=0; i<STATION_DATA.length; i++){
+                                    if (STATION_DATA[i].channelId == obj[key]["CURRENT_PLAYING"]){
+                                        console.log("Current_playing: "+STATION_DATA[i].channelId);
+                                        STATION_DATA[i].playing=true;
                                         break;
                                     }
                                 }

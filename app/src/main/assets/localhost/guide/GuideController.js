@@ -29,27 +29,35 @@ function GuideController(){
 	var MAXTTIME=10*24*3600*1000;	//start with 10 days of maximum data!
 
 	guideWebsocketControllerTimer(); //TODO switch to callbacks for efficiency
-
+	var waitTooLong=0;
 	function guideWebsocketControllerTimer(){
+
 		if (!wsopen && ws.open){
 			console.log("open");
 			stationDataFetchRequest();
 			wsopen=true;
 		}else if (stationDataAvailable){
 			console.log("sort");
+			waitTooLong=0;
 			sortChannelListData();
 			stationDataAvailable=false;
 			favoriteChannelRequest();
 		}else if (favoritesAvailable){
 			console.log("favorites");
-			setFavorites();
+			waitTooLong=0;
 			favoritesAvailable=false;
 			guideDataFetchRequest();
 		}else if (epgDataAvailable){
 			console.log("epgData");
+			waitTooLong=0;
 			epgDataAvailable=false;
 			guideDataReceived();
+		}else if (waitTooLong>15000/GUIDE_WEBSOCKET_TIMER){
+			console.log("Wait Too Long: "+waitTooLong);
+			waitTooLong=0;
+			guideDataFetchRequest();
 		}
+		waitTooLong++;
 		setTimeout(guideWebsocketControllerTimer,GUIDE_WEBSOCKET_TIMER);
 	}
 
@@ -105,7 +113,7 @@ function GuideController(){
 /****************************Don't Sort STATION_DATA ****************/
 			console.log("Sorting the channel data");
 			for (var i=0; i<STATION_DATA.length;i++){
-				CHANNELLIST_DATA[i]=STATION_DATA[i];
+				CHANNELLIST_DATA[i]=i;
 			}
 
 			if (null==currentAvailableDataRange){
@@ -128,15 +136,15 @@ function GuideController(){
 		}
 	}
 
-	function setFavorites(){
-		console.log("Setting favorites");
-		for (var i=0; i<STATION_DATA.length;i++){
-			CHANNELLIST_DATA[i]=STATION_DATA[i];
-			if (CHANNELLIST_DATA[i].favorite==true){
-				console.log("Favorites: "+CHANNELLIST_DATA[i].channelId);
-			}
-		}
-	}
+//	function setFavorites(){
+//		console.log("Setting favorites");
+//		for (var i=0; i<STATION_DATA.length;i++){
+//			CHANNELLIST_DATA[i]=STATION_DATA[i];
+//			if (CHANNELLIST_DATA[i].favorite==true){
+//				console.log("Favorites: "+CHANNELLIST_DATA[i].channelId);
+//			}
+//		}
+//	}
 
 
 
@@ -144,8 +152,8 @@ function GuideController(){
 
 
 		for (var i=0; i<CHANNELLIST_DATA.length; i++){
-			if (null!=EPG_DATA[CHANNELLIST_DATA[i].channelId]){
-				var m=EPG_DATA[CHANNELLIST_DATA[i].channelId].metadata;
+			if (null!=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[i]].channelId]){
+				var m=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[i]].channelId].metadata;
 				var l=m.length;
 
 				if (null!=currentAvailableDataRange[i]){
@@ -214,7 +222,7 @@ function GuideController(){
 			if (currentAvailableDataRange[i+updateChannelStart].endProgramStart<start){
 				start=parseInt( currentAvailableDataRange[i+updateChannelStart].endProgramStart );
 			}
-			channelData[i]=CHANNELLIST_DATA[i+updateChannelStart].channelId;
+			channelData[i]=STATION_DATA[CHANNELLIST_DATA[i+updateChannelStart]].channelId;
 
 		}
 		var end=maxTimeLast;
