@@ -7,11 +7,12 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.sony.sel.tvapp.R;
+import com.sony.sel.tvapp.view.SpinnerView;
 import com.sony.sel.util.ViewUtils;
 
 public class LoadingCell extends FrameLayout implements Bindable<String> {
 
-  private ProgressBar spinner;
+  private SpinnerView spinner;
   private TextView loadingMessage;
 
   public LoadingCell(Context context) {
@@ -35,12 +36,12 @@ public class LoadingCell extends FrameLayout implements Bindable<String> {
     super.onFinishInflate();
     spinner = ViewUtils.findViewById(this, R.id.spinner);
     loadingMessage = ViewUtils.findViewById(this, android.R.id.text1);
-    spinner.getIndeterminateDrawable().setColorFilter(getResources().getColor(R.color.accentColor), android.graphics.PorterDuff.Mode.MULTIPLY);
   }
 
   @Override
   public void bind(String data) {
     loadingMessage.setText(data);
+    spinner.spin();
   }
 
   @Override

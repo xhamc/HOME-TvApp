@@ -24,18 +24,22 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ProgressBar;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.view.animation.LinearInterpolator;
+import android.view.animation.RotateAnimation;
+import android.widget.ImageView;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.activity.MainActivity;
 import com.sony.sel.tvapp.activity.SelectChannelVideosActivity;
 import com.sony.sel.tvapp.util.DlnaHelper;
-import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.EventBus.ChannelChangedEvent;
 import com.sony.sel.tvapp.util.EventBus.PlayVodEvent;
 import com.sony.sel.tvapp.util.PrepareVideoTask;
 import com.sony.sel.tvapp.util.ProtocolInfo;
 import com.sony.sel.tvapp.util.SettingsHelper;
+import com.sony.sel.tvapp.view.SpinnerView;
 import com.squareup.otto.Subscribe;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
@@ -60,13 +64,12 @@ public class VideoFragment extends BaseFragment {
   @Bind(R.id.videoSurfaceView)
   SurfaceView surfaceView;
   @Bind(R.id.spinner)
-  ProgressBar spinner;
+  SpinnerView spinner;
 
   private VideoBroadcast currentChannel;
   private VideoProgram currentProgram;
 
   private Uri videoUri;
-  private String videoProtocolInfo;
   private MediaPlayer mediaPlayer;
   private SurfaceHolder surfaceHolder;
   private PlayVideoTask playVideoTask;
@@ -80,6 +83,8 @@ public class VideoFragment extends BaseFragment {
 
   private Handler handler = new Handler();
   private Runnable channelChangeRunnable;
+
+  private Animation spinnerAnimation;
 
   @Nullable
   @Override
@@ -191,11 +196,11 @@ public class VideoFragment extends BaseFragment {
   }
 
   private void showSpinner() {
-    spinner.setVisibility(View.VISIBLE);
+    spinner.show();
   }
 
   private void hideSpinner() {
-    spinner.setVisibility(View.GONE);
+    spinner.hide();
   }
 
   /**

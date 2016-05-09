@@ -12,13 +12,12 @@
         android:visibility="visible"
         />
 
-    <ProgressBar
+    <com.sony.sel.tvapp.view.SpinnerView
         android:id="@+id/spinner"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
         android:layout_gravity="center"
-        android:progressTint="@color/accentColor"
-        android:visibility="gone"
+        android:src="@drawable/google_logo"
         />
 
 </FrameLayout>
