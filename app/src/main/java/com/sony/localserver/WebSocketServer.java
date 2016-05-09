@@ -21,6 +21,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -159,8 +160,6 @@ public class WebSocketServer extends NanoWSD {
         } catch (IOException e) {
           Log.e(TAG, "Error sending Channels:" + e);
         }
-
-
       }
     }
 
@@ -216,15 +215,34 @@ public class WebSocketServer extends NanoWSD {
         // add the day to the channel map
         channelMap.put(channelId, dayMap);
       }
+
+      // build response
+      EpgResponse response = new EpgResponse(
+          channelMap,
+          settingsHelper.getFavoriteChannels(),
+          getChannelIds(),
+          settingsHelper.getCurrentChannel().getChannelId()
+      );
+
       // convert to JSON with special serializer
-      String json = new GsonBuilder().
+      return new GsonBuilder().
           registerTypeAdapter(VideoProgram.class, new VideoProgram.WebSerializer())
           .disableHtmlEscaping()
           .create()
-          .toJson(channelMap);
+          .toJson(response);
+    }
 
-      // wrap with tag expected by javascript
-      return "{\"EPG\":" + json + "}";
+    /**
+     * Return the list of channels as a String set containing just channel IDs.
+     * @return
+     */
+    private Set<String> getChannelIds() {
+      List<VideoBroadcast> channels = dlnaHelper.getChannels(udn, null);
+      Set<String> channelIds = new HashSet<>();
+      for (VideoBroadcast channel : channels) {
+        channelIds.add(channel.getChannelId());
+      }
+      return channelIds;
     }
 
     /**
@@ -234,18 +252,19 @@ public class WebSocketServer extends NanoWSD {
      */
     String getChannels() {
 
-      // get channels
-      List<VideoBroadcast> channels = dlnaHelper.getChannels(udn, null);
+      // build response
+      ChannelResponse response = new ChannelResponse(
+          settingsHelper.getFavoriteChannels(),
+          dlnaHelper.getChannels(udn, null),
+          settingsHelper.getCurrentChannel().getChannelId()
+      );
 
       // convert to JSON with special serializer
-      String json = new GsonBuilder().
+      return new GsonBuilder().
           registerTypeAdapter(VideoBroadcast.class, new VideoBroadcast.WebSerializer())
           .disableHtmlEscaping()
           .create()
-          .toJson(channels);
-
-      // wrap with tag expected by javascript
-      return "{\"STATIONS\":" + json + "}";
+          .toJson(response);
     }
 
     /**
@@ -316,5 +335,43 @@ public class WebSocketServer extends NanoWSD {
     }
   }
 
+  /**
+   * Class for the EPG response JSON.
+   */
+  private static class EpgResponse {
+    @SerializedName("EPG")
+    Map<String, Map<String, Map<String, VideoProgram>>> channelMap;
+    @SerializedName("FAVORITES")
+    Set<String> favorites;
+    @SerializedName("CHANNELS")
+    Set<String> channels;
+    @SerializedName("CURRENT")
+    String currentChannel;
+
+    public EpgResponse(Map<String, Map<String, Map<String, VideoProgram>>> channelMap, Set<String> favorites, Set<String> channels, String currentChannel) {
+      this.channelMap = channelMap;
+      this.favorites = favorites;
+      this.channels = channels;
+      this.currentChannel = currentChannel;
+    }
+  }
+
+  /**
+   * Class for the channel list response JSON.
+   */
+  private static class ChannelResponse {
+    @SerializedName("FAVORITES")
+    Set<String> favorites;
+    @SerializedName("STATIONS")
+    List<VideoBroadcast> channels;
+    @SerializedName("CURRENT")
+    String currentChannel;
+
+    public ChannelResponse(Set<String> favorites, List<VideoBroadcast> channels, String currentChannel) {
+      this.favorites = favorites;
+      this.channels = channels;
+      this.currentChannel = currentChannel;
+    }
+  }
 
 }
