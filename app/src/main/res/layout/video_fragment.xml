@@ -18,6 +18,7 @@
         android:layout_height="72dp"
         android:layout_gravity="center"
         android:src="@drawable/google_logo"
+        android:visibility="invisible"
         />
 
 </FrameLayout>

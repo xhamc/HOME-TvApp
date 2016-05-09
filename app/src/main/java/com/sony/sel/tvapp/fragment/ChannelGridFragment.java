@@ -87,7 +87,11 @@ public class ChannelGridFragment extends BaseFragment {
       super.onBindViewHolder(holder, position);
       if (holder.itemView instanceof ChannelCell) {
         ChannelCell channelCell = (ChannelCell) holder.itemView;
-        if (!currentChannelFocused && currentChannel.equals(channelCell.getData())) {
+        if (!currentChannelFocused && currentChannel != null && currentChannel.equals(channelCell.getData())) {
+          // focus the current channel
+          channelCell.requestFocus();
+        } else if (!currentChannelFocused && currentChannel == null && position == 0) {
+          // focus the first channel in the list
           channelCell.requestFocus();
         }
       }

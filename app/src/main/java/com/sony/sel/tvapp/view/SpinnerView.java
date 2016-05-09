@@ -8,7 +8,6 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.RotateAnimation;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 
 import com.sony.sel.tvapp.R;
 
@@ -50,6 +49,7 @@ public class SpinnerView extends ImageView {
     setAlpha(0f);
     setVisibility(View.VISIBLE);
     animate().alpha(1.0f).setDuration(1000).start();
+    startAnimation(animation);
   }
 
   public void hide() {

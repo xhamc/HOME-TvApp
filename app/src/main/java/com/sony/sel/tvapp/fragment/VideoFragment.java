@@ -24,11 +24,6 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import android.view.animation.LinearInterpolator;
-import android.view.animation.RotateAnimation;
-import android.widget.ImageView;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.activity.MainActivity;
@@ -75,7 +70,6 @@ public class VideoFragment extends BaseFragment {
   private PlayVideoTask playVideoTask;
   private MediaSession mediaSession;
   private Bitmap mediaArtwork;
-  private static boolean dlnaPlayerFailed;
 
   private final long PREPARE_DLNA_VIDEO_TIMEOUT = 30000;
   private final long PREPARE_VIDEO_TIMEOUT = 60000;
@@ -83,8 +77,6 @@ public class VideoFragment extends BaseFragment {
 
   private Handler handler = new Handler();
   private Runnable channelChangeRunnable;
-
-  private Animation spinnerAnimation;
 
   @Nullable
   @Override
@@ -188,19 +180,11 @@ public class VideoFragment extends BaseFragment {
     }
     stop();
     if (uri != null) {
-      showSpinner();
+      spinner.show();
       // create & execute async task for video playback
       playVideoTask = new PlayDlnaVideoTask(getActivity(), uri);
       playVideoTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
-  }
-
-  private void showSpinner() {
-    spinner.show();
-  }
-
-  private void hideSpinner() {
-    spinner.hide();
   }
 
   /**
@@ -242,7 +226,7 @@ public class VideoFragment extends BaseFragment {
       // cancel a playback task in progress
       playVideoTask.cancel(true);
       playVideoTask = null;
-      hideSpinner();
+      spinner.hide();
     }
 
   }
@@ -340,7 +324,7 @@ public class VideoFragment extends BaseFragment {
     @Override
     protected void onPostExecute(MediaPlayer mediaPlayer) {
       super.onPostExecute(mediaPlayer);
-      hideSpinner();
+      spinner.hide();
       Throwable error = getError();
       Uri uri = getUri();
       if (isInBackground()) {
@@ -426,7 +410,6 @@ public class VideoFragment extends BaseFragment {
     protected void onPostExecute(MediaPlayer mediaPlayer) {
       if (mediaPlayer == null && originalUri != null) {
         // not successful preparing DLNA playback
-        dlnaPlayerFailed = true;
         Log.e(TAG, "Error preparing DLNA URI " + getUri() + ". Retrying with normal MediaPlayer.");
         playVideoTask = new PlayVideoTask(getActivity(), originalUri, PREPARE_VIDEO_TIMEOUT);
         playVideoTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
