@@ -40,33 +40,33 @@
         >
 
         <CheckBox
+            android:id="@+id/channelVid"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="AUTO"
-            android:id="@+id/channelVid"
-            android:layout_gravity="center_horizontal"
             android:clickable="true"
             android:enabled="true"
-            android:gravity="center_vertical" />
+            android:text="@string/useChannelVideo"
+            android:layout_margin="10dp"
+            />
 
         <Button
             android:id="@+id/clear"
+            style="@style/button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="right"
             android:layout_margin="10dp"
             android:text="@string/clearChannelVideos"
-            style="@style/button"
             />
 
         <Button
             android:id="@+id/done"
+            style="@style/button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="right"
             android:layout_margin="10dp"
             android:text="@string/done"
-            style="@style/button"
             />
 
     </LinearLayout>

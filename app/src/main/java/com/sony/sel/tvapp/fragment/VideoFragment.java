@@ -338,7 +338,11 @@ public class VideoFragment extends BaseFragment {
       hideSpinner();
       Throwable error = getError();
       Uri uri = getUri();
-      if (error != null) {
+      if (isInBackground()) {
+        // can't play in background, video surface will not be valid
+        Log.e(TAG, "Activity went to background while preparing.");
+        return;
+      } else if (error != null) {
         Log.e(TAG, "Error starting video playback: " + error);
         new AlertDialog.Builder(getActivity())
             .setTitle(R.string.error)

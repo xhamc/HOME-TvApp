@@ -37,6 +37,7 @@
     <string name="clearChannelVideos">Clear Videos</string>
     <string name="selectVideos">Select Videos</string>
     <string name="noVideosError">You have not yet selected any videos to play.</string>
+    <string name="useChannelVideo">Use actual source for channels</string>
 
     <!-- menu items -->
     <string name="addToFavoriteChannels">Add to favorite channels</string>
@@ -52,5 +53,6 @@
     <string name="searchDescription">TV show names</string>
     <string name="searchPrompt">Search for a program:</string>
     <string name="searching">Searching...</string>
+
 
 </resources>
