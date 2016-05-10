@@ -3,7 +3,6 @@ package com.sony.sel.tvapp.view;
 import android.content.Context;
 import android.net.Uri;
 import android.util.AttributeSet;
-import android.util.StringBuilderPrinter;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;

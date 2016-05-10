@@ -195,8 +195,8 @@ public class ChannelInfoFragment extends BaseFragment {
   }
 
   public void nextChannel() {
-    if (currentChannel != null && channels != null && channels.size() > 0) {
-      int i = channels.indexOf(currentChannel) + 1;
+    if (channels != null && channels.size() > 0) {
+      int i = currentChannel != null ? channels.indexOf(currentChannel) + 1 : 0;
       if (i >= channels.size()) {
         i = 0;
       }
@@ -208,7 +208,7 @@ public class ChannelInfoFragment extends BaseFragment {
 
   public void previousChannel() {
     if (currentChannel != null && channels != null && channels.size() > 0) {
-      int i = channels.indexOf(currentChannel) - 1;
+      int i = currentChannel != null ? channels.indexOf(currentChannel) - 1 : channels.size() - 1;
       if (i < 0) {
         i = channels.size() - 1;
       }

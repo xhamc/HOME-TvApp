@@ -86,7 +86,7 @@ public class MainActivity extends BaseActivity {
   @Override
   public void onVisibleBehindCanceled() {
     super.onVisibleBehindCanceled();
-    videoFragment.stop();
+    videoFragment.onVisibleBehindCanceled();
   }
 
   /**

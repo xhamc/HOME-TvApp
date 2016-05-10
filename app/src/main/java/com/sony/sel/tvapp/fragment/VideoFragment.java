@@ -69,6 +69,7 @@ public class VideoFragment extends BaseFragment {
 
   private VideoBroadcast currentChannel;
   private VideoProgram currentProgram;
+  private VideoItem currentVod;
 
   private Uri videoUri;
   private MediaPlayer mediaPlayer;
@@ -116,7 +117,7 @@ public class VideoFragment extends BaseFragment {
   @Override
   public void onPause() {
     super.onPause();
-    if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+    if (mediaPlayer != null) {
       // Argument equals true to notify the system that the activity
       // wishes to be visible behind other translucent activities
       if (!getActivity().requestVisibleBehind(true)) {
@@ -128,6 +129,10 @@ public class VideoFragment extends BaseFragment {
       // Argument equals false because the activity is not playing
       getActivity().requestVisibleBehind(false);
     }
+  }
+
+  public void onVisibleBehindCanceled() {
+    stop();
   }
 
   @Override
@@ -218,6 +223,7 @@ public class VideoFragment extends BaseFragment {
       Log.d(TAG, "Resuming video playback.");
       mediaPlayer.start();
       showProgressBar(PROGRESS_UI_HIDE_DELAY);
+      updateMediaPlaybackState();
     }
   }
 
@@ -309,6 +315,8 @@ public class VideoFragment extends BaseFragment {
   private void setCurrentChannel(VideoBroadcast channel) {
 
     currentChannel = channel;
+    currentProgram = null;
+    currentVod = null;
     mediaArtwork = null;
     currentProgram = null;
 
@@ -392,6 +400,50 @@ public class VideoFragment extends BaseFragment {
   }
 
   /**
+   * Set the current VOD VideoItem to play.
+   *
+   * @param video Video to play.
+   */
+  private void setCurrentVodItem(VideoItem video) {
+    currentVod = video;
+    currentChannel = null;
+    currentProgram = null;
+
+    // update metadata for media session
+    updateMediaMetadata();
+
+    // start fetching icon
+    if (currentVod.getIcon() != null) {
+      // need to fetch the icon ourselves, image urls not working for metadata
+      Picasso.with(getActivity()).load(currentVod.getIcon()).into(new Target() {
+        @Override
+        public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+          mediaArtwork = bitmap;
+          updateMediaMetadata();
+        }
+
+        @Override
+        public void onBitmapFailed(Drawable errorDrawable) {
+
+        }
+
+        @Override
+        public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+        }
+      });
+    }
+
+    if (SettingsHelper.getHelper(getActivity()).useChannelVideosSetting()) {
+      // play actual VOD item
+      play(Uri.parse(currentVod.getResource()));
+    } else {
+      // change to simulated channel
+      playPlaceholderVideo();
+    }
+  }
+
+  /**
    * Play a random placeholder video from the "channel videos list" in app settings.
    */
   private void playPlaceholderVideo() {
@@ -463,13 +515,7 @@ public class VideoFragment extends BaseFragment {
    */
   @Subscribe
   public void onPlayVod(PlayVodEvent event) {
-    if (SettingsHelper.getHelper(getActivity()).useChannelVideosSetting()) {
-      // play actual VOD item
-      play(Uri.parse(event.getVideoItem().getResource()));
-    } else {
-      // change to simulated channel
-      playPlaceholderVideo();
-    }
+    setCurrentVodItem(event.getVideoItem());
   }
 
   /**
@@ -752,8 +798,6 @@ public class VideoFragment extends BaseFragment {
   private void updateMediaMetadata() {
     if (currentChannel != null && mediaSession != null) {
       MediaMetadata.Builder metadataBuilder = new MediaMetadata.Builder();
-      // To provide most control over how an item is displayed set the
-      // display fields in the metadata
       metadataBuilder.putString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE, currentProgram != null ? currentProgram.getTitle() : currentChannel.getCallSign());
       metadataBuilder.putString(MediaMetadata.METADATA_KEY_TITLE, currentProgram != null ? currentProgram.getTitle() : currentChannel.getCallSign());
       metadataBuilder.putBitmap(MediaMetadata.METADATA_KEY_ART, mediaArtwork);
@@ -762,6 +806,17 @@ public class VideoFragment extends BaseFragment {
       metadataBuilder.putString(MediaMetadata.METADATA_KEY_ART_URI, currentProgram != null ? currentProgram.getIcon() : currentChannel.getIcon());
       metadataBuilder.putString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI, currentProgram != null ? currentProgram.getIcon() : currentChannel.getIcon());
       metadataBuilder.putString(MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI, currentProgram != null ? currentProgram.getIcon() : currentChannel.getIcon());
+      mediaSession.setMetadata(metadataBuilder.build());
+    } else if (currentVod != null) {
+      MediaMetadata.Builder metadataBuilder = new MediaMetadata.Builder();
+      metadataBuilder.putString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE, currentVod.getTitle());
+      metadataBuilder.putString(MediaMetadata.METADATA_KEY_TITLE, currentVod.getTitle());
+      metadataBuilder.putBitmap(MediaMetadata.METADATA_KEY_ART, mediaArtwork);
+      metadataBuilder.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, mediaArtwork);
+      metadataBuilder.putBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON, mediaArtwork);
+      metadataBuilder.putString(MediaMetadata.METADATA_KEY_ART_URI, currentVod.getIcon());
+      metadataBuilder.putString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI, currentVod.getIcon());
+      metadataBuilder.putString(MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI, currentVod.getIcon());
       mediaSession.setMetadata(metadataBuilder.build());
     }
   }
