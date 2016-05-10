@@ -136,9 +136,6 @@ public class VideoFragment extends BaseFragment {
     if (mediaPlayer != null) {
       // resume play
       play();
-    } else if (currentChannel != null) {
-      // pick a channel video to play
-      changeChannel();
     }
   }
 
@@ -256,8 +253,14 @@ public class VideoFragment extends BaseFragment {
     }
   }
 
+  /**
+   * Process keyboard events for media seek. When seek buttons are held down, the
+   * seek location moves in the UI. After buttons are released, the actual seek is initiated.
+   *
+   * @param keyEvent Key events to process.
+   */
   public void seek(KeyEvent keyEvent) {
-    if (mediaPlayer != null) {
+    if (mediaPlayer != null && mediaPlayer.getDuration() > 0) {
       if (seekPosition < 0) {
         seekPosition = mediaPlayer.getCurrentPosition();
       }
@@ -268,20 +271,20 @@ public class VideoFragment extends BaseFragment {
           showProgressBar(PROGRESS_UI_HIDE_DELAY);
           switch (keyEvent.getKeyCode()) {
             case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
-              seekPosition += mediaPlayer.getDuration()/100;
-              seekPosition = Math.max(0,Math.min(seekPosition,mediaPlayer.getDuration()));
+              seekPosition += mediaPlayer.getDuration() / 100;
+              seekPosition = Math.max(0, Math.min(seekPosition, mediaPlayer.getDuration()));
               mediaProgress.setProgress(new Date(mediaProgress.getData().getStartTime().getTime() + seekPosition));
               break;
             case KeyEvent.KEYCODE_MEDIA_REWIND:
-              seekPosition -= mediaPlayer.getDuration()/100;
-              seekPosition = Math.max(0,Math.min(seekPosition,mediaPlayer.getDuration()));
+              seekPosition -= mediaPlayer.getDuration() / 100;
+              seekPosition = Math.max(0, Math.min(seekPosition, mediaPlayer.getDuration()));
               mediaProgress.setProgress(new Date(mediaProgress.getData().getStartTime().getTime() + seekPosition));
               break;
           }
           break;
         case KeyEvent.ACTION_UP:
           spinner.show();
-          mediaPlayer.seekTo((int)(seekPosition - mediaProgress.getData().getStartTime().getTime()));
+          mediaPlayer.seekTo((int) (seekPosition - mediaProgress.getData().getStartTime().getTime()));
           seekPosition = -1;
           mediaPlayer.setOnSeekCompleteListener(new MediaPlayer.OnSeekCompleteListener() {
             @Override
@@ -297,22 +300,104 @@ public class VideoFragment extends BaseFragment {
   }
 
   /**
-   * Change the video stream to the current channel video, or a random video stream selected
+   * Set the current broadcast channel.
+   * <p/>
+   * Sets the video stream to the current channel video, or a random video stream selected
    * from the "channel videos" list, depending on the {@link SettingsHelper#useChannelVideosSetting()}
    * setting.
    */
-  private void changeChannel() {
+  private void setCurrentChannel(VideoBroadcast channel) {
+
+    currentChannel = channel;
+    mediaArtwork = null;
+    currentProgram = null;
+
+    if (currentChannel == null) {
+      return;
+    }
+
+    // start fetching icon
+    if (currentChannel.getIcon() != null) {
+      // need to fetch the icon ourselves, image urls not working for metadata
+      Picasso.with(getActivity()).load(currentChannel.getIcon()).into(new Target() {
+        @Override
+        public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+          mediaArtwork = bitmap;
+          updateMediaMetadata();
+        }
+
+        @Override
+        public void onBitmapFailed(Drawable errorDrawable) {
+
+        }
+
+        @Override
+        public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+        }
+      });
+    }
+
+    // start fetching EPG data
+    new FetchEpgTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+    // update metadata for media session
+    updateMediaMetadata();
+
     if (SettingsHelper.getHelper(getActivity()).useChannelVideosSetting()) {
+      // play actual channel video
       final String res = currentChannel.getResource();
       if (res != null) {
         Log.d(TAG, "Changing video channel to " + res + ".");
         playChannelVideo(Uri.parse(res), CHANNEL_START_DELAY);
       }
-      return;
+    } else {
+      // select a random video to play
+      playPlaceholderVideo();
     }
+  }
 
+  /**
+   * Set the EPG data for the current program being viewed.
+   * <p/>
+   * Updates media session metadata and loads icon.
+   *
+   * @param program Current EPG program data.
+   */
+  private void setCurrentProgram(VideoProgram program) {
+    currentProgram = program;
+    if (currentProgram != null) {
+      if (currentProgram.getIcon() != null) {
+        // need to fetch the icon ourselves, image urls not working for metadata
+        Picasso.with(getActivity()).load(currentProgram.getIcon()).into(new Target() {
+          @Override
+          public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+            mediaArtwork = bitmap;
+            updateMediaMetadata();
+          }
+
+          @Override
+          public void onBitmapFailed(Drawable errorDrawable) {
+
+          }
+
+          @Override
+          public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+          }
+        });
+      }
+      updateMediaMetadata();
+    }
+  }
+
+  /**
+   * Play a random placeholder video from the "channel videos list" in app settings.
+   */
+  private void playPlaceholderVideo() {
     List<VideoItem> videos = SettingsHelper.getHelper(getActivity()).getChannelVideos();
     if (videos.size() > 0) {
+      // select a random video to play
       VideoItem video = videos.get(Math.abs(new Random().nextInt()) % videos.size());
       final String res = video.getResource();
       if (res != null) {
@@ -320,6 +405,7 @@ public class VideoFragment extends BaseFragment {
         playChannelVideo(Uri.parse(res), CHANNEL_START_DELAY);
       }
     } else if (SettingsHelper.getHelper(getActivity()).useChannelVideosSetting() == false) {
+      // show a dialog so the user can pick some videos
       new AlertDialog.Builder(getActivity())
           .setTitle(R.string.error)
           .setMessage(R.string.noVideosError)
@@ -360,12 +446,21 @@ public class VideoFragment extends BaseFragment {
     handler.postDelayed(channelChangeRunnable, delayMs);
   }
 
+  /**
+   * Receive a channel change event.
+   *
+   * @param event Channel change event with data.
+   */
   @Subscribe
   public void onChannelChanged(ChannelChangedEvent event) {
-    currentChannel = event.getChannel();
-    changeChannel();
+    setCurrentChannel(event.getChannel());
   }
 
+  /**
+   * Receive a VOD playback event.
+   *
+   * @param event Playback event with data.
+   */
   @Subscribe
   public void onPlayVod(PlayVodEvent event) {
     if (SettingsHelper.getHelper(getActivity()).useChannelVideosSetting()) {
@@ -373,16 +468,27 @@ public class VideoFragment extends BaseFragment {
       play(Uri.parse(event.getVideoItem().getResource()));
     } else {
       // change to simulated channel
-      changeChannel();
+      playPlaceholderVideo();
     }
   }
 
+  /**
+   * Hide the media progress bar with animation.
+   */
   private void hideProgressBar() {
     mediaProgress.animate().alpha(0.0f).start();
   }
 
+  /**
+   * Show the media progress bar. Time out and hide after the specified duration in ms.
+   * Calling this repeatedly will keep the bar visible.
+   * <p/>
+   * If the current media has no duration, nothing happens.
+   *
+   * @param duration Duration to time out and hide.
+   */
   private void showProgressBar(long duration) {
-    if (!isProgressVisible()) {
+    if (!isProgressVisible() && mediaPlayer != null && mediaPlayer.getDuration() > 0) {
       mediaProgress.setAlpha(0.0f);
       mediaProgress.setVisibility(View.VISIBLE);
       mediaProgress.animate().alpha(1.0f).start();
@@ -391,12 +497,20 @@ public class VideoFragment extends BaseFragment {
     handler.postDelayed(hideProgressRunnable, duration);
   }
 
+  /**
+   * Is the progress bar visible or in the process of being shown?
+   */
   private boolean isProgressVisible() {
     return mediaProgress.getAlpha() > 0 && mediaProgress.getVisibility() == View.VISIBLE;
   }
 
+  /**
+   * Update the progress bar with current media player info.
+   * <p/>
+   * If the current media has no duration, then nothing happens.
+   */
   private void updateProgressBar() {
-    if (mediaPlayer != null) {
+    if (mediaPlayer != null && mediaPlayer.getDuration() > 0) {
       ProgressInfo info = new ProgressInfo(
           new Date(0),
           new Date(mediaPlayer.getCurrentPosition()),
@@ -407,27 +521,37 @@ public class VideoFragment extends BaseFragment {
     }
   }
 
+  /**
+   * Start a timed task to update the progress bar once per second.
+   */
   private void startProgressUpdates() {
     if (mediaProgressRunnable != null) {
       handler.removeCallbacks(mediaProgressRunnable);
     }
-    mediaProgressRunnable = new Runnable() {
-      @Override
-      public void run() {
-        updateProgressBar();
-        handler.postDelayed(mediaProgressRunnable, 1000);
-      }
-    };
-    handler.postDelayed(mediaProgressRunnable, 1000);
-  }
-
-  private void stopProgressUpdates() {
-    handler.removeCallbacks(mediaProgressRunnable);
-    mediaProgressRunnable = null;
+    if (mediaPlayer != null && mediaPlayer.getDuration() > 0) {
+      mediaProgressRunnable = new Runnable() {
+        @Override
+        public void run() {
+          updateProgressBar();
+          handler.postDelayed(mediaProgressRunnable, 1000);
+        }
+      };
+      handler.postDelayed(mediaProgressRunnable, 1000);
+    }
   }
 
   /**
-   * Async task for starting video playback.
+   * Stop the timed task updating the progress bar.
+   */
+  private void stopProgressUpdates() {
+    if (mediaProgressRunnable != null) {
+      handler.removeCallbacks(mediaProgressRunnable);
+      mediaProgressRunnable = null;
+    }
+  }
+
+  /**
+   * Async task for preparing and starting video playback.
    */
   private class PlayVideoTask extends PrepareVideoTask {
 
@@ -484,14 +608,18 @@ public class VideoFragment extends BaseFragment {
         updateMediaPlaybackState();
         updateProgressBar();
         showProgressBar(PROGRESS_UI_HIDE_DELAY);
-        new FetchEpgTask().executeOnExecutor(THREAD_POOL_EXECUTOR);
         Log.d(TAG, "Play video task completed for " + uri + ".");
       }
     }
   }
 
+  /**
+   * Async task for attempting video playback using DLNA/DTCP player. Falls back to normal
+   * player if creating DLNA/DTCP URI was unsuccessful.
+   */
   private class PlayDlnaVideoTask extends PlayVideoTask {
 
+    // cached original uri if a new uri is used
     private Uri originalUri;
 
     public PlayDlnaVideoTask(Context context, Uri uri) {
@@ -537,6 +665,9 @@ public class VideoFragment extends BaseFragment {
   }
 
 
+  /**
+   * Class for receiving media session callback events, playback controls.
+   */
   private class MediaSessionCallback extends MediaSession.Callback {
     @Override
     public void onPause() {
@@ -556,74 +687,21 @@ public class VideoFragment extends BaseFragment {
 
     @Override
     public void onSkipToNext() {
-      // TODO real channel change
-      changeChannel();
+      // TODO channel change
     }
 
     @Override
     public void onSkipToPrevious() {
-      // TODO real channe change
-      changeChannel();
+      // TODO channel change
     }
   }
 
-  private void setCurrentChannel(VideoBroadcast channel) {
-    currentChannel = channel;
-    mediaArtwork = null;
-    currentProgram = null;
-    if (currentChannel != null) {
-      if (currentChannel.getIcon() != null) {
-        // need to fetch the icon ourselves, image urls not working for metadata
-        Picasso.with(getActivity()).load(currentChannel.getIcon()).into(new Target() {
-          @Override
-          public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-            mediaArtwork = bitmap;
-            updateMediaMetadata();
-          }
-
-          @Override
-          public void onBitmapFailed(Drawable errorDrawable) {
-
-          }
-
-          @Override
-          public void onPrepareLoad(Drawable placeHolderDrawable) {
-
-          }
-        });
-      }
-      changeChannel();
-      updateMediaMetadata();
-    }
-  }
-
-  private void setCurrentProgram(VideoProgram program) {
-    if (program != null) {
-      currentProgram = program;
-      if (program.getIcon() != null) {
-        // need to fetch the icon ourselves, image urls not working for metadata
-        Picasso.with(getActivity()).load(currentProgram.getIcon()).into(new Target() {
-          @Override
-          public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-            mediaArtwork = bitmap;
-            updateMediaMetadata();
-          }
-
-          @Override
-          public void onBitmapFailed(Drawable errorDrawable) {
-
-          }
-
-          @Override
-          public void onPrepareLoad(Drawable placeHolderDrawable) {
-
-          }
-        });
-      }
-      updateMediaMetadata();
-    }
-  }
-
+  /**
+   * Create a media session to tell the system that we are in media playback mode.
+   * <p/>
+   * This triggers behaviors like the ability to play in the background and display
+   * a "now playing" tile on the Home Screen.
+   */
   private void createMediaSession() {
     // new session
     mediaSession = new MediaSession(getActivity(), "TVApp");
@@ -641,6 +719,9 @@ public class VideoFragment extends BaseFragment {
     updateMediaMetadata();
   }
 
+  /**
+   * Update the playback state based on the current media player status.
+   */
   private void updateMediaPlaybackState() {
     if (mediaSession != null && mediaPlayer != null) {
       long position = PlaybackState.PLAYBACK_POSITION_UNKNOWN;
@@ -662,6 +743,10 @@ public class VideoFragment extends BaseFragment {
     }
   }
 
+  /**
+   * Update media session metadata based on current channel, current EPG program,
+   * and media artwork (icon).
+   */
   private void updateMediaMetadata() {
     if (currentChannel != null && mediaSession != null) {
       MediaMetadata.Builder metadataBuilder = new MediaMetadata.Builder();
@@ -675,11 +760,13 @@ public class VideoFragment extends BaseFragment {
       metadataBuilder.putString(MediaMetadata.METADATA_KEY_ART_URI, currentProgram != null ? currentProgram.getIcon() : currentChannel.getIcon());
       metadataBuilder.putString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI, currentProgram != null ? currentProgram.getIcon() : currentChannel.getIcon());
       metadataBuilder.putString(MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI, currentProgram != null ? currentProgram.getIcon() : currentChannel.getIcon());
-      // TODO more metadata?
       mediaSession.setMetadata(metadataBuilder.build());
     }
   }
 
+  /**
+   * Release the media session, e.g. if we're destroying the fragment.
+   */
   private void releaseMediaSession() {
     if (mediaSession != null) {
       mediaSession.release();
@@ -687,6 +774,10 @@ public class VideoFragment extends BaseFragment {
     }
   }
 
+  /**
+   * Async task that fetches EPG data for the current channel video.
+   * This in turn updates the media session metadata, icon, etc.
+   */
   private class FetchEpgTask extends AsyncTask<Void, Void, VideoProgram> {
 
     @Override
