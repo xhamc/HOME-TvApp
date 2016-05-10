@@ -41,12 +41,12 @@ function GuideController(){
 			waitTooLong=0;
 			sortChannelListData();
 			stationDataAvailable=false;
-			favoriteChannelRequest();
-		}else if (favoritesAvailable){
-			console.log("favorites");
-			waitTooLong=0;
-			favoritesAvailable=false;
 			guideDataFetchRequest();
+//		}else if (favoritesAvailable){
+//			console.log("favorites");
+//			waitTooLong=0;
+//			favoritesAvailable=false;
+//			guideDataFetchRequest();
 		}else if (epgDataAvailable){
 			console.log("epgData");
 			waitTooLong=0;
@@ -184,19 +184,19 @@ function GuideController(){
 		console.log("Fetching guide data");
 
 		if (!udpdateEPGinProgress){
-			getStations--;
-			if (getStations<=0){
-				getStations=STATION_FETCH_REQUEST_INT;
-				ws.send("browseEPGStations", true);
-				return;
-			}else{
+			//getStations--;
+//			if (getStations<=0){
+//				getStations=STATION_FETCH_REQUEST_INT;
+//				ws.send("browseEPGStations", true);
+//				return;
+//			}else{
 				var updateRequest=getNextTimeAndChannelList();
 				if (null!=updateRequest){
 					var msg=JSON.stringify({"browseEPGData":updateRequest});
 					console.log("msg:"+msg);
 					ws.send(msg, true);
 				}
-			}
+//			}
 
 		}
 

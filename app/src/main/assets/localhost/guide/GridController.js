@@ -518,7 +518,7 @@ function GridController(ws){
 
 		var index=currentProgramSelected.item;
 		channel=currentProgramSelected.channel;
-		var m= EPG_DATA[CHANNELLIST_DATA[channel].channelId].metadata[index];
+		var m= EPG_DATA[STATION_DATA[CHANNELLIST_DATA[channel]].channelId].metadata[index];
 
 		var imageloaded=false;
 		if (null!=m.programIcon && isURL(m.programIcon)){
@@ -670,6 +670,7 @@ function GridController(ws){
 			var x= 300 +(channel-currentChannelGridOffset)*HORIZCELLSIZE;
 
 			selectionParameter={"x":x,"y":y, "h":h, "mid":midSelectionPoint, "start":start, "end":end};
+//			console.log("Selection Parameters: x"+x+" y"+y+" h:"+h+" mid:"+midSelectionPoint+" start:"+start+ "end:"+end);
 			return selectionParameter;
 	}
 

@@ -59,6 +59,7 @@
                     var obj=JSON.parse(received_msg);
                     var keyChannel, keyDate, keyTime, keyMetadata, stations, keyStation;
                     for (key in obj){
+                        console.log ("KEY: "+key);
                         if (key=="EPG"){
                             epg=obj[key];
                             for (keyChannel in epg){
@@ -151,12 +152,24 @@
 
 
                         } else if (key=="CURRENT"){
-
+                            console.log("Found CURRENT key");
                             for (var i=0; i<STATION_DATA.length; i++){
-                                STATION_DATA[i].favorite=false;
                                 STATION_DATA[i].playing=false;
                             }
-                            var faveChannel= obj[key]["FAVORITES"];
+
+                            for (var i=0; i<STATION_DATA.length; i++){
+                                if (STATION_DATA[i].channelId == obj[key]){
+                                    console.log("Current_playing: "+STATION_DATA[i].channelId);
+                                    STATION_DATA[i].playing=true;
+                                    break;
+                                }
+                            }
+                        }else if (key == "FAVORITES" ){
+                            var faveChannel= obj[key];
+                            for (var i=0; i<STATION_DATA.length; i++){
+                                STATION_DATA[i].favorite=false;
+                            }
+                            console.log("FAVORITES key length: "+faveChannel.length);
 
                             for (var j=0; j<faveChannel.length; j++){
 
@@ -166,18 +179,29 @@
                                         break;
                                     }
                                 }
-                                for (var i=0; i<STATION_DATA.length; i++){
-                                    if (STATION_DATA[i].channelId == obj[key]["CURRENT_PLAYING"]){
-                                        console.log("Current_playing: "+STATION_DATA[i].channelId);
-                                        STATION_DATA[i].playing=true;
-                                        break;
+                            }
+
+//                            favoritesAvailable=true;
+                            udpdateEPGinProgress=false;
+
+                        } else if (key =="CHANNELS"){
+                            var channelList=obj[key];
+                            console.log("CHANNELLIST_DATA length: "+channelList.length);
+                            console.log(channelList[0]);
+                            for (var i=0; i<channelList.length; i++){
+                                for (var j=0; j<STATION_DATA.length; j++){
+                                    if (STATION_DATA[j].channelId==channelList[i]){
+                                        CHANNELLIST_DATA[i]=j;
+                                        console.log("CHANNELIST_DATA i: "+j);
+                                        j=STATION_DATA.length;
                                     }
+//                                    CHANNELLIST_DATA[i]=0;  //default error
+//                                    console.log("Error CHANNELLIST_DATA: "+STATION_DATA[j].channelID +"  not found");
                                 }
 
                             }
-                            favoritesAvailable=true;
-                            udpdateEPGinProgress=false;
                         }
+
 
                     }
                 }

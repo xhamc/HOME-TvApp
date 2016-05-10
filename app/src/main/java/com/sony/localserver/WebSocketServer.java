@@ -19,6 +19,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
@@ -236,9 +237,10 @@ public class WebSocketServer extends NanoWSD {
      * Return the list of channels as a String set containing just channel IDs.
      * @return
      */
-    private Set<String> getChannelIds() {
+    private List<String> getChannelIds() {
       List<VideoBroadcast> channels = dlnaHelper.getChannels(udn, null);
-      Set<String> channelIds = new HashSet<>();
+//      Set<String> channelIds = new HashSet<>();
+      List<String> channelIds=new ArrayList<>();
       for (VideoBroadcast channel : channels) {
         channelIds.add(channel.getChannelId());
       }
@@ -344,11 +346,11 @@ public class WebSocketServer extends NanoWSD {
     @SerializedName("FAVORITES")
     Set<String> favorites;
     @SerializedName("CHANNELS")
-    Set<String> channels;
+    List<String> channels;
     @SerializedName("CURRENT")
     String currentChannel;
 
-    public EpgResponse(Map<String, Map<String, Map<String, VideoProgram>>> channelMap, Set<String> favorites, Set<String> channels, String currentChannel) {
+    public EpgResponse(Map<String, Map<String, Map<String, VideoProgram>>> channelMap, Set<String> favorites, List<String> channels, String currentChannel) {
       this.channelMap = channelMap;
       this.favorites = favorites;
       this.channels = channels;
