@@ -29,9 +29,9 @@ public class MediaProgressView extends FrameLayout implements Bindable<MediaProg
     private Date startTime;
     private Date progress;
     private Date endTime;
-    private int playSpeed;
+    private Double playSpeed;
 
-    public ProgressInfo(Date startTime, Date progress, Date endTime, int playSpeed) {
+    public ProgressInfo(Date startTime, Date progress, Date endTime, Double playSpeed) {
       this.startTime = startTime;
       this.progress = progress;
       this.endTime = endTime;
@@ -62,11 +62,11 @@ public class MediaProgressView extends FrameLayout implements Bindable<MediaProg
       return endTime;
     }
 
-    public int getPlaySpeed() {
+    public Double getPlaySpeed() {
       return playSpeed;
     }
 
-    public void setPlaySpeed(int playSpeed) {
+    public void setPlaySpeed(Double playSpeed) {
       this.playSpeed = playSpeed;
     }
   }
@@ -134,7 +134,7 @@ public class MediaProgressView extends FrameLayout implements Bindable<MediaProg
     bind(data);
   }
 
-  public void setPlaySpeed(int speed) {
+  public void setPlaySpeed(Double speed) {
     data.setPlaySpeed(speed);
     // rebind to update
     bind(data);

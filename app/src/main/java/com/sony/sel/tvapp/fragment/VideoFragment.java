@@ -16,6 +16,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Parcel;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -42,6 +43,9 @@ import com.squareup.otto.Subscribe;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
@@ -60,6 +64,11 @@ public class VideoFragment extends BaseFragment {
 
   public static final String TAG = VideoFragment.class.getSimpleName();
 
+
+  private Method mediaPlayerInvoke=null;
+  private Method setSpeedMethod=null;
+  private ProtocolInfo protocolInfo;
+
   @Bind(R.id.videoSurfaceView)
   SurfaceView surfaceView;
   @Bind(R.id.spinner)
@@ -70,7 +79,7 @@ public class VideoFragment extends BaseFragment {
   private VideoBroadcast currentChannel;
   private VideoProgram currentProgram;
   private VideoItem currentVod;
-  private int currentPlaySpeed = 1;
+  private Double currentPlaySpeed = 1.0;
 
   private Uri videoUri;
   private MediaPlayer mediaPlayer;
@@ -111,8 +120,27 @@ public class VideoFragment extends BaseFragment {
 
     // create media session
     createMediaSession();
+    getInvokeMethod();
 
     return contentView;
+  }
+
+  Double[] fixedSpeeds={-16.0, -4.0, -2.0, -1.0, 1.0,2.0,4.0,16.0};
+
+  private void getInvokeMethod(){
+
+    try {
+      mediaPlayerInvoke = MediaPlayer.class.getMethod("invoke", new Class[]{Parcel.class, Parcel.class});
+    }catch (Exception e){
+      Log.e(TAG, "Class method not supported :" + e.getMessage());
+    }
+    try {
+      setSpeedMethod = MediaPlayer.class.getMethod("setSpeed",new Class[]{float.class});
+    }catch (Exception e){
+      Log.e(TAG, "Class method not supported :" + e.getMessage());
+    }
+
+
   }
 
   @Override
@@ -287,9 +315,10 @@ public class VideoFragment extends BaseFragment {
             case KeyEvent.KEYCODE_MEDIA_SKIP_FORWARD:
             case KeyEvent.KEYCODE_MEDIA_STEP_FORWARD:
               // move the seek position forward without actually seeking
-              seekPosition += mediaPlayer.getDuration() / 100;
-              seekPosition = Math.max(0, Math.min(seekPosition, mediaPlayer.getDuration()));
-              mediaProgress.setProgress(new Date(mediaProgress.getData().getStartTime().getTime() + seekPosition));
+//              seekPosition += mediaPlayer.getDuration() / 100;
+//              seekPosition = Math.max(0, Math.min(seekPosition, mediaPlayer.getDuration()));
+//              mediaProgress.setProgress(new Date(mediaProgress.getData().getStartTime().getTime() + seekPosition));
+
               break;
             case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
             case KeyEvent.KEYCODE_MEDIA_SKIP_BACKWARD:
@@ -340,19 +369,26 @@ public class VideoFragment extends BaseFragment {
   /**
    * Increase the playback speed to the next increment in the forward direction, and update the UI.
    */
+
   void increasePlaySpeed() {
+    List<Double> ps=new ArrayList<>();
+    if (protocolInfo!=null && protocolInfo.playSpeedSupported()){
+       ps=protocolInfo.getPlaySpeedDoubles();
 
-    // stub code, do whatever speed selection is needed here
-    // this implementation just loops through speeds from 2x to 16x
-    int speed = currentPlaySpeed < 0 ? 2 : currentPlaySpeed * 2;
-    if (speed > 16) {
-      // after 16x, just reset to 2x
-      speed = 2;
+    }else{
+        ps.addAll(Arrays.asList(fixedSpeeds));
     }
-
-    // save current speed value
-    currentPlaySpeed = speed;
-    // update UI
+    Double speed=1.0;
+    Double minSpeedChange=Double.POSITIVE_INFINITY;
+    for (Double s: ps){
+      if (s>currentPlaySpeed ) {
+        if (minSpeedChange>s) {
+          speed = s;
+        }
+        minSpeedChange=s;
+      }
+    }
+    invokeSetSpeed(speed);
     updateProgressBar();
   }
 
@@ -360,34 +396,52 @@ public class VideoFragment extends BaseFragment {
    * Increase the playback speed to the next increment in the reverse direction, and update the UI.
    */
   void increasePlaySpeedReverse() {
+    List<Double> ps=new ArrayList<>();
+    if (protocolInfo!=null && protocolInfo.playSpeedSupported()){
+      ps=protocolInfo.getPlaySpeedDoubles();
 
-    // stub code, do whatever speed selection is needed here
-    // this implementation just loops through speeds from -2x to -16x
-    int speed = currentPlaySpeed > 0 ? -2 : currentPlaySpeed * 2;
-    if (speed < -16) {
-      // after -16x, just reset to -2x
-      speed = -2;
+    }else{
+      ps.addAll(Arrays.asList(fixedSpeeds));
     }
-
-    // save current speed value
-    currentPlaySpeed = speed;
-    // update UI
+    Double speed=1.0;
+    Double minSpeedChange=Double.NEGATIVE_INFINITY;
+    for (Double s: ps){
+      if (s<currentPlaySpeed ) {
+        if (minSpeedChange<s) {
+          speed = s;
+        }
+        minSpeedChange=s;
+      }
+    }
+    invokeSetSpeed(speed);
     updateProgressBar();
   }
+
+
 
   /**
    * Reset the playback speed to 1x forward.
    */
   void resetPlaySpeed() {
-    if (currentPlaySpeed != 1) {
+    invokeSetSpeed(1.0);
+    updateProgressBar();
+  }
 
-      // do whatever speed reset is needed
+  /**
+   * call the MediaPlayer invoke method and update currentPlaySpeed based on result.
+   */
+  void invokeSetSpeed(Double speed){
 
-      // save current speed value
-      currentPlaySpeed = 1;
-      // update UI
-      updateProgressBar();
+    try{
+      if (speed!=currentPlaySpeed) {
+        setSpeedMethod.invoke(mediaPlayer, speed.floatValue());
+      }
+    }catch (Exception e){
+      Log.e(TAG,"setSpeedMethod error: "+e.getMessage());
+      return;
     }
+    currentPlaySpeed= speed;
+
   }
 
   private boolean canSeek() {
@@ -399,6 +453,7 @@ public class VideoFragment extends BaseFragment {
     // TODO better capabilities analysis from ProtocolInfo
     return mediaPlayer != null && mediaPlayer.getDuration() > 0;
   }
+
 
   /**
    * Set the current broadcast channel.
@@ -778,10 +833,11 @@ public class VideoFragment extends BaseFragment {
       return super.doInBackground(params);
     }
 
+
     private void createDlnaUri() {
       if (getUri().getScheme().equals("http")) {
         // transform the URI to a DLNA version before prepare
-        ProtocolInfo protocolInfo = new ProtocolInfo(getUri().toString(), 0, null);
+        protocolInfo = new ProtocolInfo(getUri().toString(), 0, null);
         String dlnaUri = protocolInfo.getUrl();
         if (!dlnaUri.equals(getUri().toString())) {
           // dlna URI was created successfully
@@ -861,6 +917,9 @@ public class VideoFragment extends BaseFragment {
     updateMediaPlaybackState();
     // update state of channel or program
     updateMediaMetadata();
+
+
+
   }
 
   /**

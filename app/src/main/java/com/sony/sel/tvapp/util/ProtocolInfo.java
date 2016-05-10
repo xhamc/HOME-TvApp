@@ -190,6 +190,15 @@ public class ProtocolInfo {
     return mPsValue.contains(sp);
   }
 
+  public List<Double> getPlaySpeedDoubles(){
+    return mPsValue;
+  }
+
+  public List<String> getPlaySpeedStrings(){
+    return mPsString;
+  }
+
+
   private Map<String, String> headerResult = new HashMap<>();
 
   public Map<String, String> getHeaders() {
