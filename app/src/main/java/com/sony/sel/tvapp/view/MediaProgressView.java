@@ -29,17 +29,13 @@ public class MediaProgressView extends FrameLayout implements Bindable<MediaProg
     private Date startTime;
     private Date progress;
     private Date endTime;
+    private int playSpeed;
 
-    public ProgressInfo(Date startTime, Date progress, Date endTime) {
+    public ProgressInfo(Date startTime, Date progress, Date endTime, int playSpeed) {
       this.startTime = startTime;
       this.progress = progress;
       this.endTime = endTime;
-    }
-
-    public ProgressInfo(long duration, long progress) {
-      this.startTime = new Date(0);
-      this.progress = new Date(progress);
-      this.endTime = new Date(duration);
+      this.playSpeed = playSpeed;
     }
 
     public Date getStartTime() {
@@ -64,6 +60,14 @@ public class MediaProgressView extends FrameLayout implements Bindable<MediaProg
 
     public Date getEndTime() {
       return endTime;
+    }
+
+    public int getPlaySpeed() {
+      return playSpeed;
+    }
+
+    public void setPlaySpeed(int playSpeed) {
+      this.playSpeed = playSpeed;
     }
   }
 
@@ -108,7 +112,11 @@ public class MediaProgressView extends FrameLayout implements Bindable<MediaProg
       format.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
-    startTime.setText(format.format(data.getProgress()));
+    String startText = format.format(data.getProgress());
+    if (data.getPlaySpeed() != 1) {
+      startText += " ("+data.getPlaySpeed()+"x)";
+    }
+    startTime.setText(startText);
     endTime.setText(format.format(new Date(data.getEndTime().getTime())));
 
     int duration = (int) (data.getEndTime().getTime());
@@ -122,6 +130,12 @@ public class MediaProgressView extends FrameLayout implements Bindable<MediaProg
     // keep progress value within limits
     progress = new Date(Math.max(data.getStartTime().getTime(),Math.min(data.getEndTime().getTime(), progress.getTime())));
     data.setProgress(progress);
+    // rebind to update
+    bind(data);
+  }
+
+  public void setPlaySpeed(int speed) {
+    data.setPlaySpeed(speed);
     // rebind to update
     bind(data);
   }

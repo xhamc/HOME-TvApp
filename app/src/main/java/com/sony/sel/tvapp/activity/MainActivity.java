@@ -204,6 +204,12 @@ public class MainActivity extends BaseActivity {
     switch (keyCode) {
       case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
       case KeyEvent.KEYCODE_MEDIA_REWIND:
+      case KeyEvent.KEYCODE_MEDIA_NEXT:
+      case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+      case KeyEvent.KEYCODE_MEDIA_SKIP_BACKWARD:
+      case KeyEvent.KEYCODE_MEDIA_STEP_BACKWARD:
+      case KeyEvent.KEYCODE_MEDIA_SKIP_FORWARD:
+      case KeyEvent.KEYCODE_MEDIA_STEP_FORWARD:
         videoFragment.seek(event);
         return true;
     }
@@ -218,6 +224,12 @@ public class MainActivity extends BaseActivity {
     switch (keyCode) {
       case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
       case KeyEvent.KEYCODE_MEDIA_REWIND:
+      case KeyEvent.KEYCODE_MEDIA_NEXT:
+      case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+      case KeyEvent.KEYCODE_MEDIA_SKIP_BACKWARD:
+      case KeyEvent.KEYCODE_MEDIA_STEP_BACKWARD:
+      case KeyEvent.KEYCODE_MEDIA_SKIP_FORWARD:
+      case KeyEvent.KEYCODE_MEDIA_STEP_FORWARD:
         videoFragment.seek(event);
         return true;
     }

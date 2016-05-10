@@ -70,6 +70,7 @@ public class VideoFragment extends BaseFragment {
   private VideoBroadcast currentChannel;
   private VideoProgram currentProgram;
   private VideoItem currentVod;
+  private int currentPlaySpeed = 1;
 
   private Uri videoUri;
   private MediaPlayer mediaPlayer;
@@ -224,6 +225,9 @@ public class VideoFragment extends BaseFragment {
       mediaPlayer.start();
       showProgressBar(PROGRESS_UI_HIDE_DELAY);
       updateMediaPlaybackState();
+    } else if (mediaPlayer != null) {
+      // reset to normal playback speed
+      resetPlaySpeed();
     }
   }
 
@@ -231,11 +235,13 @@ public class VideoFragment extends BaseFragment {
    * Pause a video that's playing.
    */
   public void pause() {
-    if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+    if (canPause() && mediaPlayer.isPlaying()) {
       Log.d(TAG, "Pausing video.");
       mediaPlayer.pause();
       updateMediaPlaybackState();
       showProgressBar(PROGRESS_UI_HIDE_DELAY);
+      // reset playback speed for when play resumes
+      resetPlaySpeed();
     }
   }
 
@@ -250,6 +256,7 @@ public class VideoFragment extends BaseFragment {
       updateMediaPlaybackState();
       hideProgressBar();
       stopProgressUpdates();
+      resetPlaySpeed();
     }
     if (playVideoTask != null) {
       // cancel a playback task in progress
@@ -266,7 +273,7 @@ public class VideoFragment extends BaseFragment {
    * @param keyEvent Key events to process.
    */
   public void seek(KeyEvent keyEvent) {
-    if (mediaPlayer != null && mediaPlayer.getDuration() > 0) {
+    if (canSeek()) {
       if (seekPosition < 0) {
         seekPosition = mediaPlayer.getCurrentPosition();
       }
@@ -276,33 +283,121 @@ public class VideoFragment extends BaseFragment {
           stopProgressUpdates();
           showProgressBar(PROGRESS_UI_HIDE_DELAY);
           switch (keyEvent.getKeyCode()) {
-            case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
+            case KeyEvent.KEYCODE_MEDIA_NEXT:
+            case KeyEvent.KEYCODE_MEDIA_SKIP_FORWARD:
+            case KeyEvent.KEYCODE_MEDIA_STEP_FORWARD:
+              // move the seek position forward without actually seeking
               seekPosition += mediaPlayer.getDuration() / 100;
               seekPosition = Math.max(0, Math.min(seekPosition, mediaPlayer.getDuration()));
               mediaProgress.setProgress(new Date(mediaProgress.getData().getStartTime().getTime() + seekPosition));
               break;
-            case KeyEvent.KEYCODE_MEDIA_REWIND:
+            case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+            case KeyEvent.KEYCODE_MEDIA_SKIP_BACKWARD:
+            case KeyEvent.KEYCODE_MEDIA_STEP_BACKWARD:
+              // move the seek position back without actually seeking
               seekPosition -= mediaPlayer.getDuration() / 100;
               seekPosition = Math.max(0, Math.min(seekPosition, mediaPlayer.getDuration()));
               mediaProgress.setProgress(new Date(mediaProgress.getData().getStartTime().getTime() + seekPosition));
               break;
+            case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD: {
+              // bump up and/or loop the forward play speed
+              increasePlaySpeed();
+              break;
+            }
+            case KeyEvent.KEYCODE_MEDIA_REWIND: {
+              // bump up and/or loop the reverse play speed
+              increasePlaySpeedReverse();
+              break;
+            }
           }
           break;
         case KeyEvent.ACTION_UP:
-          spinner.show();
-          mediaPlayer.seekTo((int) (seekPosition - mediaProgress.getData().getStartTime().getTime()));
-          seekPosition = -1;
-          mediaPlayer.setOnSeekCompleteListener(new MediaPlayer.OnSeekCompleteListener() {
-            @Override
-            public void onSeekComplete(MediaPlayer mp) {
-              spinner.hide();
-              showProgressBar(PROGRESS_UI_HIDE_DELAY);
-              startProgressUpdates();
-            }
-          });
-          break;
+          switch (keyEvent.getKeyCode()) {
+            case KeyEvent.KEYCODE_MEDIA_NEXT:
+            case KeyEvent.KEYCODE_MEDIA_SKIP_FORWARD:
+            case KeyEvent.KEYCODE_MEDIA_STEP_FORWARD:
+            case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+            case KeyEvent.KEYCODE_MEDIA_SKIP_BACKWARD:
+            case KeyEvent.KEYCODE_MEDIA_STEP_BACKWARD:
+              // initiate a seek to the current position on key release
+              spinner.show();
+              mediaPlayer.seekTo((int) (seekPosition - mediaProgress.getData().getStartTime().getTime()));
+              seekPosition = -1;
+              mediaPlayer.setOnSeekCompleteListener(new MediaPlayer.OnSeekCompleteListener() {
+                @Override
+                public void onSeekComplete(MediaPlayer mp) {
+                  spinner.hide();
+                  showProgressBar(PROGRESS_UI_HIDE_DELAY);
+                  startProgressUpdates();
+                }
+              });
+              break;
+          }
       }
     }
+  }
+
+  /**
+   * Increase the playback speed to the next increment in the forward direction, and update the UI.
+   */
+  void increasePlaySpeed() {
+
+    // stub code, do whatever speed selection is needed here
+    // this implementation just loops through speeds from 2x to 16x
+    int speed = currentPlaySpeed < 0 ? 2 : currentPlaySpeed * 2;
+    if (speed > 16) {
+      // after 16x, just reset to 2x
+      speed = 2;
+    }
+
+    // save current speed value
+    currentPlaySpeed = speed;
+    // update UI
+    updateProgressBar();
+  }
+
+  /**
+   * Increase the playback speed to the next increment in the reverse direction, and update the UI.
+   */
+  void increasePlaySpeedReverse() {
+
+    // stub code, do whatever speed selection is needed here
+    // this implementation just loops through speeds from -2x to -16x
+    int speed = currentPlaySpeed > 0 ? -2 : currentPlaySpeed * 2;
+    if (speed < -16) {
+      // after -16x, just reset to -2x
+      speed = -2;
+    }
+
+    // save current speed value
+    currentPlaySpeed = speed;
+    // update UI
+    updateProgressBar();
+  }
+
+  /**
+   * Reset the playback speed to 1x forward.
+   */
+  void resetPlaySpeed() {
+    if (currentPlaySpeed != 1) {
+
+      // do whatever speed reset is needed
+
+      // save current speed value
+      currentPlaySpeed = 1;
+      // update UI
+      updateProgressBar();
+    }
+  }
+
+  private boolean canSeek() {
+    // TODO better capabilities analysis from ProtocolInfo
+    return mediaPlayer != null && mediaPlayer.getDuration() > 0;
+  }
+
+  private boolean canPause() {
+    // TODO better capabilities analysis from ProtocolInfo
+    return mediaPlayer != null && mediaPlayer.getDuration() > 0;
   }
 
   /**
@@ -562,7 +657,8 @@ public class VideoFragment extends BaseFragment {
       ProgressInfo info = new ProgressInfo(
           new Date(0),
           new Date(mediaPlayer.getCurrentPosition()),
-          new Date(mediaPlayer.getDuration())
+          new Date(mediaPlayer.getDuration()),
+          currentPlaySpeed
       );
       mediaProgress.bind(info);
       startProgressUpdates();
