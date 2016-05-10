@@ -12,6 +12,7 @@ import com.sony.sel.tvapp.adapter.Bindable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -25,9 +26,9 @@ public class MediaProgressView extends FrameLayout implements Bindable<MediaProg
    * Class for sending media progress.
    */
   public static class ProgressInfo {
-    private final Date startTime;
-    private final Date progress;
-    private final Date endTime;
+    private Date startTime;
+    private Date progress;
+    private Date endTime;
 
     public ProgressInfo(Date startTime, Date progress, Date endTime) {
       this.startTime = startTime;
@@ -45,8 +46,20 @@ public class MediaProgressView extends FrameLayout implements Bindable<MediaProg
       return startTime;
     }
 
+    public void setStartTime(Date startTime) {
+      this.startTime = startTime;
+    }
+
     public Date getProgress() {
       return progress;
+    }
+
+    public void setProgress(Date progress) {
+      this.progress = progress;
+    }
+
+    public void setEndTime(Date endTime) {
+      this.endTime = endTime;
     }
 
     public Date getEndTime() {
@@ -89,16 +102,28 @@ public class MediaProgressView extends FrameLayout implements Bindable<MediaProg
   public void bind(ProgressInfo data) {
     this.data = data;
 
-    DateFormat format = new SimpleDateFormat("h:mm");
+    DateFormat format = new SimpleDateFormat("H:mm:ss");
+    if (data.getStartTime().getTime() == 0) {
+      // adjust for UTC if time is absolute
+      format.setTimeZone(TimeZone.getTimeZone("UTC"));
+    }
 
-    startTime.setText(format.format(data.getStartTime()));
-    endTime.setText(format.format(data.getEndTime()));
+    startTime.setText(format.format(data.getProgress()));
+    endTime.setText("-"+format.format(new Date(data.getEndTime().getTime()-data.getProgress().getTime())));
 
     int duration = (int) (data.getEndTime().getTime() - data.getStartTime().getTime());
     int progress = (int) (data.getProgress().getTime() - data.getStartTime().getTime());
 
     progressBar.setMax(duration);
     progressBar.setProgress(progress);
+  }
+
+  public void setProgress(Date progress) {
+    // keep progress value within limits
+    progress = new Date(Math.max(data.getStartTime().getTime(),Math.min(data.getEndTime().getTime(), progress.getTime())));
+    data.setProgress(progress);
+    // rebind to update
+    bind(data);
   }
 
   @Override

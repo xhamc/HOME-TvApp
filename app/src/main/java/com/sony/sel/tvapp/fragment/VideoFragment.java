@@ -19,6 +19,7 @@ import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -35,11 +36,13 @@ import com.sony.sel.tvapp.util.PrepareVideoTask;
 import com.sony.sel.tvapp.util.ProtocolInfo;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.sony.sel.tvapp.view.MediaProgressView;
+import com.sony.sel.tvapp.view.MediaProgressView.ProgressInfo;
 import com.sony.sel.tvapp.view.SpinnerView;
 import com.squareup.otto.Subscribe;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
@@ -77,9 +80,24 @@ public class VideoFragment extends BaseFragment {
   private final long PREPARE_DLNA_VIDEO_TIMEOUT = 30000;
   private final long PREPARE_VIDEO_TIMEOUT = 60000;
   private final long CHANNEL_START_DELAY = 500;
+  private final long PROGRESS_UI_HIDE_DELAY = 10000;
 
   private Handler handler = new Handler();
   private Runnable channelChangeRunnable;
+  private Runnable mediaProgressRunnable = new Runnable() {
+    @Override
+    public void run() {
+      updateProgressBar();
+    }
+  };
+
+  private Runnable hideProgressRunnable = new Runnable() {
+    @Override
+    public void run() {
+      hideProgressBar();
+    }
+  };
+  private long seekPosition = -1;
 
   @Nullable
   @Override
@@ -197,10 +215,12 @@ public class VideoFragment extends BaseFragment {
     if (mediaPlayer == null && videoUri != null) {
       // restart playback from scratch
       play(videoUri);
+      showProgressBar(PROGRESS_UI_HIDE_DELAY);
     } else if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
       // resume play
       Log.d(TAG, "Resuming video playback.");
       mediaPlayer.start();
+      showProgressBar(PROGRESS_UI_HIDE_DELAY);
     }
   }
 
@@ -212,6 +232,7 @@ public class VideoFragment extends BaseFragment {
       Log.d(TAG, "Pausing video.");
       mediaPlayer.pause();
       updateMediaPlaybackState();
+      showProgressBar(PROGRESS_UI_HIDE_DELAY);
     }
   }
 
@@ -224,6 +245,8 @@ public class VideoFragment extends BaseFragment {
       mediaPlayer.release();
       mediaPlayer = null;
       updateMediaPlaybackState();
+      hideProgressBar();
+      stopProgressUpdates();
     }
     if (playVideoTask != null) {
       // cancel a playback task in progress
@@ -231,7 +254,46 @@ public class VideoFragment extends BaseFragment {
       playVideoTask = null;
       spinner.hide();
     }
+  }
 
+  public void seek(KeyEvent keyEvent) {
+    if (mediaPlayer != null) {
+      if (seekPosition < 0) {
+        seekPosition = mediaPlayer.getCurrentPosition();
+      }
+      switch (keyEvent.getAction()) {
+        case KeyEvent.ACTION_DOWN:
+        case KeyEvent.ACTION_MULTIPLE:
+          stopProgressUpdates();
+          showProgressBar(PROGRESS_UI_HIDE_DELAY);
+          switch (keyEvent.getKeyCode()) {
+            case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
+              seekPosition += mediaPlayer.getDuration()/100;
+              seekPosition = Math.max(0,Math.min(seekPosition,mediaPlayer.getDuration()));
+              mediaProgress.setProgress(new Date(mediaProgress.getData().getStartTime().getTime() + seekPosition));
+              break;
+            case KeyEvent.KEYCODE_MEDIA_REWIND:
+              seekPosition -= mediaPlayer.getDuration()/100;
+              seekPosition = Math.max(0,Math.min(seekPosition,mediaPlayer.getDuration()));
+              mediaProgress.setProgress(new Date(mediaProgress.getData().getStartTime().getTime() + seekPosition));
+              break;
+          }
+          break;
+        case KeyEvent.ACTION_UP:
+          spinner.show();
+          mediaPlayer.seekTo((int)(seekPosition - mediaProgress.getData().getStartTime().getTime()));
+          seekPosition = -1;
+          mediaPlayer.setOnSeekCompleteListener(new MediaPlayer.OnSeekCompleteListener() {
+            @Override
+            public void onSeekComplete(MediaPlayer mp) {
+              spinner.hide();
+              showProgressBar(PROGRESS_UI_HIDE_DELAY);
+              startProgressUpdates();
+            }
+          });
+          break;
+      }
+    }
   }
 
   /**
@@ -315,6 +377,55 @@ public class VideoFragment extends BaseFragment {
     }
   }
 
+  private void hideProgressBar() {
+    mediaProgress.animate().alpha(0.0f).start();
+  }
+
+  private void showProgressBar(long duration) {
+    if (!isProgressVisible()) {
+      mediaProgress.setAlpha(0.0f);
+      mediaProgress.setVisibility(View.VISIBLE);
+      mediaProgress.animate().alpha(1.0f).start();
+    }
+    handler.removeCallbacks(hideProgressRunnable);
+    handler.postDelayed(hideProgressRunnable, duration);
+  }
+
+  private boolean isProgressVisible() {
+    return mediaProgress.getAlpha() > 0 && mediaProgress.getVisibility() == View.VISIBLE;
+  }
+
+  private void updateProgressBar() {
+    if (mediaPlayer != null) {
+      ProgressInfo info = new ProgressInfo(
+          new Date(0),
+          new Date(mediaPlayer.getCurrentPosition()),
+          new Date(mediaPlayer.getDuration())
+      );
+      mediaProgress.bind(info);
+      startProgressUpdates();
+    }
+  }
+
+  private void startProgressUpdates() {
+    if (mediaProgressRunnable != null) {
+      handler.removeCallbacks(mediaProgressRunnable);
+    }
+    mediaProgressRunnable = new Runnable() {
+      @Override
+      public void run() {
+        updateProgressBar();
+        handler.postDelayed(mediaProgressRunnable, 1000);
+      }
+    };
+    handler.postDelayed(mediaProgressRunnable, 1000);
+  }
+
+  private void stopProgressUpdates() {
+    handler.removeCallbacks(mediaProgressRunnable);
+    mediaProgressRunnable = null;
+  }
+
   /**
    * Async task for starting video playback.
    */
@@ -371,6 +482,8 @@ public class VideoFragment extends BaseFragment {
         playVideoTask = null;
         mediaSession.setActive(true);
         updateMediaPlaybackState();
+        updateProgressBar();
+        showProgressBar(PROGRESS_UI_HIDE_DELAY);
         new FetchEpgTask().executeOnExecutor(THREAD_POOL_EXECUTOR);
         Log.d(TAG, "Play video task completed for " + uri + ".");
       }

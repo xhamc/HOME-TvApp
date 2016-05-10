@@ -197,8 +197,28 @@ public class MainActivity extends BaseActivity {
   }
 
   @Override
+  public boolean onKeyUp(int keyCode, KeyEvent event) {
+    // send seek events to video fragment
+    switch (keyCode) {
+      case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
+      case KeyEvent.KEYCODE_MEDIA_REWIND:
+        videoFragment.seek(event);
+        return true;
+    }
+    return super.onKeyUp(keyCode, event);
+  }
+
+  @Override
   public boolean onKeyDown(int keyCode, KeyEvent event) {
     boolean handled = false;
+
+    // send seek events to video fragment
+    switch (keyCode) {
+      case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
+      case KeyEvent.KEYCODE_MEDIA_REWIND:
+        videoFragment.seek(event);
+        return true;
+    }
     if (event.getAction() == KeyEvent.ACTION_DOWN) {
       switch (keyCode) {
         case KeyEvent.KEYCODE_BACK: {
