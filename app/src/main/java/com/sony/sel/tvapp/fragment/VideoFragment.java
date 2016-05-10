@@ -384,9 +384,10 @@ public class VideoFragment extends BaseFragment {
       if (s>currentPlaySpeed ) {
         if (minSpeedChange>s) {
           speed = s;
+          minSpeedChange=s;
         }
-        minSpeedChange=s;
       }
+      Log.d(TAG,"Speed: "+s+" ,minSpeedChange: "+minSpeedChange+"  CurrentPlaySpeed"+currentPlaySpeed);
     }
     invokeSetSpeed(speed);
     updateProgressBar();
@@ -409,8 +410,8 @@ public class VideoFragment extends BaseFragment {
       if (s<currentPlaySpeed ) {
         if (minSpeedChange<s) {
           speed = s;
+          minSpeedChange=s;
         }
-        minSpeedChange=s;
       }
     }
     invokeSetSpeed(speed);
