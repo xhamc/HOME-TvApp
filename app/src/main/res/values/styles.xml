@@ -94,5 +94,9 @@
         <item name="android:textAllCaps">true</item>
     </style>
 
+    <style name="MediaProgressBar" parent="android:Widget.ProgressBar.Horizontal">
+        <item name="android:progressDrawable">@drawable/progress_bar</item>
+        <item name="android:background">@android:color/transparent</item>
+    </style>
 
 </resources>

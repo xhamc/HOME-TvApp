@@ -21,4 +21,12 @@
         android:visibility="invisible"
         />
 
+    <include
+        android:id="@+id/mediaProgress"
+        layout="@layout/media_progress_view"
+        android:layout_gravity="bottom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        />
+
 </FrameLayout>

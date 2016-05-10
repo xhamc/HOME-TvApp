@@ -34,6 +34,7 @@ import com.sony.sel.tvapp.util.EventBus.PlayVodEvent;
 import com.sony.sel.tvapp.util.PrepareVideoTask;
 import com.sony.sel.tvapp.util.ProtocolInfo;
 import com.sony.sel.tvapp.util.SettingsHelper;
+import com.sony.sel.tvapp.view.MediaProgressView;
 import com.sony.sel.tvapp.view.SpinnerView;
 import com.squareup.otto.Subscribe;
 import com.squareup.picasso.Picasso;
@@ -60,6 +61,8 @@ public class VideoFragment extends BaseFragment {
   SurfaceView surfaceView;
   @Bind(R.id.spinner)
   SpinnerView spinner;
+  @Bind(R.id.mediaProgress)
+  MediaProgressView mediaProgress;
 
   private VideoBroadcast currentChannel;
   private VideoProgram currentProgram;
