@@ -509,7 +509,9 @@ public class VideoFragment extends BaseFragment {
    * <p/>
    * If the current media has no duration, then nothing happens.
    */
+
   private void updateProgressBar() {
+
     if (mediaPlayer != null && mediaPlayer.getDuration() > 0) {
       ProgressInfo info = new ProgressInfo(
           new Date(0),

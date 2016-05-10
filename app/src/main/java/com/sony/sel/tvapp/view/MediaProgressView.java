@@ -109,9 +109,9 @@ public class MediaProgressView extends FrameLayout implements Bindable<MediaProg
     }
 
     startTime.setText(format.format(data.getProgress()));
-    endTime.setText("-"+format.format(new Date(data.getEndTime().getTime()-data.getProgress().getTime())));
+    endTime.setText(format.format(new Date(data.getEndTime().getTime())));
 
-    int duration = (int) (data.getEndTime().getTime() - data.getStartTime().getTime());
+    int duration = (int) (data.getEndTime().getTime());
     int progress = (int) (data.getProgress().getTime() - data.getStartTime().getTime());
 
     progressBar.setMax(duration);
