@@ -631,7 +631,7 @@ public class DlnaObjects {
     /**
      * Return duration in milliseconds.
      */
-    public long getScheduledDurationTime(){
+    public long getScheduledDurationTime() {
       if (scheduledDurationTime != null) {
         try {
           // need to set time zone to UTC for proper parsing
@@ -676,7 +676,7 @@ public class DlnaObjects {
     public void setRating(String rating) {
       // transform certain ratings for EPG grid
       if (rating.contains("Adult")) {
-        rating="AO";
+        rating = "AO";
       }
       switch (rating) {
 
@@ -722,8 +722,8 @@ public class DlnaObjects {
       this.scheduledEndTime = scheduledEndTime;
     }
 
-    public void setScheduleDurationTime(String scheduledDurationTime){
-      this.scheduledDurationTime=scheduledDurationTime;
+    public void setScheduleDurationTime(String scheduledDurationTime) {
+      this.scheduledDurationTime = scheduledDurationTime;
     }
 
     public String getProgramId() {
@@ -807,9 +807,9 @@ public class DlnaObjects {
    */
   public static class VideoItem extends Item {
 
-    //    @ColumnName("upnp:genre")
-//    private String genre;
-//    @ColumnName("upnp:genre@id")
+    @ColumnName("upnp:genre")
+    private String genre;
+    //    @ColumnName("upnp:genre@id")
 //    private String genreId;
 //    @ColumnName("upnp:genre@type")
 //    private String genreType;
@@ -817,19 +817,19 @@ public class DlnaObjects {
     private String longDescription;
     //    @ColumnName("upnp:producer")
 //    private String producer;
-//    @ColumnName("upnp:rating")
-//    private String rating;
-//    @ColumnName("upnp:actor")
-//    private String actor;
-//    @ColumnName("upnp:director")
+    @ColumnName("upnp:rating")
+    private String rating;
+    @ColumnName("upnp:actor")
+    private String actor;
+    //    @ColumnName("upnp:director")
 //    private String director;
     @ColumnName("dc:description")
     private String description;
     //    @ColumnName("dc:publisher")
 //    private String publisher;
-//    @ColumnName("dc:language")
-//    private String language;
-//    @ColumnName("dc:relation")
+    @ColumnName("dc:language")
+    private String language;
+    //    @ColumnName("dc:relation")
 //    private String relation;
 //    @ColumnName("upnp:playbackCount")
 //    private String playbackCount;
@@ -843,6 +843,8 @@ public class DlnaObjects {
 //    private String srsRecordScheduleId;
     @ColumnName("upnp:channelID")
     private String channelId;
+    @ColumnName("upnp:programTitle")
+    private String programTitle;
 
     public String getLongDescription() {
       return longDescription;
@@ -866,6 +868,62 @@ public class DlnaObjects {
 
     public void setChannelId(String channelId) {
       this.channelId = channelId;
+    }
+
+    public String getGenre() {
+      return genre;
+    }
+
+    public void setGenre(String genre) {
+      this.genre = genre;
+    }
+
+    public String getRating() {
+      return rating;
+    }
+
+    public void setRating(String rating) {
+      this.rating = rating;
+    }
+
+    public void addRating(String rating) {
+      if (this.rating == null) {
+        this.rating = rating;
+      } else {
+        this.rating = this.rating + " " + rating;
+      }
+    }
+
+    public String getActor() {
+      return actor;
+    }
+
+    public void setActor(String actor) {
+      this.actor = actor;
+    }
+
+    public void addActor(String actor) {
+      if (this.actor == null) {
+        this.actor = actor;
+      } else {
+        this.actor = this.actor + ", " + actor;
+      }
+    }
+
+    public String getLanguage() {
+      return language;
+    }
+
+    public void setLanguage(String language) {
+      this.language = language;
+    }
+
+    public String getProgramTitle() {
+      return programTitle;
+    }
+
+    public void setProgramTitle(String programTitle) {
+      this.programTitle = programTitle;
     }
   }
 

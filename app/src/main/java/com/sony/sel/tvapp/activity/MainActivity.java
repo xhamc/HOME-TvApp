@@ -194,6 +194,8 @@ public class MainActivity extends BaseActivity {
   public void onPlayVod(PlayVodEvent event) {
     // hide all UI on VOD playback
     hideUi();
+    // then show channel info
+    showChannelInfo();
   }
 
   @Override

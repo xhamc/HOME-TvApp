@@ -387,6 +387,18 @@ public class ClingDlnaHelper extends BaseDlnaHelper {
         for (DIDLObject.Property property : source.getProperties()) {
           if (property.getDescriptorName().equals("channelID")) {
             dest.setChannelId(property.getValue().toString());
+          } else if (property.getDescriptorName().equals("rating")) {
+            dest.addRating(property.getValue().toString());
+          } else if (property.getDescriptorName().equals("language")) {
+            dest.setLanguage(property.getValue().toString());
+          } else if (property.getDescriptorName().equals("genre")) {
+            dest.setGenre(property.getValue().toString());
+          } else if (property.getDescriptorName().equals("programTitle")) {
+            dest.setProgramTitle(property.getValue().toString());
+          } else if (property.getDescriptorName().equals("icon")) {
+            dest.setIcon(property.getValue().toString());
+          } else if (property.getDescriptorName().equals("actor")) {
+            dest.addActor(property.getValue().toString());
           }
         }
       }

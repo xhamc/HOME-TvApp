@@ -15,10 +15,13 @@ import android.view.ViewGroup;
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaInterface;
+import com.sony.sel.tvapp.util.DlnaObjects;
+import com.sony.sel.tvapp.util.DlnaObjects.VideoItem;
 import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.sony.sel.tvapp.view.ChannelEpgView;
 import com.sony.sel.tvapp.view.ProgramInfoView;
+import com.sony.sel.tvapp.view.VideoItemInfoView;
 import com.squareup.otto.Subscribe;
 
 import java.text.DateFormat;
@@ -46,9 +49,12 @@ public class ChannelInfoFragment extends BaseFragment {
 
   @Bind(R.id.channelEpgInfo)
   ChannelEpgView channelEpgInfo;
+  @Bind(R.id.vodVideoInfo)
+  VideoItemInfoView vodVideoInfo;
 
   private List<VideoBroadcast> channels = new ArrayList<>();
   private VideoBroadcast currentChannel;
+  private VideoItem currentVod;
   private Map<String, List<VideoProgram>> currentPrograms = new HashMap<>();
 
   private GetCurrentProgramsTask epgTask;
@@ -99,7 +105,7 @@ public class ChannelInfoFragment extends BaseFragment {
   @Subscribe
   public void onFavoriteChannelsChanged(EventBus.FavoriteChannelsChangedEvent event) {
     // refresh the channel list
-    this.channels = dlnaHelper.getChannels(SettingsHelper.getHelper(getActivity()).getEpgServer(),null);
+    this.channels = dlnaHelper.getChannels(SettingsHelper.getHelper(getActivity()).getEpgServer(), null);
   }
 
   /**
@@ -135,16 +141,37 @@ public class ChannelInfoFragment extends BaseFragment {
     setCurrentChannel(event.getChannel());
   }
 
+  @Subscribe
+  public void onVodVideoPlayback(EventBus.PlayVodEvent event) {
+    setVodVideo(event.getVideoItem());
+  }
+
   public void setCurrentChannel(VideoBroadcast channel) {
     currentChannel = channel;
+    currentVod = null;
     updateChannelInfo();
   }
 
   private void updateChannelInfo() {
     if (currentChannel != null) {
+      channelEpgInfo.setVisibility(View.VISIBLE);
+      vodVideoInfo.setVisibility(View.GONE);
       channelEpgInfo.bind(currentChannel, currentPrograms.get(currentChannel.getChannelId()));
       if (isVisible()) {
         channelEpgInfo.requestFocus();
+      }
+    }
+  }
+
+  private void setVodVideo(VideoItem vodVideo) {
+    currentVod = vodVideo;
+    currentChannel = null;
+    if (currentVod != null) {
+      vodVideoInfo.setVisibility(View.VISIBLE);
+      channelEpgInfo.setVisibility(View.GONE);
+      vodVideoInfo.bind(vodVideo);
+      if (isVisible()) {
+        vodVideoInfo.requestFocus();
       }
     }
   }
@@ -225,7 +252,7 @@ public class ChannelInfoFragment extends BaseFragment {
       List<VideoProgram> programs = Arrays.asList(values);
       String channelId = programs.get(0).getChannelId();
       currentPrograms.put(channelId, programs);
-      if (channelId.equals(currentChannel.getChannelId())) {
+      if (currentChannel != null && channelId.equals(currentChannel.getChannelId())) {
         updateChannelInfo();
       }
     }
