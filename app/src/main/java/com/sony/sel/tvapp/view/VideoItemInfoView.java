@@ -80,7 +80,7 @@ public class VideoItemInfoView extends FrameLayout implements Bindable<VideoItem
       // title
       title.setText(data.getTitle());
 
-      if (data.getProgramTitle() != null) {
+      if (data.getProgramTitle() != null && data.getProgramTitle().length() > 0) {
         line1.setVisibility(View.VISIBLE);
         line1.setText(data.getProgramTitle());
       } else {

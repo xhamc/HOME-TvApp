@@ -83,6 +83,7 @@
                 style="@style/dimmedSmallText"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
+                android:lines="3"
                 android:ellipsize="end"
                 android:text="Long description\nof the program goes here, there can\nbe a lot of text and it shold wrap\nacross multiple lines."
                 />
