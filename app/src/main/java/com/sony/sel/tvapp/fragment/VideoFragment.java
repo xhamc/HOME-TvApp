@@ -315,10 +315,9 @@ public class VideoFragment extends BaseFragment {
             case KeyEvent.KEYCODE_MEDIA_SKIP_FORWARD:
             case KeyEvent.KEYCODE_MEDIA_STEP_FORWARD:
               // move the seek position forward without actually seeking
-//              seekPosition += mediaPlayer.getDuration() / 100;
-//              seekPosition = Math.max(0, Math.min(seekPosition, mediaPlayer.getDuration()));
-//              mediaProgress.setProgress(new Date(mediaProgress.getData().getStartTime().getTime() + seekPosition));
-
+              seekPosition += mediaPlayer.getDuration() / 100;
+              seekPosition = Math.max(0, Math.min(seekPosition, mediaPlayer.getDuration()));
+              mediaProgress.setProgress(new Date(mediaProgress.getData().getStartTime().getTime() + seekPosition));
               break;
             case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
             case KeyEvent.KEYCODE_MEDIA_SKIP_BACKWARD:
