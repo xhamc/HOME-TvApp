@@ -19,7 +19,7 @@ import java.util.List;
 public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
 
   private static final String DATABASE_NAME = "dlnacache.db";
-  public static final int DATABASE_VERSION = 4;
+  public static final int DATABASE_VERSION = 5;
 
   private final String CREATE_DLNA_OBJECTS_TABLE = "CREATE TABLE `DLNAObjects` (\n" +
       "\t`UDN`\tTEXT,\n" +
@@ -29,7 +29,7 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
       "\t`UPNPClass`\tTEXT,\n" +
       "\t`JSON`\tTEXT,\n" +
       "\t`ChildIndex`\tINTEGER,\n" +
-      "\tPRIMARY KEY(UDN,ID)\n" +
+      "\tPRIMARY KEY(UDN,ParentID,ID)\n" +
       ");";
 
   SQLiteDatabase db;

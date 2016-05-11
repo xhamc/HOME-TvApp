@@ -23,10 +23,11 @@
 
         <ImageView
             android:id="@+id/icon"
-            android:layout_width="72dp"
+            android:layout_width="96dp"
             android:layout_height="72dp"
             android:layout_gravity="center"
             android:layout_marginRight="10dp"
+            android:scaleType="centerCrop"
             />
 
         <TextView

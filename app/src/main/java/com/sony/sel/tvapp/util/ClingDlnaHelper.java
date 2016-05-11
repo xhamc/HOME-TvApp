@@ -265,64 +265,10 @@ public class ClingDlnaHelper extends BaseDlnaHelper {
   @NonNull
   @Override
   public <T extends DlnaObject> List<T> search(String udn, String parentId, String searchText, final Class<T> childClass) {
-    String query = "*".equals(searchText) ? "*" : "dc:title contains \"" + searchText + "\"";
-    Log.d(TAG, "Search: udn =  " + udn + ", parentId = " + parentId + ", query = " + query + ".");
-    final List<DlnaObject> results = new ArrayList<>();
-    Device device = upnpService.getRegistry().getDevice(UDN.valueOf(udn), true);
-    if (device == null) {
-      // device not found
-      return (List<T>) results;
-    }
-    Service service = device.findService(new UDAServiceType("ContentDirectory"));
-    if (service.getAction("Search") == null) {
-      Log.e(TAG, "Server does not support Search action.");
-      // search the cache instead
-      return searchCache(udn, parentId, searchText, childClass);
-    }
-    Search search = new Search(service, parentId, query) {
-
-      @Override
-      public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {
-        Log.e(TAG, "Search failure: " + defaultMsg);
-        synchronized (results) {
-          results.notifyAll();
-        }
-      }
-
-      @Override
-      public void received(ActionInvocation actionInvocation, DIDLContent didl) {
-        Log.d(TAG, "Search results received.");
-        synchronized (results) {
-          for (Container item : didl.getContainers()) {
-            DlnaObject object = parseDidlItem(item);
-            if (object != null) {
-              results.add(object);
-            }
-          }
-          for (Item item : didl.getItems()) {
-            DlnaObject object = parseDidlItem(item);
-            if (object != null) {
-              results.add(object);
-            }
-          }
-          results.notifyAll();
-        }
-      }
-
-      @Override
-      public void updateStatus(Search.Status status) {
-        Log.d(TAG, "Search status: " + status.getDefaultMessage());
-      }
-    };
-    upnpService.getControlPoint().execute(search);
-    synchronized (results) {
-      try {
-        results.wait();
-      } catch (InterruptedException e) {
-        Log.e(TAG, e.getMessage());
-      }
-    }
-    return (List<T>) results;
+    Log.d(TAG, "Search: udn =  " + udn + ", parentId = " + parentId + ", query = " + searchText + ".");
+    List<T> results = searchCache(udn, parentId, searchText, childClass);
+    Log.d(TAG, String.format("%d items found.",results.size()));
+    return results;
   }
 
   private <T extends DlnaObject> List<T> searchCache(String udn, String parentId, String searchText, final Class<T> childClass) {
@@ -330,14 +276,8 @@ public class ClingDlnaHelper extends BaseDlnaHelper {
     Collections.sort(results, new Comparator<DlnaObject>() {
       @Override
       public int compare(DlnaObject lhs, DlnaObject rhs) {
-        if (lhs instanceof VideoProgram && rhs instanceof VideoProgram) {
-          Date lhsDate = ((VideoProgram) lhs).getScheduledStartTime();
-          Date rhsDate = ((VideoProgram) rhs).getScheduledStartTime();
-          if (lhsDate != null && rhsDate != null) {
-            return lhsDate.equals(rhsDate) ? 0 : lhsDate.before(rhsDate) ? -1 : 1;
-          }
-        }
-        return 0;
+        // alphabetical sort by title
+        return lhs.getTitle().compareTo(rhs.getTitle());
       }
     });
     return (List<T>) results;

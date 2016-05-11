@@ -251,6 +251,7 @@ public class VideoFragment extends BaseFragment {
       // resume play
       Log.d(TAG, "Resuming video playback.");
       mediaPlayer.start();
+      resetPlaySpeed();
       showProgressBar(PROGRESS_UI_HIDE_DELAY);
       updateMediaPlaybackState();
     } else if (mediaPlayer != null) {
@@ -268,8 +269,6 @@ public class VideoFragment extends BaseFragment {
       mediaPlayer.pause();
       updateMediaPlaybackState();
       showProgressBar(PROGRESS_UI_HIDE_DELAY);
-      // reset playback speed for when play resumes
-      resetPlaySpeed();
     }
   }
 
