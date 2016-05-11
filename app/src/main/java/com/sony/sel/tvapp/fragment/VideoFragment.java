@@ -378,17 +378,33 @@ public class VideoFragment extends BaseFragment {
     }else{
         ps.addAll(Arrays.asList(fixedSpeeds));
     }
-    Double speed=1.0;
-    Double minSpeedChange=Double.POSITIVE_INFINITY;
-    for (Double s: ps){
-      if (s>currentPlaySpeed ) {
-        if (minSpeedChange>s) {
-          speed = s;
-          minSpeedChange=s;
+    Double speed = 1.0;
+    if (mediaPlayer.isPlaying()) {
+
+      Double minSpeedChange = Double.POSITIVE_INFINITY;
+      for (Double s : ps) {
+        if (s > currentPlaySpeed) {
+          if (minSpeedChange > s && s>1.0) {
+            speed = s;
+            minSpeedChange = s;
+          }
         }
       }
-      Log.d(TAG,"Speed: "+s+" ,minSpeedChange: "+minSpeedChange+"  CurrentPlaySpeed"+currentPlaySpeed);
+
+    }else{
+
+      Double minSpeedChange = 1.0;
+      for (Double s : ps) {
+        if (s > 0.0 && s<1.0) {
+          if (minSpeedChange > s) {
+            speed = s;
+            minSpeedChange = s;
+          }
+        }
+      }
+
     }
+
     invokeSetSpeed(speed);
     updateProgressBar();
   }
@@ -405,12 +421,24 @@ public class VideoFragment extends BaseFragment {
       ps.addAll(Arrays.asList(fixedSpeeds));
     }
     Double speed=1.0;
-    Double minSpeedChange=Double.NEGATIVE_INFINITY;
-    for (Double s: ps){
-      if (s<currentPlaySpeed ) {
-        if (minSpeedChange<s) {
-          speed = s;
-          minSpeedChange=s;
+    if (mediaPlayer.isPlaying()) {
+      Double minSpeedChange = Double.NEGATIVE_INFINITY;
+      for (Double s : ps) {
+        if (s < currentPlaySpeed) {
+          if (minSpeedChange < s) {
+            speed = s;
+            minSpeedChange = s;
+          }
+        }
+      }
+    }else{
+      Double minSpeedChange=-1.0;
+      for (Double s : ps) {
+        if (s < 0.0 && s>-1.0) {
+          if (minSpeedChange < s) {
+            speed = s;
+            minSpeedChange = s;
+          }
         }
       }
     }
