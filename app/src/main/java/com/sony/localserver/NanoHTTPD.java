@@ -205,7 +205,7 @@ public abstract class NanoHTTPD {
      *
      * @throws IOException if the socket is in use.
      */
-    public void start() throws IOException {
+    public void start(final int readTimeout) throws IOException {
         myServerSocket = new ServerSocket();
         myServerSocket.bind((hostname != null) ? new InetSocketAddress(hostname, myPort) : new InetSocketAddress(myPort));
 
@@ -216,7 +216,7 @@ public abstract class NanoHTTPD {
                     try {
                         final Socket finalAccept = myServerSocket.accept();
                         registerConnection(finalAccept);
-                        finalAccept.setSoTimeout(SOCKET_READ_TIMEOUT);
+                        finalAccept.setSoTimeout(readTimeout<0?SOCKET_READ_TIMEOUT:readTimeout);
                         final InputStream inputStream = finalAccept.getInputStream();
                         asyncRunner.exec(new Runnable() {
                             @Override

@@ -44,7 +44,7 @@
             ws.onopen = function()
             {
                 that.open=true;
-                setInterval (pingWebSocket, 2000);
+                //setInterval (pingWebSocket, 2000);
 
                 ws.send('keepUIVisible:120000', false);
 
@@ -218,10 +218,10 @@
            };
     }
 
-    function pingWebSocket(){
-        ws.send("ping");
+//    function pingWebSocket(){
+//        ws.send("ping");
 //        console.log("Ping    sent");
-    }
+//    }
 
 
 

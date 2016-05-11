@@ -64,7 +64,7 @@ public class ServerService extends IntentService {
       if (webSocketServer == null) {
         webSocketServer = new WebServer(host, port, getApplicationContext());
         try {
-          webSocketServer.start();
+          webSocketServer.start(0);
           sendBroadcast(new Intent(SERVICE_STARTED));
         } catch (IOException e) {
           Log.e(TAG, "Error starting server: " + e);
