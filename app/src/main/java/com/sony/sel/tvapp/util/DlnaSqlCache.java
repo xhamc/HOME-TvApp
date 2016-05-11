@@ -8,7 +8,6 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.support.annotation.Nullable;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import com.sony.sel.tvapp.util.DlnaObjects.DlnaObject;
 
 import java.util.ArrayList;
@@ -44,6 +43,7 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
   @Nullable
   @Override
   public <T extends DlnaObject> List<T> getChildren(String udn, String parentId) {
+    // query the cache
     Cursor cursor = db.query(
         "DLNAObjects",
         new String[]{"UPNPClass", "JSON"},
@@ -55,16 +55,7 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
     );
     try {
       if (cursor.getCount() > 0) {
-        Gson gson = new Gson();
-        List<DlnaObject> results = new ArrayList<>();
-        for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
-          String upnpClass = cursor.getString(cursor.getColumnIndex("UPNPClass"));
-          String json = cursor.getString(cursor.getColumnIndex("JSON"));
-          Class<? extends DlnaObject> clazz = DlnaObjects.DlnaClass.classOf(upnpClass);
-          DlnaObject item = gson.fromJson(json, clazz);
-          results.add(item);
-        }
-        return (List<T>) results;
+        return buildResults(cursor);
       } else {
         return null;
       }
@@ -73,30 +64,74 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
     }
   }
 
-  @Override
-  public void add(String udn, String parentID, List<DlnaObject> children) {
+  <T extends DlnaObject> List<T> buildResults(Cursor cursor) {
     Gson gson = new Gson();
-    int childIndex = 0;
-    for (DlnaObject child : children) {
-      ContentValues values = new ContentValues();
-      values.put("UDN", udn);
-      values.put("ParentID", parentID);
-      values.put("ID", child.getId());
-      values.put("Title", child.getTitle());
-      values.put("UPNPClass", child.getUpnpClass());
-      values.put("JSON", gson.toJson(child));
-      values.put("ChildIndex", childIndex++);
-      db.insert(
-          "DLNAObjects",
-          null,
-          values
-      );
+    List<DlnaObject> results = new ArrayList<>();
+    for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
+      String upnpClass = cursor.getString(cursor.getColumnIndex("UPNPClass"));
+      String json = cursor.getString(cursor.getColumnIndex("JSON"));
+      Class<? extends DlnaObject> clazz = DlnaObjects.DlnaClass.classOf(upnpClass);
+      DlnaObject item = gson.fromJson(json, clazz);
+      results.add(item);
     }
+    return (List<T>) results;
+  }
+
+  @Override
+  public void add(final String udn, final String parentID, final List<DlnaObject> children) {
+    // perform caching on a separate thread so we can return quickly
+    new Thread(new Runnable() {
+      @Override
+      public void run() {
+        // delete any existing cached children at this parent
+        db.delete(
+            "DlnaObjects",
+            "UDN = '" + udn + "' AND ParentID = '" + parentID + "'",
+            null
+        );
+        // insert new child records
+        Gson gson = new Gson();
+        int childIndex = 0;
+        for (DlnaObject child : children) {
+          ContentValues values = new ContentValues();
+          values.put("UDN", udn);
+          values.put("ParentID", parentID);
+          values.put("ID", child.getId());
+          values.put("Title", child.getTitle());
+          values.put("UPNPClass", child.getUpnpClass());
+          values.put("JSON", gson.toJson(child));
+          values.put("ChildIndex", childIndex++);
+          db.insert(
+              "DLNAObjects",
+              null,
+              values
+          );
+        }
+      }
+    }).start();
   }
 
   @Override
   public <T extends DlnaObject> List<T> search(String udn, String parentId, String searchText) {
-    return new ArrayList<>();
+    // query the cache
+    Cursor cursor = db.query(
+        "DLNAObjects",
+        new String[]{"UPNPClass", "JSON"},
+        "UDN = '" + udn + "' AND ParentID LIKE '" + parentId + "%' AND Title LIKE '%" + searchText + "%'",
+        null,
+        null,
+        null,
+        null
+    );
+    try {
+      if (cursor.getCount() > 0) {
+        return buildResults(cursor);
+      } else {
+        return new ArrayList<>();
+      }
+    } finally {
+      cursor.close();
+    }
   }
 
   @Override
