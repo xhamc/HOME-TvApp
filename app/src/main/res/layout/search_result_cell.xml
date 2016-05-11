@@ -22,8 +22,8 @@
 
             <ImageView
                 android:id="@+id/icon"
-                android:layout_width="100dp"
-                android:layout_height="75dp"
+                android:layout_width="133dp"
+                android:layout_height="100dp"
                 android:scaleType="centerCrop"
                 />
 
@@ -55,7 +55,7 @@
             >
 
             <TextView
-                android:id="@android:id/text1"
+                android:id="@+id/title"
                 style="@style/normalText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -65,13 +65,33 @@
                 />
 
             <TextView
-                android:id="@android:id/text2"
+                android:id="@+id/programTitle"
                 style="@style/smallText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:lines="1"
-                android:text="Description"
+                android:text="Title"
+                />
+
+            <TextView
+                android:id="@+id/time"
+                style="@style/smallText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:lines="1"
+                android:text="Title"
+                />
+
+            <TextView
+                android:id="@+id/description"
+                style="@style/dimmedSmallText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:lines="1"
+                android:text="This is the long description of the search item, it can be very long"
                 />
 
         </LinearLayout>

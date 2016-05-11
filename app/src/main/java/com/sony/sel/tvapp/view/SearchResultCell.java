@@ -8,6 +8,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.sony.sel.tvapp.R;
+import com.sony.sel.tvapp.util.DlnaObjects.DlnaObject;
+import com.sony.sel.tvapp.util.DlnaObjects.VideoItem;
 import com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.EventBus.RecordingsChangedEvent;
@@ -23,15 +25,19 @@ import butterknife.ButterKnife;
 /**
  * View
  */
-public class SearchResultCell extends BaseListCell<VideoProgram> {
+public class SearchResultCell extends BaseListCell<DlnaObject> {
 
-  private VideoProgram program;
+  private DlnaObject program;
   private SettingsHelper settingsHelper;
 
-  @Bind(android.R.id.text1)
+  @Bind(R.id.title)
   TextView title;
-  @Bind(android.R.id.text2)
-  TextView details;
+  @Bind(R.id.programTitle)
+  TextView programTitle;
+  @Bind(R.id.time)
+  TextView time;
+  @Bind(R.id.description)
+  TextView description;
   @Bind(R.id.icon)
   ImageView icon;
   @Bind(R.id.recordProgram)
@@ -58,6 +64,9 @@ public class SearchResultCell extends BaseListCell<VideoProgram> {
   @Override
   protected void onFinishInflate() {
     super.onFinishInflate();
+    if (isInEditMode()) {
+      return;
+    }
     ButterKnife.bind(this);
     setupFocus(null, 1.03f);
     settingsHelper = SettingsHelper.getHelper(getContext());
@@ -76,14 +85,51 @@ public class SearchResultCell extends BaseListCell<VideoProgram> {
   }
 
   @Override
-  public void bind(VideoProgram data) {
+  public void bind(DlnaObject data) {
     program = data;
 
+    // main title
     title.setText(data.getTitle());
 
-    String time = new SimpleDateFormat("M/d/yy h:mm a").format(data.getScheduledStartTime());
-    details.setText(time);
+    // program title
+    String progTitle = null;
+    if (data instanceof VideoProgram) {
+      progTitle = ((VideoProgram) data).getProgramTitle();
+    } else if (data instanceof VideoItem) {
+      progTitle = ((VideoItem) data).getProgramTitle();
+    }
+    if (progTitle != null && progTitle.length() > 0) {
+      programTitle.setVisibility(View.VISIBLE);
+      programTitle.setText(progTitle);
+    } else {
+      programTitle.setVisibility(View.GONE);
+    }
 
+    // time
+    if (data instanceof VideoProgram) {
+      // display program date/time
+      String t = new SimpleDateFormat("M/d/yy h:mm a").format(((VideoProgram) data).getScheduledStartTime());
+      time.setText(t);
+    } else {
+      // video on demand
+      time.setText(R.string.onDemand);
+    }
+
+    // description
+    String desc = null;
+    if (data instanceof VideoProgram) {
+      desc = ((VideoProgram) data).getLongDescription();
+    } else if (data instanceof VideoItem) {
+      desc = ((VideoItem) data).getLongDescription();
+    }
+    if (desc != null && desc.length() > 0) {
+      description.setVisibility(View.VISIBLE);
+      description.setText(desc);
+    } else {
+      description.setVisibility(View.GONE);
+    }
+
+    // recording icons
     if (settingsHelper.getSeriesToRecord().contains(program.getTitle())) {
       recordSeries.setVisibility(View.VISIBLE);
       recordProgram.setVisibility(View.GONE);
@@ -95,6 +141,7 @@ public class SearchResultCell extends BaseListCell<VideoProgram> {
       recordProgram.setVisibility(View.GONE);
     }
 
+    // thumbnail icon
     if (program.getIcon() != null && program.getIcon().length() > 0) {
       Picasso.with(getContext()).load(Uri.parse(program.getIcon())).into(icon);
     } else {
@@ -104,7 +151,7 @@ public class SearchResultCell extends BaseListCell<VideoProgram> {
   }
 
   @Override
-  public VideoProgram getData() {
+  public DlnaObject getData() {
     return program;
   }
 

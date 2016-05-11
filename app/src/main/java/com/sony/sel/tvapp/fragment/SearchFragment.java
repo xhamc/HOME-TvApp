@@ -3,7 +3,6 @@ package com.sony.sel.tvapp.fragment;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -13,10 +12,8 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -27,6 +24,8 @@ import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.adapter.TvAppAdapter;
 import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaInterface;
+import com.sony.sel.tvapp.util.DlnaObjects.DlnaObject;
+import com.sony.sel.tvapp.util.DlnaObjects.VideoItem;
 import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.sony.sel.tvapp.view.SearchResultCell;
@@ -144,7 +143,7 @@ public class SearchFragment extends BaseFragment {
   }
 
   private void showPopup(SearchResultCell cell, int position) {
-    final VideoProgram program = cell.getData();
+    final DlnaObject program = cell.getData();
     PopupMenu menu = new PopupMenu(getActivity(), cell);
     menu.inflate(R.menu.program_popup_menu);
 
@@ -197,20 +196,26 @@ public class SearchFragment extends BaseFragment {
   }
 
   private void clearSearch() {
-    adapter.setData(new ArrayList<VideoProgram>());
+    adapter.setData(new ArrayList<DlnaObject>());
   }
 
-  private class VideoProgramAdapter extends TvAppAdapter<VideoProgram, SearchResultCell> {
+  private class VideoProgramAdapter extends TvAppAdapter<DlnaObject, SearchResultCell> {
     public VideoProgramAdapter() {
       super(getActivity(),
           R.id.searchResultCell,
           R.layout.search_result_cell,
           getString(R.string.searching),
           getString(R.string.noItemsFound),
-          new OnClickListener<VideoProgram, SearchResultCell>() {
+          new OnClickListener<DlnaObject, SearchResultCell>() {
             @Override
             public void onClick(SearchResultCell view, int position) {
-              showPopup(view, position);
+              if (view.getData() instanceof VideoProgram) {
+                // program popup
+                showPopup(view, position);
+              } else if (view.getData() instanceof VideoItem) {
+                // VOD item
+                EventBus.getInstance().post(new EventBus.PlayVodEvent((VideoItem) view.getData()));
+              }
             }
           },
           false
@@ -231,7 +236,7 @@ public class SearchFragment extends BaseFragment {
   /**
    * Async task to get the device list.
    */
-  private class SearchTask extends AsyncTask<Void, Void, List<VideoProgram>> {
+  private class SearchTask extends AsyncTask<Void, Void, List<DlnaObject>> {
 
     private final String searchText;
 
@@ -240,18 +245,26 @@ public class SearchFragment extends BaseFragment {
     }
 
     @Override
-    protected List<VideoProgram> doInBackground(Void... params) {
+    protected List<DlnaObject> doInBackground(Void... params) {
       String udn = SettingsHelper.getHelper(getActivity()).getEpgServer();
       Log.d(TAG, "Searching for \'" + searchText + "\'.");
-      return dlnaHelper.search(udn, "0/EPG", searchText, VideoProgram.class);
+      List<DlnaObject> results = dlnaHelper.search(udn, "0/EPG", searchText, DlnaObject.class);
+      List<DlnaObject> vodResults = dlnaHelper.search(udn, "0/VOD", searchText, DlnaObject.class);
+      results.addAll(vodResults);
+      return results;
     }
 
     @Override
-    protected void onPostExecute(List<VideoProgram> searchResults) {
-      List<VideoProgram> results = new ArrayList<>();
+    protected void onPostExecute(List<DlnaObject> searchResults) {
+      List<DlnaObject> results = new ArrayList<>();
       Date now = new Date();
-      for (VideoProgram program : searchResults) {
-        if (program.getScheduledEndTime().after(now)) {
+      for (DlnaObject program : searchResults) {
+        if (program instanceof VideoProgram) {
+          if (((VideoProgram) program).getScheduledEndTime().after(now)) {
+            results.add(program);
+          }
+        } else {
+          // probably VOD item
           results.add(program);
         }
       }

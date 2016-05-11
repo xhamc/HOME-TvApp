@@ -31,7 +31,6 @@ import org.fourthline.cling.registry.RegistryListener;
 import org.fourthline.cling.support.contentdirectory.callback.Browse;
 import org.fourthline.cling.support.contentdirectory.callback.Search;
 import org.fourthline.cling.support.model.BrowseFlag;
-import org.fourthline.cling.support.model.DIDLAttribute;
 import org.fourthline.cling.support.model.DIDLContent;
 import org.fourthline.cling.support.model.DIDLObject;
 import org.fourthline.cling.support.model.Res;
@@ -42,16 +41,12 @@ import org.fourthline.cling.support.model.item.VideoItem;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Implementation of DLNA helper based on cling DLNA libraries.
@@ -62,7 +57,6 @@ public class ClingDlnaHelper extends BaseDlnaHelper {
 
   private ObserverSet<DlnaServiceObserver> serviceObservers = new ObserverSet<>(DlnaServiceObserver.class);
   private ContentObserver deviceObserver;
-  private Map<String, List<DlnaObject>> dlnaCache = new HashMap<>();
 
   /**
    * Listener for the service connection.
@@ -205,12 +199,11 @@ public class ClingDlnaHelper extends BaseDlnaHelper {
   public <T extends DlnaObject> List<T> getChildren(String udn, String parentId, final Class<T> childClass, @Nullable ContentObserver contentObserver, boolean useCache) {
 
     // check for cached data
-    synchronized (dlnaCache) {
-      List<DlnaObject> cachedChildren = dlnaCache.get(udn + "/" + parentId);
-      if (cachedChildren != null) {
-        return (List<T>) cachedChildren;
-      }
+    List<DlnaObject> cachedChildren = DlnaHelper.getCache(getContext()).getChildren(udn, parentId);
+    if (cachedChildren != null) {
+      return (List<T>) cachedChildren;
     }
+
 
     Log.d(TAG, "Get children: udn =  " + udn + ", parentId = " + parentId + ".");
     final List<DlnaObject> children = new ArrayList<>();
@@ -264,9 +257,7 @@ public class ClingDlnaHelper extends BaseDlnaHelper {
       }
     }
     if (children.size() > 0) {
-      synchronized (dlnaCache) {
-        dlnaCache.put(udn + "/" + parentId, children);
-      }
+      DlnaHelper.getCache(getContext()).add(udn, parentId, children);
     }
     return (List<T>) children;
   }
@@ -275,7 +266,7 @@ public class ClingDlnaHelper extends BaseDlnaHelper {
   @Override
   public <T extends DlnaObject> List<T> search(String udn, String parentId, String searchText, final Class<T> childClass) {
     String query = "*".equals(searchText) ? "*" : "dc:title contains \"" + searchText + "\"";
-    Log.d(TAG, "Search: udn =  " + udn + ", query = " + query + ".");
+    Log.d(TAG, "Search: udn =  " + udn + ", parentId = " + parentId + ", query = " + query + ".");
     final List<DlnaObject> results = new ArrayList<>();
     Device device = upnpService.getRegistry().getDevice(UDN.valueOf(udn), true);
     if (device == null) {
@@ -335,20 +326,7 @@ public class ClingDlnaHelper extends BaseDlnaHelper {
   }
 
   private <T extends DlnaObject> List<T> searchCache(String udn, String parentId, String searchText, final Class<T> childClass) {
-    final List<DlnaObject> results = new ArrayList<>();
-    synchronized (dlnaCache) {
-      for (String key : dlnaCache.keySet()) {
-        if (key.startsWith(udn + "/" + parentId)) {
-          // matching parent, check for matching content
-          List<DlnaObject> contents = dlnaCache.get(key);
-          for (DlnaObject item : contents) {
-            if (item.getTitle().toLowerCase().contains(searchText.toLowerCase())) {
-              results.add(item);
-            }
-          }
-        }
-      }
-    }
+    final List<DlnaObject> results = DlnaHelper.getCache(getContext()).search(udn, parentId, searchText);
     Collections.sort(results, new Comparator<DlnaObject>() {
       @Override
       public int compare(DlnaObject lhs, DlnaObject rhs) {

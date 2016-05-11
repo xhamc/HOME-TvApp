@@ -53,6 +53,7 @@
     <string name="searchDescription">TV show names</string>
     <string name="searchPrompt">Search for a program:</string>
     <string name="searching">Searching...</string>
+    <string name="onDemand">On Demand</string>
 
 
 </resources>

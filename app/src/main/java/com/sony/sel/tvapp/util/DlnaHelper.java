@@ -13,6 +13,8 @@ public class DlnaHelper {
   public static final String DLNA_ROOT = "0";
 
   private static DlnaInterface INSTANCE;
+  private static DlnaCache CACHE;
+
   /**
    * Get the helper instance.
    */
@@ -22,5 +24,13 @@ public class DlnaHelper {
       INSTANCE = new ClingDlnaHelper(context.getApplicationContext());
     }
     return INSTANCE;
+  }
+
+  static DlnaCache getCache(Context context) {
+    if (CACHE == null) {
+      // ensure application context is used to prevent leaks
+      CACHE = new DlnaMemoryCache();
+    }
+    return CACHE;
   }
 }

@@ -6,8 +6,10 @@ import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.KeyEvent;
 
 import com.sony.sel.tvapp.R;
@@ -17,11 +19,15 @@ import com.sony.sel.tvapp.fragment.NavigationFragment;
 import com.sony.sel.tvapp.fragment.VideoFragment;
 import com.sony.sel.tvapp.ui.NavigationItem;
 import com.sony.sel.tvapp.util.DlnaHelper;
+import com.sony.sel.tvapp.util.DlnaInterface;
+import com.sony.sel.tvapp.util.DlnaObjects.DlnaObject;
 import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.EventBus.ChannelChangedEvent;
 import com.sony.sel.tvapp.util.EventBus.PlayVodEvent;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.squareup.otto.Subscribe;
+
+import java.util.List;
 
 import butterknife.ButterKnife;
 
@@ -80,6 +86,14 @@ public class MainActivity extends BaseActivity {
     ButterKnife.bind(this);
 
     initFragments();
+
+    // start caching VOD after a startup delay
+    new Handler().postDelayed(new Runnable() {
+      @Override
+      public void run() {
+        new CacheVodTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+      }
+    }, 10000);
 
   }
 
@@ -353,6 +367,28 @@ public class MainActivity extends BaseActivity {
     fragmentTransaction.commit();
     resetUiTimer(HIDE_UI_TIMEOUT);
     channelInfoFragment.requestFocus();
+  }
+
+  /**
+   * Task that browses the VOD directories to allow the DlnaHelper to cache them.
+   */
+  private class CacheVodTask extends AsyncTask<Void, Void, Void> {
+
+    private final String TAG = CacheVodTask.class.getSimpleName();
+
+    @Override
+    protected Void doInBackground(Void... params) {
+      DlnaInterface dlnaHelper = DlnaHelper.getHelper(getApplicationContext());
+      String udn = SettingsHelper.getHelper(getApplicationContext()).getEpgServer();
+      Log.d(TAG, "Caching VOD containers.");
+      List<DlnaObject> vodContainers = dlnaHelper.getChildren(udn, "0/VOD", DlnaObject.class, null, true);
+      for (DlnaObject container : vodContainers) {
+        Log.d(TAG, "Caching " + container.getId() + ".");
+        dlnaHelper.getChildren(udn, container.getId(), DlnaObject.class, null, true);
+      }
+      Log.d(TAG, "Finished caching VOD containers.");
+      return null;
+    }
   }
 
 
