@@ -99,6 +99,15 @@ public class DlnaObjects {
       return compare.getUpnpClass().startsWith(this.className);
     }
 
+    public static Class<? extends DlnaObject> classOf(String className) {
+      for (DlnaClass dlnaClass : values()) {
+        if (className.startsWith(dlnaClass.className)) {
+          return dlnaClass.objectClass;
+        }
+      }
+      throw new IllegalArgumentException("DLNA class " + className + " not resolved.");
+    }
+
   }
 
   /**

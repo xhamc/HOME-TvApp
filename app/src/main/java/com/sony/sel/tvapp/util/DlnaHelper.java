@@ -29,7 +29,7 @@ public class DlnaHelper {
   static DlnaCache getCache(Context context) {
     if (CACHE == null) {
       // ensure application context is used to prevent leaks
-      CACHE = new DlnaMemoryCache();
+      CACHE = new DlnaSqlCache(context);
     }
     return CACHE;
   }
