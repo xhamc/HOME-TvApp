@@ -117,7 +117,7 @@ public class VideoFragment extends BaseFragment {
   private long seekPosition = -1;
 
   // values for setting playback speed
-  private final Double[] fixedSpeeds = {-16.0, -4.0, -2.0, -1.0, 1.0, 2.0, 4.0, 16.0};
+  private final Double[] fixedSpeeds = {-16.0, -4.0, -2.0, -1.0, -0.5, 0.5, 1.0, 2.0, 4.0, 16.0};
   private final static int INVOKE_ID_SET_SPEED_FLOAT = 100;
   private final static String IMEDIA_PLAYER = "android.media.IMediaPlayer";
 
@@ -207,10 +207,10 @@ public class VideoFragment extends BaseFragment {
       request.writeInt(INVOKE_ID_SET_SPEED_FLOAT);
       request.writeFloat(speed.floatValue());
       mediaPlayerInvoke.invoke(mediaPlayer, request, reply);
-      Log.d(TAG, "Speed set response: " + reply.readInt());
+      Log.d(TAG, "Set speed to " + speed + ", response: " + reply.readInt());
       return reply.readInt();
     } catch (Exception e) {
-      Log.w(TAG, "Error setting speed: " + e);
+      Log.e(TAG, "Error setting speed to " + speed + ": " + e);
     } finally {
       request.recycle();
       reply.recycle();
@@ -500,13 +500,12 @@ public class VideoFragment extends BaseFragment {
         if (speed > 0.0 && speed < 1.0) speed = 0.5;
         if (speed < 0.0 && speed > -1.0) speed = -0.5;
         if (speed > 1.0) speed = 10.0;
-        if (speed < -1.0) speed = -10.0;
-        int returnvalue = setPlaySpeed(speed);
-
-        Log.e(TAG, "setting speed to " + speed + " gives return value of: " + returnvalue);
+        if (speed <= -1.0) speed = -10.0;
+        int result = setPlaySpeed(speed);
+        Log.d(TAG, "Setting speed to " + speed + " gives return value of: " + result);
       }
     } catch (Exception e) {
-      Log.e(TAG, "setSpeedMethod error: " + e.getMessage());
+      Log.e(TAG, "Error setting speed: " + e.getMessage());
       return;
     }
     currentPlaySpeed = speed;
