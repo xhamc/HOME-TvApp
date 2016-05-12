@@ -147,7 +147,7 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
   }
 
   @Override
-  public List<VideoProgram> searchEpg(String udn, List<String> channels, Date startDateTime, Date endDateTime) {
+  public List<VideoProgram> searchEpg(String udn, final List<String> channels, Date startDateTime, Date endDateTime) {
     // build channel list string for sql statement
     StringBuilder channelsString = new StringBuilder();
     for (String channel : channels) {
@@ -189,5 +189,10 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
   public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
     db.execSQL("DROP TABLE DLNAObjects;");
     onCreate(db);
+  }
+
+  @Override
+  public void reset() {
+    db.execSQL("TRUNCATE TABLE DlnaObjects");
   }
 }

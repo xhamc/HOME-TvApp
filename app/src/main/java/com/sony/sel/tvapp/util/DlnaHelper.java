@@ -26,7 +26,7 @@ public class DlnaHelper {
     return INSTANCE;
   }
 
-  static DlnaCache getCache(Context context) {
+  public static DlnaCache getCache(Context context) {
     if (CACHE == null) {
       // ensure application context is used to prevent leaks
       CACHE = new DlnaSqlCache(context);

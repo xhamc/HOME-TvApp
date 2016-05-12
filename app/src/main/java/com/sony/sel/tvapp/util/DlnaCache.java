@@ -50,4 +50,9 @@ public interface DlnaCache {
    */
   @NonNull
   List<VideoProgram> searchEpg(@NonNull String udn, @NonNull List<String> channels, @NonNull Date startDateTime, @NonNull Date endDateTime);
+
+  /**
+   * Clear and reset the cache.
+   */
+  void reset();
 }

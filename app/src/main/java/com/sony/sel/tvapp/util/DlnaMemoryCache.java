@@ -59,4 +59,9 @@ public class DlnaMemoryCache implements DlnaCache {
   public List<DlnaObjects.VideoProgram> searchEpg(String udn, List<String> channels, Date startDateTime, Date endDateTime) {
     return null;
   }
+
+  @Override
+  public void reset() {
+    dlnaCache.clear();
+  }
 }
