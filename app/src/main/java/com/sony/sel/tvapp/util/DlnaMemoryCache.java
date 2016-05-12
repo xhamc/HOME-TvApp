@@ -3,6 +3,7 @@ package com.sony.sel.tvapp.util;
 import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,5 +53,10 @@ public class DlnaMemoryCache implements DlnaCache {
       }
     }
     return (List<T>) results;
+  }
+
+  @Override
+  public List<DlnaObjects.VideoProgram> searchEpg(String udn, List<String> channels, Date startDateTime, Date endDateTime) {
+    return null;
   }
 }

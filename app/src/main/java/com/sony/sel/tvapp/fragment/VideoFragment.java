@@ -65,8 +65,8 @@ public class VideoFragment extends BaseFragment {
   public static final String TAG = VideoFragment.class.getSimpleName();
 
 
-  private Method mediaPlayerInvoke=null;
-  private Method setSpeedMethod=null;
+  private Method mediaPlayerInvoke = null;
+  private Method setSpeedMethod = null;
   private ProtocolInfo protocolInfo;
 
   @Bind(R.id.videoSurfaceView)
@@ -101,13 +101,19 @@ public class VideoFragment extends BaseFragment {
       updateProgressBar();
     }
   };
-
   private Runnable hideProgressRunnable = new Runnable() {
     @Override
     public void run() {
       hideProgressBar();
     }
   };
+  private Runnable showSpinnerRunnable = new Runnable() {
+    @Override
+    public void run() {
+      spinner.show();
+    }
+  };
+
   private long seekPosition = -1;
 
   @Nullable
@@ -125,19 +131,18 @@ public class VideoFragment extends BaseFragment {
     return contentView;
   }
 
-  Double[] fixedSpeeds={-16.0, -4.0, -2.0, -1.0, -0.5, 0.5, 1.0,2.0,4.0,16.0};
+  Double[] fixedSpeeds = {-16.0, -4.0, -2.0, -1.0, 1.0, 2.0, 4.0, 16.0};
 
-  private void getInvokeMethod(){
+  private void getInvokeMethod() {
 
     try {
       mediaPlayerInvoke = MediaPlayer.class.getMethod("invoke", new Class[]{Parcel.class, Parcel.class});
-
-    }catch (Exception e){
+    } catch (Exception e) {
       Log.e(TAG, "Class method not supported :" + e.getMessage());
     }
     try {
-      setSpeedMethod = MediaPlayer.class.getMethod("setSpeed",new Class[]{float.class});
-    }catch (Exception e){
+      setSpeedMethod = MediaPlayer.class.getMethod("setSpeed", new Class[]{float.class});
+    } catch (Exception e) {
       Log.e(TAG, "Class method not supported :" + e.getMessage());
     }
 
@@ -263,7 +268,7 @@ public class VideoFragment extends BaseFragment {
     }
     stop();
     if (uri != null) {
-      spinner.show();
+      showSpinner();
       // create & execute async task for video playback
       playVideoTask = new PlayDlnaVideoTask(getActivity(), uri);
       playVideoTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
@@ -274,16 +279,15 @@ public class VideoFragment extends BaseFragment {
    * Restart playback of an existing video that is paused or stopped.
    */
   public void play() {
+    showProgressBar(PROGRESS_UI_HIDE_DELAY);
     if (mediaPlayer == null && videoUri != null) {
       // restart playback from scratch
       play(videoUri);
-      showProgressBar(PROGRESS_UI_HIDE_DELAY);
     } else if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
       // resume play
       Log.d(TAG, "Resuming video playback.");
       mediaPlayer.start();
       resetPlaySpeed();
-      showProgressBar(PROGRESS_UI_HIDE_DELAY);
       updateMediaPlaybackState();
     } else if (mediaPlayer != null) {
       // reset to normal playback speed
@@ -320,7 +324,7 @@ public class VideoFragment extends BaseFragment {
       // cancel a playback task in progress
       playVideoTask.cancel(true);
       playVideoTask = null;
-      spinner.hide();
+      hideSpinner();
     }
   }
 
@@ -378,13 +382,13 @@ public class VideoFragment extends BaseFragment {
             case KeyEvent.KEYCODE_MEDIA_SKIP_BACKWARD:
             case KeyEvent.KEYCODE_MEDIA_STEP_BACKWARD:
               // initiate a seek to the current position on key release
-              spinner.show();
+              showSpinner();
               mediaPlayer.seekTo((int) (seekPosition - mediaProgress.getData().getStartTime().getTime()));
               seekPosition = -1;
               mediaPlayer.setOnSeekCompleteListener(new MediaPlayer.OnSeekCompleteListener() {
                 @Override
                 public void onSeekComplete(MediaPlayer mp) {
-                  spinner.hide();
+                  hideSpinner();
                   showProgressBar(PROGRESS_UI_HIDE_DELAY);
                   startProgressUpdates();
                 }
@@ -400,12 +404,12 @@ public class VideoFragment extends BaseFragment {
    */
 
   void increasePlaySpeed() {
-    List<Double> ps=new ArrayList<>();
-    if (protocolInfo!=null && protocolInfo.playSpeedSupported()){
-       ps=protocolInfo.getPlaySpeedDoubles();
+    List<Double> ps = new ArrayList<>();
+    if (protocolInfo != null && protocolInfo.playSpeedSupported()) {
+      ps = protocolInfo.getPlaySpeedDoubles();
 
-    }else{
-        ps.addAll(Arrays.asList(fixedSpeeds));
+    } else {
+      ps.addAll(Arrays.asList(fixedSpeeds));
     }
     Double speed = 1.0;
     if (mediaPlayer.isPlaying()) {
@@ -413,18 +417,18 @@ public class VideoFragment extends BaseFragment {
       Double minSpeedChange = Double.POSITIVE_INFINITY;
       for (Double s : ps) {
         if (s > currentPlaySpeed) {
-          if (minSpeedChange > s && s>1.0) {
+          if (minSpeedChange > s && s > 1.0) {
             speed = s;
             minSpeedChange = s;
           }
         }
       }
 
-    }else{
+    } else {
 
       Double minSpeedChange = 1.0;
       for (Double s : ps) {
-        if (s > 0.0 && s<1.0) {
+        if (s > 0.0 && s < 1.0) {
           if (minSpeedChange > s) {
             speed = s;
             minSpeedChange = s;
@@ -442,14 +446,14 @@ public class VideoFragment extends BaseFragment {
    * Increase the playback speed to the next increment in the reverse direction, and update the UI.
    */
   void increasePlaySpeedReverse() {
-    List<Double> ps=new ArrayList<>();
-    if (protocolInfo!=null && protocolInfo.playSpeedSupported()){
-      ps=protocolInfo.getPlaySpeedDoubles();
+    List<Double> ps = new ArrayList<>();
+    if (protocolInfo != null && protocolInfo.playSpeedSupported()) {
+      ps = protocolInfo.getPlaySpeedDoubles();
 
-    }else{
+    } else {
       ps.addAll(Arrays.asList(fixedSpeeds));
     }
-    Double speed=1.0;
+    Double speed = 1.0;
     if (mediaPlayer.isPlaying()) {
       Double minSpeedChange = Double.NEGATIVE_INFINITY;
       for (Double s : ps) {
@@ -460,10 +464,10 @@ public class VideoFragment extends BaseFragment {
           }
         }
       }
-    }else{
-      Double minSpeedChange=-1.0;
+    } else {
+      Double minSpeedChange = -1.0;
       for (Double s : ps) {
-        if (s < 0.0 && s>-1.0) {
+        if (s < 0.0 && s > -1.0) {
           if (minSpeedChange < s) {
             speed = s;
             minSpeedChange = s;
@@ -474,7 +478,6 @@ public class VideoFragment extends BaseFragment {
     invokeSetSpeed(speed);
     updateProgressBar();
   }
-
 
 
   /**
@@ -488,7 +491,7 @@ public class VideoFragment extends BaseFragment {
   /**
    * call the MediaPlayer invoke method and update currentPlaySpeed based on result.
    */
-  void invokeSetSpeed(Double speed){
+  void invokeSetSpeed(Double speed) {
 
     try{
       if (speed!=currentPlaySpeed) {
@@ -501,11 +504,11 @@ public class VideoFragment extends BaseFragment {
 
         Log.e(TAG,"setting speed to "+speed+ " gives return value of: "+returnvalue);
       }
-    }catch (Exception e){
-      Log.e(TAG,"setSpeedMethod error: "+e.getMessage());
+    } catch (Exception e) {
+      Log.e(TAG, "setSpeedMethod error: " + e.getMessage());
       return;
     }
-    currentPlaySpeed= speed;
+    currentPlaySpeed = speed;
 
   }
 
@@ -815,6 +818,21 @@ public class VideoFragment extends BaseFragment {
   }
 
   /**
+   * Show the spinner if {@link #hideSpinner()} is not called after 2 seconds.
+   */
+  private void showSpinner() {
+    handler.postDelayed(showSpinnerRunnable, 2000);
+  }
+
+  /**
+   * Hide the spinner if visible.
+   */
+  private void hideSpinner() {
+    handler.removeCallbacks(showSpinnerRunnable);
+    spinner.hide();
+  }
+
+  /**
    * Async task for preparing and starting video playback.
    */
   private class PlayVideoTask extends PrepareVideoTask {
@@ -826,7 +844,7 @@ public class VideoFragment extends BaseFragment {
     @Override
     protected void onPostExecute(MediaPlayer mediaPlayer) {
       super.onPostExecute(mediaPlayer);
-      spinner.hide();
+      hideSpinner();
       Throwable error = getError();
       Uri uri = getUri();
       if (isInBackground()) {
@@ -982,7 +1000,6 @@ public class VideoFragment extends BaseFragment {
     updateMediaPlaybackState();
     // update state of channel or program
     updateMediaMetadata();
-
 
 
   }

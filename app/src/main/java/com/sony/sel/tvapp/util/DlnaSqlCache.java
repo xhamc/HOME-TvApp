@@ -9,8 +9,10 @@ import android.support.annotation.Nullable;
 
 import com.google.gson.Gson;
 import com.sony.sel.tvapp.util.DlnaObjects.DlnaObject;
+import com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -19,7 +21,7 @@ import java.util.List;
 public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
 
   private static final String DATABASE_NAME = "dlnacache.db";
-  public static final int DATABASE_VERSION = 5;
+  public static final int DATABASE_VERSION = 6;
 
   private final String CREATE_DLNA_OBJECTS_TABLE = "CREATE TABLE `DLNAObjects` (\n" +
       "\t`UDN`\tTEXT,\n" +
@@ -29,6 +31,9 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
       "\t`UPNPClass`\tTEXT,\n" +
       "\t`JSON`\tTEXT,\n" +
       "\t`ChildIndex`\tINTEGER,\n" +
+      "\t`ScheduledStartTime`\tINTEGER,\n" +
+      "\t`ScheduledEndTime`\tINTEGER,\n" +
+      "\t`ChannelID`\tSTRING,\n" +
       "\tPRIMARY KEY(UDN,ParentID,ID)\n" +
       ");";
 
@@ -101,6 +106,13 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
           values.put("UPNPClass", child.getUpnpClass());
           values.put("JSON", gson.toJson(child));
           values.put("ChildIndex", childIndex++);
+          if (child instanceof VideoProgram) {
+            // save EPG-specific fields
+            VideoProgram videoProgram = (VideoProgram) child;
+            values.put("ScheduledStartTime", videoProgram.getScheduledStartTime().getTime());
+            values.put("ScheduledEndTime", videoProgram.getScheduledEndTime().getTime());
+            values.put("ChannelID", videoProgram.getChannelId());
+          }
           db.insert(
               "DLNAObjects",
               null,
@@ -122,6 +134,40 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
         null,
         null,
         null
+    );
+    try {
+      if (cursor.getCount() > 0) {
+        return buildResults(cursor);
+      } else {
+        return new ArrayList<>();
+      }
+    } finally {
+      cursor.close();
+    }
+  }
+
+  @Override
+  public List<VideoProgram> searchEpg(String udn, List<String> channels, Date startDateTime, Date endDateTime) {
+    // build channel list string for sql statement
+    StringBuilder channelsString = new StringBuilder();
+    for (String channel : channels) {
+      if (channelsString.length() > 0) {
+        channelsString.append(", ");
+      }
+      channelsString.append("'" + channel + "'");
+    }
+    // build query
+    Cursor cursor = db.query(
+        "DLNAObjects",
+        new String[]{"UPNPClass", "JSON"},
+        "UDN = '" + udn + "'"
+            + " AND ChannelID IN (" + channelsString.toString() + ")"
+            + " AND ScheduledStartTime <= " + endDateTime.getTime()
+            + " AND ScheduledEndTime > " + startDateTime.getTime(),
+        null,
+        null,
+        null,
+        "ChannelID, ScheduledStartTime"
     );
     try {
       if (cursor.getCount() > 0) {
