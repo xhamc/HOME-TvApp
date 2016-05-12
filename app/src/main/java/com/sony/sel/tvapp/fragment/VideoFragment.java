@@ -280,6 +280,7 @@ public class VideoFragment extends BaseFragment {
    */
   public void play() {
     showProgressBar(PROGRESS_UI_HIDE_DELAY);
+    seekPosition = -1;
     if (mediaPlayer == null && videoUri != null) {
       // restart playback from scratch
       play(videoUri);
@@ -319,6 +320,7 @@ public class VideoFragment extends BaseFragment {
       hideProgressBar();
       stopProgressUpdates();
       resetPlaySpeed();
+      seekPosition = -1;
     }
     if (playVideoTask != null) {
       // cancel a playback task in progress
