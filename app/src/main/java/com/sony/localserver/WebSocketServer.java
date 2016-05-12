@@ -201,7 +201,12 @@ public class WebSocketServer extends NanoWSD {
       List<VideoProgram> epgData = dlnaCache.searchEpg(udn, request.getData().getChannels(), startDate, endDate);
 
       // create response
-      SearchEpgCacheResponse response = new SearchEpgCacheResponse(epgData);
+      SearchEpgCacheResponse response = new SearchEpgCacheResponse(
+          epgData,
+          settingsHelper.getFavoriteChannels(),
+          getChannelIds(),
+          settingsHelper.getCurrentChannel().getChannelId()
+      );
 
       // convert to JSON
       return new GsonBuilder().
@@ -434,9 +439,18 @@ public class WebSocketServer extends NanoWSD {
   private static class SearchEpgCacheResponse {
     @SerializedName("PROGRAMS")
     List<VideoProgram> programs;
+    @SerializedName("FAVORITES")
+    Set<String> favorites;
+    @SerializedName("CHANNELS")
+    List<String> channels;
+    @SerializedName("CURRENT")
+    String currentChannel;
 
-    public SearchEpgCacheResponse(List<VideoProgram> programs) {
+    public SearchEpgCacheResponse(List<VideoProgram> programs, Set<String> favorites, List<String> channels, String currentChannel) {
       this.programs = programs;
+      this.favorites = favorites;
+      this.channels = channels;
+      this.currentChannel = currentChannel;
     }
   }
 

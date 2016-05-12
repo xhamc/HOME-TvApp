@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.sony.localserver.WebSocketServer.*;
+import static com.sony.localserver.WebSocketServer.TAG;
 
 /**
  * Tests for web socket server.
@@ -68,14 +69,14 @@ public class WebSocketServerTest extends InstrumentationTestCase {
     Calendar calendar = Calendar.getInstance();
     calendar.add(Calendar.HOUR_OF_DAY, -1);
     Date start = calendar.getTime();
-    calendar.add(Calendar.HOUR_OF_DAY, 12);
+    calendar.add(Calendar.HOUR_OF_DAY, 1);
     Date end = calendar.getTime();
 
     List<DlnaObjects.VideoBroadcast> channels = dlnaHelper.getChannels(settingsHelper.getEpgServer(), null);
     assertTrue("No channels returned from server.", channels.size() > 0);
     Log.d(TAG, String.format("%d channels found.", channels.size()));
     List<String> channelIds = new ArrayList<>();
-    final int MAX_EPG_CHANNELS = 5;
+    final int MAX_EPG_CHANNELS = 1;
     for (int i = 0; i < channels.size() && i < MAX_EPG_CHANNELS; i++) {
       DlnaObjects.VideoBroadcast channel = channels.get(i);
       channelIds.add(channel.getChannelId());
@@ -88,11 +89,13 @@ public class WebSocketServerTest extends InstrumentationTestCase {
     times.add(String.valueOf(end.getTime()));
     SearchEpgCacheRequest request = new SearchEpgCacheRequest(channelIds, times);
     String json = new Gson().toJson(request);
+    Log.d(TAG, "Socket request: "+json);
 
     // when
     long time = System.currentTimeMillis();
     String response = webSocket.searchEpgCache(json);
     time = System.currentTimeMillis() - time;
+    Log.d(TAG, "Socket response: "+response);
 
     // then
     Log.d(TAG, String.format("Response processed in " + time + " ms."));
