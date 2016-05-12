@@ -125,7 +125,7 @@ public class VideoFragment extends BaseFragment {
     return contentView;
   }
 
-  Double[] fixedSpeeds={-16.0, -4.0, -2.0, -1.0, 1.0,2.0,4.0,16.0};
+  Double[] fixedSpeeds={-16.0, -4.0, -2.0, -1.0, -0.5, 0.5, 1.0,2.0,4.0,16.0};
 
   private void getInvokeMethod(){
 
@@ -493,6 +493,8 @@ public class VideoFragment extends BaseFragment {
     try{
       if (speed!=currentPlaySpeed) {
         //setSpeedMethod.invoke(mediaPlayer, speed.floatValue());
+        if (speed>0.0 && speed<1.0) speed =0.5;
+        if (speed<0.0 && speed>-1.0) speed = -0.5;
         if (speed>1.0) speed=10.0;
         if (speed<-1.0) speed=-10.0;
         int returnvalue=setPlaySpeed(speed);
