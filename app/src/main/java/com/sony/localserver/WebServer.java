@@ -25,7 +25,7 @@ public class WebServer extends WebSocketServer {
   private Context context;
 
   public WebServer(String host, int port, Context context) {
-    super(host, port, DlnaHelper.getHelper(context), SettingsHelper.getHelper(context));
+    super(host, port, DlnaHelper.getHelper(context), DlnaHelper.getCache(context), SettingsHelper.getHelper(context));
     this.context = context;
     iterateFiles(LOCALHOST);
   }

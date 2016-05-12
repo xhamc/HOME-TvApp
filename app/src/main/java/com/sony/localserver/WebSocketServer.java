@@ -8,6 +8,8 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
+import com.sony.sel.tvapp.util.DlnaCache;
+import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.DlnaObjects;
 import com.sony.sel.tvapp.util.EventBus;
@@ -40,12 +42,14 @@ public class WebSocketServer extends NanoWSD {
   private LocalWebSocket ws;
   private String udn;
   private DlnaInterface dlnaHelper;
+  private DlnaCache dlnaCache;
   private SettingsHelper settingsHelper;
 
-  public WebSocketServer(String host, int port, DlnaInterface dlnaHelper, SettingsHelper settingsHelper) {
+  public WebSocketServer(String host, int port, DlnaInterface dlnaHelper, DlnaCache dlnaCache, SettingsHelper settingsHelper) {
     super(host, port);
     this.dlnaHelper = dlnaHelper;
     this.settingsHelper = settingsHelper;
+    this.dlnaCache = dlnaCache;
   }
 
   public String getUdn() {
@@ -96,6 +100,23 @@ public class WebSocketServer extends NanoWSD {
           @Override
           public void run() {
             String json = processEpgRequest(message.getTextPayload());
+            if (json != null) {
+              try {
+                ws.send(json);
+              } catch (IOException e) {
+                e.printStackTrace();
+              }
+            }
+          }
+        });
+        t.setPriority(Thread.MIN_PRIORITY);
+        t.start();
+      } else if (payload.contains("searchEPGCache")) {
+        Log.d(TAG, "Search EPG cache.");
+        Thread t = new Thread(new Runnable() {
+          @Override
+          public void run() {
+            String json = searchEpgCache(message.getTextPayload());
             if (json != null) {
               try {
                 ws.send(json);
@@ -160,6 +181,34 @@ public class WebSocketServer extends NanoWSD {
           Log.e(TAG, "Error sending Channels:" + e);
         }
       }
+    }
+
+    /**
+     * Process a request to search the EPG cache.
+     *
+     * @param payload message payload.
+     * @return response in JSON format.
+     */
+    String searchEpgCache(String payload) {
+      // parse request from JSON
+      SearchEpgCacheRequest request = new Gson().fromJson(payload, SearchEpgCacheRequest.class);
+
+      // extract dates
+      Date startDate = new Date(Long.parseLong(request.getData().getTimes().get(0)));
+      Date endDate = new Date(Long.parseLong(request.getData().getTimes().get(1)));
+
+      // get data
+      List<VideoProgram> epgData = dlnaCache.searchEpg(udn, request.getData().getChannels(), startDate, endDate);
+
+      // create response
+      SearchEpgCacheResponse response = new SearchEpgCacheResponse(epgData);
+
+      // convert to JSON
+      return new GsonBuilder().
+          registerTypeAdapter(VideoProgram.class, new VideoProgram.WebSerializer())
+          .disableHtmlEscaping()
+          .create()
+          .toJson(response);
     }
 
     /**
@@ -233,12 +282,12 @@ public class WebSocketServer extends NanoWSD {
 
     /**
      * Return the list of channels as a String set containing just channel IDs.
+     *
      * @return
      */
     private List<String> getChannelIds() {
       List<VideoBroadcast> channels = dlnaHelper.getChannels(udn, null);
-//      Set<String> channelIds = new HashSet<>();
-      List<String> channelIds=new ArrayList<>();
+      List<String> channelIds = new ArrayList<>();
       for (VideoBroadcast channel : channels) {
         channelIds.add(channel.getChannelId());
       }
@@ -308,11 +357,17 @@ public class WebSocketServer extends NanoWSD {
   /**
    * Class for parsing incoming epg requests from JSON
    */
-  private static class EpgRequestData {
+  static class EpgRequestData {
     @SerializedName("CHANNELLIST")
     List<String> channels;
     @SerializedName("TIMELIST")
     List<String> times;
+
+
+    public EpgRequestData(List<String> channels, List<String> times) {
+      this.channels = channels;
+      this.times = times;
+    }
 
     public List<String> getChannels() {
       return channels;
@@ -326,12 +381,32 @@ public class WebSocketServer extends NanoWSD {
   /**
    * Class for parsing incoming epg requests from JSON
    */
-  private static class EpgRequest {
+  static class EpgRequest {
     @SerializedName("browseEPGData")
     EpgRequestData data;
 
     public EpgRequestData getData() {
       return data;
+    }
+
+    public EpgRequest(List<String> channels, List<String> times) {
+      this.data = new EpgRequestData(channels, times);
+    }
+  }
+
+  /**
+   * Class for parsing incoming epg requests from JSON
+   */
+  static class SearchEpgCacheRequest {
+    @SerializedName("searchEPGCache")
+    EpgRequestData data;
+
+    public EpgRequestData getData() {
+      return data;
+    }
+
+    public SearchEpgCacheRequest(List<String> channels, List<String> times) {
+      this.data = new EpgRequestData(channels, times);
     }
   }
 
@@ -353,6 +428,15 @@ public class WebSocketServer extends NanoWSD {
       this.favorites = favorites;
       this.channels = channels;
       this.currentChannel = currentChannel;
+    }
+  }
+
+  private static class SearchEpgCacheResponse {
+    @SerializedName("PROGRAMS")
+    List<VideoProgram> programs;
+
+    public SearchEpgCacheResponse(List<VideoProgram> programs) {
+      this.programs = programs;
     }
   }
 
