@@ -131,6 +131,7 @@ public class VideoFragment extends BaseFragment {
 
     try {
       mediaPlayerInvoke = MediaPlayer.class.getMethod("invoke", new Class[]{Parcel.class, Parcel.class});
+
     }catch (Exception e){
       Log.e(TAG, "Class method not supported :" + e.getMessage());
     }
@@ -142,6 +143,36 @@ public class VideoFragment extends BaseFragment {
 
 
   }
+
+  private final static int INVOKE_ID_SET_SPEED_FLOAT=100;
+  private final static String IMEDIA_PLAYER = "android.media.IMediaPlayer";
+
+  private int setPlaySpeed(Double speed)
+  {
+    //New Method
+    Parcel request = Parcel.obtain();
+    Parcel reply = Parcel.obtain();
+    int value=0;
+
+    try {
+      request.writeInterfaceToken(IMEDIA_PLAYER);
+      request.writeInt(INVOKE_ID_SET_SPEED_FLOAT);
+      request.writeFloat(speed.floatValue());
+      mediaPlayerInvoke.invoke(mediaPlayer, request, reply);
+      Log.d(TAG,"Speed set response: "+reply.readInt());
+      return reply.readInt();
+    }
+    catch(Exception e)
+    {
+      Log.w(TAG, "Error setting speed: "+e);
+    }
+    finally {
+      request.recycle();
+      reply.recycle();
+    }
+    return 0;
+  }
+
 
   @Override
   public void onPause() {
@@ -461,7 +492,12 @@ public class VideoFragment extends BaseFragment {
 
     try{
       if (speed!=currentPlaySpeed) {
-        setSpeedMethod.invoke(mediaPlayer, speed.floatValue());
+        //setSpeedMethod.invoke(mediaPlayer, speed.floatValue());
+        if (speed>1.0) speed=10.0;
+        if (speed<-1.0) speed=-10.0;
+        int returnvalue=setPlaySpeed(speed);
+
+        Log.e(TAG,"setting speed to "+speed+ " gives return value of: "+returnvalue);
       }
     }catch (Exception e){
       Log.e(TAG,"setSpeedMethod error: "+e.getMessage());

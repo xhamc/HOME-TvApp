@@ -26,7 +26,7 @@ function GuideController(){
     var ws=new WebsocketController(); if (!ws.supported) return;
     var gc=new GridController(ws);
 	var originalGridTimeStart=gc.initialize();
-	var MAXTTIME=10*24*3600*1000;	//start with 10 days of maximum data!
+	var MAXTTIME=2*24*3600*1000;	//start with 10 days of maximum data!
 
 	guideWebsocketControllerTimer(); //TODO switch to callbacks for efficiency
 	var waitTooLong=0;
@@ -191,11 +191,11 @@ function GuideController(){
 //				return;
 //			}else{
 				var updateRequest=getNextTimeAndChannelList();
-				if (null!=updateRequest){
+//				if (null!=updateRequest){
 					var msg=JSON.stringify({"browseEPGData":updateRequest});
 					console.log("msg:"+msg);
 					ws.send(msg, true);
-				}
+//				}
 //			}
 
 		}
@@ -213,7 +213,8 @@ function GuideController(){
 		console.log("updateTimeNext: "+updateTimeNext);
 		var mxt=getTime().ms+MAXTTIME;
 		if (maxTimeLast>(getTime().ms+MAXTTIME)){
-			return null;
+			var jo={"CHANNELLIST":channelData, "TIMELIST":timeData};
+			return jo;
 		}
 
 		var numChannels=Math.min(5, (currentAvailableDataRange.length-updateChannelStart));
