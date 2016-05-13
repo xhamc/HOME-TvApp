@@ -368,6 +368,7 @@ function GridController(ws){
 
 		}else{
 			console.log("ICON image not found: "+ name);
+			drawTextInBox(x,y,w*4,name, 6,8,false);
 		}
 		ctx.restore();
 	}

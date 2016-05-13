@@ -684,9 +684,20 @@ public class DlnaObjects {
 
     public void setRating(String rating) {
       // transform certain ratings for EPG grid
-      if (rating.contains("Adult")) {
-        rating = "AO";
+      String ratingConvert="";
+      if (rating.contains("Language")){
+        ratingConvert.concat("L");
       }
+      if (rating.contains("Violence")){
+        ratingConvert.concat("V");
+      }
+      if (rating.contains("Nudity")){
+        ratingConvert.concat("N");
+      }
+      if (!ratingConvert.isEmpty()){
+        rating=("TVMA:").concat(ratingConvert);
+      }
+
       switch (rating) {
 
         case "AO":

@@ -151,6 +151,58 @@
                             console.log("STATION_DATA: udpdateEPGinProgress=false" );
 
 
+                        }else if (key=="PROGRAMS"){
+                            epg=obj[key];
+                            var epglength=epg.length;
+                            console.log("epglength: "+epglength);
+                            for (var j=0; j<epglength; j++){
+
+
+                                var metadata=epg[j];
+                                keyChannel=metadata["channelId"];
+                                console.log("channel:" + keyChannel);
+                                if (null==keyChannel){
+
+                                }
+                                else
+                                {
+                                    if (null==EPG_DATA[keyChannel]){
+                                        EPG_DATA[keyChannel]={};
+                                    }
+
+
+                                    if (null==EPG_DATA[keyChannel].metadata){
+
+                                        EPG_DATA[keyChannel].metadata=[metadata];
+
+                                    }else{
+                                        if (metadata.start<EPG_DATA[keyChannel].metadata[0].start){
+                                            epgDataAvailable=true;
+                                            var l=EPG_DATA[keyChannel].metadata.length;
+                                            for (var i=l; i>0; i--){
+                                                EPG_DATA[keyChannel].metadata[i]=EPG_DATA[keyChannel].metadata[i-1];
+                                            }
+                                            EPG_DATA[keyChannel].metadata[0]=metadata;
+
+                                        }else if (metadata.start>EPG_DATA[keyChannel].metadata[EPG_DATA[keyChannel].metadata.length-1].start){
+                                            epgDataAvailable=true;
+                                            EPG_DATA[keyChannel].metadata[EPG_DATA[keyChannel].metadata.length]=metadata;
+                                        }
+                                    }
+
+
+                                    console.log("EPG_DATA length:"+EPG_DATA[keyChannel].metadata.length);
+                                    var d=new Date(parseInt(EPG_DATA[keyChannel].metadata[0].start));
+                                    var d2=new Date(parseInt(EPG_DATA[keyChannel].metadata[EPG_DATA[keyChannel].metadata.length-1].start));
+                                    console.log("EPG_DATA start:"+d.toUTCString());
+                                    console.log("EPG_DATA end:"+ d2.toUTCString());
+                                }
+
+                            }
+
+                            udpdateEPGinProgress=false;
+                            console.log("EPG_DATA: udpdateEPGinProgress=false" );
+
                         } else if (key=="CURRENT"){
                             console.log("Found CURRENT key");
                             for (var i=0; i<STATION_DATA.length; i++){
@@ -192,7 +244,7 @@
                                 for (var j=0; j<STATION_DATA.length; j++){
                                     if (STATION_DATA[j].channelId==channelList[i]){
                                         CHANNELLIST_DATA[i]=j;
-                                        console.log("CHANNELIST_DATA i: "+j);
+//                                        console.log("CHANNELIST_DATA i: "+j);
                                         j=STATION_DATA.length;
                                     }
 //                                    CHANNELLIST_DATA[i]=0;  //default error

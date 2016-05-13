@@ -192,7 +192,8 @@ function GuideController(){
 //			}else{
 				var updateRequest=getNextTimeAndChannelList();
 //				if (null!=updateRequest){
-					var msg=JSON.stringify({"browseEPGData":updateRequest});
+//					var msg=JSON.stringify({"browseEPGData":updateRequest});
+					var msg=JSON.stringify({"searchEPGCache":updateRequest});
 					console.log("msg:"+msg);
 					ws.send(msg, true);
 //				}
