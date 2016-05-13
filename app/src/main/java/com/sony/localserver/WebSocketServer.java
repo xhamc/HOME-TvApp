@@ -193,12 +193,20 @@ public class WebSocketServer extends NanoWSD {
       // parse request from JSON
       SearchEpgCacheRequest request = new Gson().fromJson(payload, SearchEpgCacheRequest.class);
 
-      // extract dates
-      Date startDate = new Date(Long.parseLong(request.getData().getTimes().get(0)));
-      Date endDate = new Date(Long.parseLong(request.getData().getTimes().get(1)));
+      List<VideoProgram> epgData;
+      if (request.getData().getTimes().size() == 2 && request.getData().getChannels().size() > 0) {
 
-      // get data
-      List<VideoProgram> epgData = dlnaCache.searchEpg(udn, request.getData().getChannels(), startDate, endDate);
+        // extract dates
+        Date startDate = new Date(Long.parseLong(request.getData().getTimes().get(0)));
+        Date endDate = new Date(Long.parseLong(request.getData().getTimes().get(1)));
+
+        // get data
+        epgData = dlnaCache.searchEpg(udn, request.getData().getChannels(), startDate, endDate);
+
+      } else {
+        Log.e(TAG, "Invalid request data.");
+        epgData = new ArrayList<>();
+      }
 
       // create response
       SearchEpgCacheResponse response = new SearchEpgCacheResponse(
