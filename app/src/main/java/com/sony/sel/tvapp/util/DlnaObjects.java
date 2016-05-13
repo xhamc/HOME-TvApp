@@ -686,13 +686,13 @@ public class DlnaObjects {
       // transform certain ratings for EPG grid
       String ratingConvert="";
       if (rating.contains("Language")){
-        ratingConvert.concat("L");
+        ratingConvert=ratingConvert.concat("L");
       }
       if (rating.contains("Violence")){
-        ratingConvert.concat("V");
+        ratingConvert=ratingConvert.concat("V");
       }
       if (rating.contains("Nudity")){
-        ratingConvert.concat("N");
+        ratingConvert=ratingConvert.concat("N");
       }
       if (!ratingConvert.isEmpty()){
         rating=("TVMA:").concat(ratingConvert);
