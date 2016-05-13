@@ -695,7 +695,7 @@ public class DlnaObjects {
         ratingConvert=ratingConvert.concat("N");
       }
       if (!ratingConvert.isEmpty()){
-        rating=("TVMA:").concat(ratingConvert);
+        rating=("Warn:").concat(ratingConvert);
       }
 
       switch (rating) {
