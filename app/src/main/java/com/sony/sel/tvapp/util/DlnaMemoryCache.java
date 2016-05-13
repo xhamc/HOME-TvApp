@@ -1,5 +1,6 @@
 package com.sony.sel.tvapp.util;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
@@ -58,6 +59,11 @@ public class DlnaMemoryCache implements DlnaCache {
   @Override
   public List<DlnaObjects.VideoProgram> searchEpg(String udn, List<String> channels, Date startDateTime, Date endDateTime) {
     return null;
+  }
+
+  @Override
+  public int countEpgItems(@NonNull String udn, @NonNull List<String> channels, @NonNull Date startDateTime, @NonNull Date endDateTime) {
+    return 0;
   }
 
   @Override

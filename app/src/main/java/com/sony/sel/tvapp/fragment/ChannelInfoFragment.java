@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.sony.sel.tvapp.R;
+import com.sony.sel.tvapp.util.DlnaCache;
 import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.DlnaObjects;
@@ -55,17 +56,19 @@ public class ChannelInfoFragment extends BaseFragment {
   private List<VideoBroadcast> channels = new ArrayList<>();
   private VideoBroadcast currentChannel;
   private VideoItem currentVod;
-  private Map<String, List<VideoProgram>> currentPrograms = new HashMap<>();
-
-  private GetCurrentProgramsTask epgTask;
+  private List<VideoProgram> currentEpg;
 
   private DlnaInterface dlnaHelper;
+  private DlnaCache dlnaCache;
+  private SettingsHelper settingsHelper;
 
   @Nullable
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
     dlnaHelper = DlnaHelper.getHelper(getActivity());
+    dlnaCache = DlnaHelper.getCache(getActivity());
+    settingsHelper = SettingsHelper.getHelper(getActivity());
 
     // inflate view
     View contentView = inflater.inflate(R.layout.channel_info_fragment, null);
@@ -75,17 +78,6 @@ public class ChannelInfoFragment extends BaseFragment {
     getChannels();
 
     return contentView;
-  }
-
-  @Override
-  public void onDestroy() {
-    super.onDestroy();
-    if (epgTask != null) {
-      // cancel EPG task if running
-      epgTask.cancel(true);
-      // stop listening for channel list changes
-      dlnaHelper.unregisterContentObserver(channelObserver);
-    }
   }
 
   @Subscribe
@@ -98,14 +90,13 @@ public class ChannelInfoFragment extends BaseFragment {
    * Fetch the list of channels
    */
   private void getChannels() {
-    String udn = SettingsHelper.getHelper(getActivity()).getEpgServer();
-    new GetChannelsTask(udn).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    new GetChannelsTask(settingsHelper.getEpgServer()).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
   }
 
   @Subscribe
   public void onFavoriteChannelsChanged(EventBus.FavoriteChannelsChangedEvent event) {
     // refresh the channel list
-    this.channels = dlnaHelper.getChannels(SettingsHelper.getHelper(getActivity()).getEpgServer(), null);
+    this.channels = dlnaHelper.getChannels(settingsHelper.getEpgServer(), null);
   }
 
   /**
@@ -125,14 +116,6 @@ public class ChannelInfoFragment extends BaseFragment {
         channel = channels.get(0);
       }
       EventBus.getInstance().post(new EventBus.ChannelChangedEvent(channel));
-
-      // fetch current programs for all channels
-      if (epgTask != null) {
-        // cancel existing EPG task
-        epgTask.cancel(true);
-      }
-      epgTask = new GetCurrentProgramsTask();
-      epgTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
   }
 
@@ -149,6 +132,19 @@ public class ChannelInfoFragment extends BaseFragment {
   public void setCurrentChannel(VideoBroadcast channel) {
     currentChannel = channel;
     currentVod = null;
+    Calendar calendar = Calendar.getInstance();
+    calendar.add(Calendar.HOUR_OF_DAY, -1);
+    Date start = calendar.getTime();
+    calendar.add(Calendar.HOUR_OF_DAY, 7);
+    Date end = calendar.getTime();
+    List<String> channelId = new ArrayList<>();
+    channelId.add(channel.getChannelId());
+    currentEpg = dlnaCache.searchEpg(
+        settingsHelper.getEpgServer(),
+        channelId,
+        start,
+        end
+    );
     updateChannelInfo();
   }
 
@@ -156,7 +152,7 @@ public class ChannelInfoFragment extends BaseFragment {
     if (currentChannel != null) {
       channelEpgInfo.setVisibility(View.VISIBLE);
       vodVideoInfo.setVisibility(View.GONE);
-      channelEpgInfo.bind(currentChannel, currentPrograms.get(currentChannel.getChannelId()));
+      channelEpgInfo.bind(currentChannel, currentEpg);
       if (isVisible()) {
         channelEpgInfo.requestFocus();
       }
@@ -180,20 +176,6 @@ public class ChannelInfoFragment extends BaseFragment {
     channelEpgInfo.requestFocus();
   }
 
-  private VideoProgram getCurrentProgram() {
-    Date now = new Date();
-    List<VideoProgram> programs = currentPrograms.get(currentChannel.getChannelId());
-    if (programs != null) {
-      for (VideoProgram program : programs) {
-        if (program.getScheduledStartTime().before(now) && program.getScheduledEndTime().after(now)) {
-          return program;
-        }
-      }
-    }
-    // not found
-    return null;
-  }
-
   public void nextChannel() {
     if (channels != null && channels.size() > 0) {
       int i = currentChannel != null ? channels.indexOf(currentChannel) + 1 : 0;
@@ -215,46 +197,6 @@ public class ChannelInfoFragment extends BaseFragment {
       VideoBroadcast channel = channels.get(i);
       // save new channel to settings
       SettingsHelper.getHelper(getActivity()).setCurrentChannel(channel);
-    }
-  }
-
-  private class GetCurrentProgramsTask extends AsyncTask<Void, VideoProgram, Void> {
-
-    @Override
-    protected Void doInBackground(Void... params) {
-      String udn = SettingsHelper.getHelper(getActivity()).getEpgServer();
-      Calendar calendar = Calendar.getInstance();
-      calendar.add(Calendar.HOUR_OF_DAY, -12);
-      Date start = calendar.getTime();
-      calendar.add(Calendar.HOUR_OF_DAY, 24);
-      Date end = calendar.getTime();
-      for (VideoBroadcast channel : channels) {
-        Log.d(TAG, "Get EPG for channel " + channel.getCallSign() + ".");
-        List<VideoProgram> epgData = dlnaHelper.getEpgPrograms(udn, channel, start, end);
-        if (epgData != null && epgData.size() > 0) {
-          Log.d(TAG, String.format("%d programs found.", epgData.size()));
-          VideoProgram[] programs = new VideoProgram[epgData.size()];
-          publishProgress(epgData.toArray(programs));
-        } else {
-          Log.e(TAG, "No current program found.");
-        }
-        if (isCancelled()) {
-          Log.w(TAG, "Canceling EPG task.");
-          break;
-        }
-      }
-      return null;
-    }
-
-    @Override
-    protected void onProgressUpdate(VideoProgram... values) {
-      super.onProgressUpdate(values);
-      List<VideoProgram> programs = Arrays.asList(values);
-      String channelId = programs.get(0).getChannelId();
-      currentPrograms.put(channelId, programs);
-      if (currentChannel != null && channelId.equals(currentChannel.getChannelId())) {
-        updateChannelInfo();
-      }
     }
   }
 

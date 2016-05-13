@@ -436,7 +436,7 @@ public class WebSocketServer extends NanoWSD {
     }
   }
 
-  private static class SearchEpgCacheResponse {
+  static class SearchEpgCacheResponse {
     @SerializedName("PROGRAMS")
     List<VideoProgram> programs;
     @SerializedName("FAVORITES")

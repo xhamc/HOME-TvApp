@@ -5,20 +5,27 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import com.google.gson.Gson;
 import com.sony.sel.tvapp.util.DlnaObjects.DlnaObject;
 import com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 /**
  * DLNA cache backed by an SQLite database.
  */
 public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
+
+  public static final String TAG = DlnaSqlCache.class.getSimpleName();
 
   private static final String DATABASE_NAME = "dlnacache.db";
   public static final int DATABASE_VERSION = 6;
@@ -148,6 +155,29 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
 
   @Override
   public List<VideoProgram> searchEpg(String udn, final List<String> channels, Date startDateTime, Date endDateTime) {
+    Cursor cursor = getEpgItems(udn, channels, startDateTime, endDateTime);
+    try {
+      if (cursor.getCount() > 0) {
+        return buildResults(cursor);
+      } else {
+        return new ArrayList<>();
+      }
+    } finally {
+      cursor.close();
+    }
+  }
+
+  @Override
+  public int countEpgItems(@NonNull String udn, @NonNull List<String> channels, @NonNull Date startDateTime, @NonNull Date endDateTime) {
+    Cursor cursor = getEpgItems(udn, channels, startDateTime, endDateTime);
+    try {
+      return cursor.getCount();
+    } finally {
+      cursor.close();
+    }
+  }
+
+  private Cursor getEpgItems(@NonNull String udn, @NonNull List<String> channels, @NonNull Date startDateTime, @NonNull Date endDateTime) {
     // build channel list string for sql statement
     StringBuilder channelsString = new StringBuilder();
     for (String channel : channels) {
@@ -156,8 +186,13 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
       }
       channelsString.append("'" + channel + "'");
     }
+
+    DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+    format.setTimeZone(TimeZone.getTimeZone("UTC"));
+    Log.d(TAG, "Find EPG items from " + format.format(startDateTime) + " to " + format.format(endDateTime) + " in channels " + new Gson().toJson(channels) + ".");
+
     // build query
-    Cursor cursor = db.query(
+    return db.query(
         "DLNAObjects",
         new String[]{"UPNPClass", "JSON"},
         "UDN = '" + udn + "'"
@@ -169,15 +204,6 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
         null,
         "ChannelID, ScheduledStartTime"
     );
-    try {
-      if (cursor.getCount() > 0) {
-        return buildResults(cursor);
-      } else {
-        return new ArrayList<>();
-      }
-    } finally {
-      cursor.close();
-    }
   }
 
   @Override
@@ -193,6 +219,6 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
 
   @Override
   public void reset() {
-    db.execSQL("TRUNCATE TABLE DlnaObjects");
+    this.onUpgrade(db, db.getVersion(), DATABASE_VERSION);
   }
 }

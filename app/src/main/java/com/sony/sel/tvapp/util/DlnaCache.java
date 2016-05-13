@@ -52,6 +52,17 @@ public interface DlnaCache {
   List<VideoProgram> searchEpg(@NonNull String udn, @NonNull List<String> channels, @NonNull Date startDateTime, @NonNull Date endDateTime);
 
   /**
+   * Check the cache contents and return a count of programs for the specified search criteria.
+   *
+   * @param udn           Server UDN.
+   * @param channels      List of channel IDs to search.
+   * @param startDateTime Starting date/time to search for. (Overlapping programs will be returned.)
+   * @param endDateTime   Ending date/time to search for. (Overlapping programs will be returned.)
+   * @return The total number of EPG programs matching the given criteria.
+   */
+  int countEpgItems(@NonNull String udn, @NonNull List<String> channels, @NonNull Date startDateTime, @NonNull Date endDateTime);
+
+  /**
    * Clear and reset the cache.
    */
   void reset();

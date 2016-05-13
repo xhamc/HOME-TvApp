@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.KeyEvent;
 
 import com.sony.sel.tvapp.R;
@@ -18,16 +17,16 @@ import com.sony.sel.tvapp.fragment.ChannelInfoFragment;
 import com.sony.sel.tvapp.fragment.NavigationFragment;
 import com.sony.sel.tvapp.fragment.VideoFragment;
 import com.sony.sel.tvapp.ui.NavigationItem;
+import com.sony.sel.tvapp.util.DlnaCache;
 import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaInterface;
-import com.sony.sel.tvapp.util.DlnaObjects.DlnaObject;
+import com.sony.sel.tvapp.util.EpgCachingTask;
 import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.EventBus.ChannelChangedEvent;
 import com.sony.sel.tvapp.util.EventBus.PlayVodEvent;
 import com.sony.sel.tvapp.util.SettingsHelper;
+import com.sony.sel.tvapp.util.VodCachingTask;
 import com.squareup.otto.Subscribe;
-
-import java.util.List;
 
 import butterknife.ButterKnife;
 
@@ -49,13 +48,35 @@ public class MainActivity extends BaseActivity {
   /// long timeout allows time for more viewing/longer processes but still times out eventually
   public static final long HIDE_UI_TIMEOUT_LONG = 30000;
 
-  private Handler handler = new Handler();
-  private Runnable runnable = new Runnable() {
+
+  private DlnaInterface dlnaHelper;
+  private DlnaCache dlnaCache;
+  private SettingsHelper settingsHelper;
+
+  private final Handler handler = new Handler();
+  private Runnable hideUiRunnable = new Runnable() {
     @Override
     public void run() {
       hideUi();
     }
   };
+  private final Runnable epgCachingRunnable = new Runnable() {
+    @Override
+    public void run() {
+      epgCachingTask = new EpgCachingTask(dlnaHelper, dlnaCache, settingsHelper.getEpgServer());
+      epgCachingTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    }
+  };
+  private EpgCachingTask epgCachingTask;
+  private Runnable vodCachingRunnable = new Runnable() {
+    @Override
+    public void run() {
+      vodCachingTask = new VodCachingTask(dlnaHelper, settingsHelper.getEpgServer());
+      vodCachingTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    }
+  };
+  private VodCachingTask vodCachingTask;
+
 
   @Override
   protected void onPause() {
@@ -68,13 +89,20 @@ public class MainActivity extends BaseActivity {
     super.onDestroy();
     // stop the DLNA service on the way out
     DlnaHelper.getHelper(this).stopDlnaService();
+    // cancel caching in the background
+    cancelEpgCaching();
+    cancelVodCaching();
   }
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    String urn = SettingsHelper.getHelper(this).getEpgServer();
+    dlnaHelper = DlnaHelper.getHelper(this);
+    dlnaCache = DlnaHelper.getCache(this);
+    settingsHelper = SettingsHelper.getHelper(this);
+
+    String urn = settingsHelper.getEpgServer();
     if (urn == null) {
       // go to server selection
       startActivity(new Intent(this, SelectServerActivity.class));
@@ -87,20 +115,54 @@ public class MainActivity extends BaseActivity {
 
     initFragments();
 
-    // start caching VOD after a startup delay
-    new Handler().postDelayed(new Runnable() {
-      @Override
-      public void run() {
-        new CacheVodTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-      }
-    }, 10000);
+    // start caching EPG right away
+    startEpgCaching(0);
 
+    // start caching VOD after 1 minute
+    startVodCaching(60000);
+  }
+
+  private void startVodCaching(long delay) {
+    // cancel any caching in progress
+    cancelVodCaching();
+    // start new caching task
+    handler.postDelayed(vodCachingRunnable, delay);
+  }
+
+  private void cancelVodCaching() {
+    handler.removeCallbacks(vodCachingRunnable);
+    if (vodCachingTask != null) {
+      vodCachingTask.cancel(true);
+      vodCachingTask = null;
+    }
+  }
+
+  private void startEpgCaching(long delay) {
+    // cancel any caching in progress
+    cancelEpgCaching();
+    // start new caching task
+    handler.postDelayed(epgCachingRunnable, delay);
+  }
+
+  private void cancelEpgCaching() {
+    handler.removeCallbacks(epgCachingRunnable);
+    if (epgCachingTask != null) {
+      epgCachingTask.cancel(true);
+      epgCachingTask = null;
+    }
   }
 
   @Override
   public void onVisibleBehindCanceled() {
     super.onVisibleBehindCanceled();
     videoFragment.onVisibleBehindCanceled();
+  }
+
+  @Subscribe
+  public void onServerChanged(EventBus.EpgServerChangedEvent event) {
+    // restart caching when server changes
+    startEpgCaching(0);
+    startVodCaching(0);
   }
 
   /**
@@ -316,8 +378,8 @@ public class MainActivity extends BaseActivity {
   }
 
   void resetUiTimer(long ms) {
-    handler.removeCallbacks(runnable);
-    handler.postDelayed(runnable, ms);
+    handler.removeCallbacks(hideUiRunnable);
+    handler.postDelayed(hideUiRunnable, ms);
   }
 
   @Subscribe
@@ -326,7 +388,7 @@ public class MainActivity extends BaseActivity {
   }
 
   void cancelUiTimer() {
-    handler.removeCallbacks(runnable);
+    handler.removeCallbacks(hideUiRunnable);
   }
 
   boolean isUiVisible() {
@@ -343,7 +405,7 @@ public class MainActivity extends BaseActivity {
     }
     transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
     transaction.commit();
-    handler.removeCallbacks(runnable);
+    handler.removeCallbacks(hideUiRunnable);
   }
 
   void showNavigation() {
@@ -368,28 +430,4 @@ public class MainActivity extends BaseActivity {
     resetUiTimer(HIDE_UI_TIMEOUT);
     channelInfoFragment.requestFocus();
   }
-
-  /**
-   * Task that browses the VOD directories to allow the DlnaHelper to cache them.
-   */
-  private class CacheVodTask extends AsyncTask<Void, Void, Void> {
-
-    private final String TAG = CacheVodTask.class.getSimpleName();
-
-    @Override
-    protected Void doInBackground(Void... params) {
-      DlnaInterface dlnaHelper = DlnaHelper.getHelper(getApplicationContext());
-      String udn = SettingsHelper.getHelper(getApplicationContext()).getEpgServer();
-      Log.d(TAG, "Caching VOD containers.");
-      List<DlnaObject> vodContainers = dlnaHelper.getChildren(udn, "0/VOD", DlnaObject.class, null, true);
-      for (DlnaObject container : vodContainers) {
-        Log.d(TAG, "Caching " + container.getId() + ".");
-        dlnaHelper.getChildren(udn, container.getId(), DlnaObject.class, null, true);
-      }
-      Log.d(TAG, "Finished caching VOD containers.");
-      return null;
-    }
-  }
-
-
 }

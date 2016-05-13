@@ -102,6 +102,14 @@ public class WebSocketServerTest extends InstrumentationTestCase {
     assertNotNull("Response was null.", response);
     assertTrue("Response was empty.", response.length() > 0);
 
+    SearchEpgCacheResponse responseData = new Gson().fromJson(response, SearchEpgCacheResponse.class);
+    assertNotNull("Programs list was null.",responseData.programs);
+    assertTrue("Programs list was empty.",responseData.programs.size() > 0);
+    assertNotNull("Channels list was null.",responseData.channels);
+    assertTrue("Channels list was empty.",responseData.channels.size() > 0);
+    assertNotNull("Favorites list was null.",responseData.favorites);
+    assertNotNull("Current channel was null.",responseData.currentChannel);
+
   }
 
   /**
