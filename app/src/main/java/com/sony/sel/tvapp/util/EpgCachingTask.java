@@ -126,29 +126,20 @@ public class EpgCachingTask extends AsyncTask<Void, Void, Void> {
 
       List<String> idList = new ArrayList<>();
       idList.add(channelId);
-      int cacheCount = dlnaCache.countEpgItems(
-          udn,
-          idList,
-          start,
-          end
-      );
-      if (cacheCount > 0) {
-        Log.d(TAG, "EPG data already cached (" + cacheCount + " items) for channel " + channelId + " " + day + ".");
-        programCount += cacheCount;
-      } else {
-        Log.d(TAG, "Caching EPG data for channel " + channelId + " " + day + ".");
 
-        // get container
-        String parentId = "0/EPG/" + channelId + "/" + day;
+      Log.d(TAG, "Caching EPG data for channel " + channelId + " " + day + ".");
 
-        // get EPG data from server
-        List<VideoProgram> programs = dlnaHelper.getChildren(udn, parentId, VideoProgram.class, null, false);
-        programCount += programs.size();
+      // get container
+      String parentId = "0/EPG/" + channelId + "/" + day;
 
-        if (isCancelled()) {
-          return programCount;
-        }
+      // get EPG data from server
+      List<VideoProgram> programs = dlnaHelper.getChildren(udn, parentId, VideoProgram.class, null, false);
+      programCount += programs.size();
+
+      if (isCancelled()) {
+        return programCount;
       }
+
     }
     return programCount;
   }

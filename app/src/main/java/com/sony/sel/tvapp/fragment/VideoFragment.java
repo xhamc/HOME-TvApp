@@ -31,6 +31,7 @@ import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.activity.MainActivity;
 import com.sony.sel.tvapp.activity.SelectChannelVideosActivity;
 import com.sony.sel.tvapp.util.DlnaHelper;
+import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.EventBus.ChannelChangedEvent;
 import com.sony.sel.tvapp.util.EventBus.PlayVodEvent;
 import com.sony.sel.tvapp.util.PrepareVideoTask;
@@ -122,6 +123,9 @@ public class VideoFragment extends BaseFragment {
   private final static int INVOKE_ID_SET_SPEED_FLOAT = 100;
   private final static String IMEDIA_PLAYER = "android.media.IMediaPlayer";
 
+  private SettingsHelper settingsHelper;
+  private DlnaInterface dlnaHelper;
+
   @Nullable
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -129,6 +133,9 @@ public class VideoFragment extends BaseFragment {
     // inflate view
     View contentView = inflater.inflate(R.layout.video_fragment, null);
     ButterKnife.bind(this, contentView);
+
+    settingsHelper = SettingsHelper.getHelper(getActivity());
+    dlnaHelper = DlnaHelper.getHelper(getActivity());
 
     // create media session
     createMediaSession();
@@ -143,7 +150,6 @@ public class VideoFragment extends BaseFragment {
   public void onPause() {
     super.onPause();
     if (mediaPlayer != null) {
-      wasPlaying = mediaPlayer.isPlaying();
       // Argument equals true to notify the system that the activity
       // wishes to be visible behind other translucent activities
       if (!getActivity().requestVisibleBehind(true)) {
@@ -164,9 +170,9 @@ public class VideoFragment extends BaseFragment {
   @Override
   public void onResume() {
     super.onResume();
-    if (mediaPlayer != null && wasPlaying) {
+    if (wasPlaying && videoUri != null) {
       // resume play
-      play();
+      play(videoUri);
     }
   }
 
@@ -315,6 +321,8 @@ public class VideoFragment extends BaseFragment {
   public void stop() {
     if (mediaPlayer != null) {
       Log.d(TAG, "Stopping and releasing video.");
+      wasPlaying = mediaPlayer.isPlaying();
+      settingsHelper.saveVideoPosition(videoUri.toString(), mediaPlayer.getCurrentPosition());
       mediaPlayer.release();
       mediaPlayer = null;
       updateMediaPlaybackState();
@@ -330,6 +338,33 @@ public class VideoFragment extends BaseFragment {
       hideSpinner();
     }
   }
+
+  /**
+   * Seek to a specific playback position.
+   *
+   * @param position Position to seek to.
+   */
+  private void seekTo(int position, final boolean playAfterSeek) {
+    // show spinner if seek takes a while
+    showSpinner();
+    // set player to seek
+    mediaPlayer.seekTo(position);
+    // clear any saved seek position
+    seekPosition = -1;
+    // completion listener
+    mediaPlayer.setOnSeekCompleteListener(new MediaPlayer.OnSeekCompleteListener() {
+      @Override
+      public void onSeekComplete(MediaPlayer mp) {
+        hideSpinner();
+        showProgressBar(PROGRESS_UI_HIDE_DELAY);
+        startProgressUpdates();
+        if (playAfterSeek) {
+          mediaPlayer.start();
+        }
+      }
+    });
+  }
+
 
   /**
    * Process keyboard events for media seek. When seek buttons are held down, the
@@ -385,17 +420,7 @@ public class VideoFragment extends BaseFragment {
             case KeyEvent.KEYCODE_MEDIA_SKIP_BACKWARD:
             case KeyEvent.KEYCODE_MEDIA_STEP_BACKWARD:
               // initiate a seek to the current position on key release
-              showSpinner();
-              mediaPlayer.seekTo((int) (seekPosition - mediaProgress.getData().getStartTime().getTime()));
-              seekPosition = -1;
-              mediaPlayer.setOnSeekCompleteListener(new MediaPlayer.OnSeekCompleteListener() {
-                @Override
-                public void onSeekComplete(MediaPlayer mp) {
-                  hideSpinner();
-                  showProgressBar(PROGRESS_UI_HIDE_DELAY);
-                  startProgressUpdates();
-                }
-              });
+              seekTo((int) (seekPosition - mediaProgress.getData().getStartTime().getTime()), false);
               break;
           }
       }
@@ -572,7 +597,7 @@ public class VideoFragment extends BaseFragment {
     // update metadata for media session
     updateMediaMetadata();
 
-    if (SettingsHelper.getHelper(getActivity()).useChannelVideosSetting()) {
+    if (settingsHelper.useChannelVideosSetting()) {
       // play actual channel video
       final String res = currentChannel.getResource();
       if (res != null) {
@@ -654,7 +679,7 @@ public class VideoFragment extends BaseFragment {
       });
     }
 
-    if (SettingsHelper.getHelper(getActivity()).useChannelVideosSetting()) {
+    if (settingsHelper.useChannelVideosSetting()) {
       // play actual VOD item
       play(Uri.parse(currentVod.getResource()));
     } else {
@@ -667,7 +692,7 @@ public class VideoFragment extends BaseFragment {
    * Play a random placeholder video from the "channel videos list" in app settings.
    */
   private void playPlaceholderVideo() {
-    List<VideoItem> videos = SettingsHelper.getHelper(getActivity()).getChannelVideos();
+    List<VideoItem> videos = settingsHelper.getChannelVideos();
     if (videos.size() > 0) {
       // select a random video to play
       VideoItem video = videos.get(Math.abs(new Random().nextInt()) % videos.size());
@@ -676,7 +701,7 @@ public class VideoFragment extends BaseFragment {
         Log.d(TAG, "Changing video channel to " + res + ".");
         playChannelVideo(Uri.parse(res), CHANNEL_START_DELAY);
       }
-    } else if (SettingsHelper.getHelper(getActivity()).useChannelVideosSetting() == false) {
+    } else if (settingsHelper.useChannelVideosSetting() == false) {
       // show a dialog so the user can pick some videos
       new AlertDialog.Builder(getActivity())
           .setTitle(R.string.error)
@@ -846,14 +871,15 @@ public class VideoFragment extends BaseFragment {
     @Override
     protected void onPostExecute(MediaPlayer mediaPlayer) {
       super.onPostExecute(mediaPlayer);
-      hideSpinner();
       Throwable error = getError();
       Uri uri = getUri();
       if (isInBackground()) {
         // can't play in background, video surface will not be valid
         Log.e(TAG, "Activity went to background while preparing.");
+        hideSpinner();
         return;
       } else if (error != null) {
+        hideSpinner();
         Log.e(TAG, "Error starting video playback: " + error);
         new AlertDialog.Builder(getActivity())
             .setTitle(R.string.error)
@@ -868,6 +894,7 @@ public class VideoFragment extends BaseFragment {
             .create()
             .show();
       } else if (mediaPlayer == null) {
+        hideSpinner();
         new AlertDialog.Builder(getActivity())
             .setTitle(R.string.error)
             .setMessage("Error starting video: " + uri + "." + (error != null ? "\n\n" + error : ""))
@@ -882,13 +909,20 @@ public class VideoFragment extends BaseFragment {
             .show();
       } else {
         Log.d(TAG, "Starting playback.");
+        VideoFragment.this.mediaPlayer = mediaPlayer;
         mediaPlayer.setDisplay(surfaceHolder);
         mediaPlayer.setScreenOnWhilePlaying(true);
-        mediaPlayer.start();
-        VideoFragment.this.mediaPlayer = mediaPlayer;
         videoUri = uri;
         playVideoTask = null;
         mediaSession.setActive(true);
+        int position = settingsHelper.getVideoPosition(uri.toString());
+        if (position > 0) {
+          Log.d(TAG, "Resuming play at position " + position + ".");
+          seekTo(position, true);
+        } else {
+          hideSpinner();
+          mediaPlayer.start();
+        }
         updateMediaPlaybackState();
         updateProgressBar();
         showProgressBar(PROGRESS_UI_HIDE_DELAY);
@@ -1078,8 +1112,8 @@ public class VideoFragment extends BaseFragment {
 
     @Override
     protected VideoProgram doInBackground(Void... params) {
-      return DlnaHelper.getHelper(getActivity()).getCurrentEpgProgram(
-          SettingsHelper.getHelper(getActivity()).getEpgServer(),
+      return dlnaHelper.getCurrentEpgProgram(
+          settingsHelper.getEpgServer(),
           currentChannel
       );
     }

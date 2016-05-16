@@ -199,9 +199,11 @@ public class ClingDlnaHelper extends BaseDlnaHelper {
   public <T extends DlnaObject> List<T> getChildren(String udn, String parentId, final Class<T> childClass, @Nullable ContentObserver contentObserver, boolean useCache) {
 
     // check for cached data
-    List<DlnaObject> cachedChildren = DlnaHelper.getCache(getContext()).getChildren(udn, parentId);
-    if (cachedChildren != null) {
-      return (List<T>) cachedChildren;
+    if (useCache == true) {
+      List<DlnaObject> cachedChildren = DlnaHelper.getCache(getContext()).getChildren(udn, parentId);
+      if (cachedChildren != null) {
+        return (List<T>) cachedChildren;
+      }
     }
 
 

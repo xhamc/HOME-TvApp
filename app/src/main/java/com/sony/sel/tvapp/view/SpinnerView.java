@@ -48,12 +48,12 @@ public class SpinnerView extends ImageView {
   public void show() {
     setAlpha(0f);
     setVisibility(View.VISIBLE);
-    animate().alpha(1.0f).setDuration(1000).start();
+    animate().alpha(1.0f).setDuration(500).start();
     startAnimation(animation);
   }
 
   public void hide() {
-    animate().alpha(0f).setDuration(1000).start();
+    animate().alpha(0f).setDuration(500).start();
   }
 
   public void spin() {

@@ -1,13 +1,17 @@
 package com.sony.sel.tvapp.util;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static com.sony.sel.tvapp.util.DlnaObjects.VideoItem;
@@ -25,9 +29,11 @@ public class SettingsHelper {
   private static final String RECORD_PROGRAMS = "RecordPrograms";
   private static final String RECORD_SERIES = "RecordSeries";
   private static final String USE_CHANNEL_VIDEO = "UseChannelVideo";
+  private static final String VIDEO_POSITIONS = "VideoPositions";
 
   private static SettingsHelper INSTANCE;
   private List<VideoItem> channelVideos;
+  private Map<String, Integer> videoPositions;
 
   private static final String[] DEFAULT_CHANNEL_VIDEOS = null; // { "file:///sdcard/Movies/tvapp.mp4" };
 
@@ -146,14 +152,14 @@ public class SettingsHelper {
     setToChannelVideoSetting(false);
   }
 
-  public void setToChannelVideoSetting(boolean condition){
+  public void setToChannelVideoSetting(boolean condition) {
     SharedPreferences prefs = getSharedPreferences();
     SharedPreferences.Editor editor = prefs.edit();
     editor.putBoolean(USE_CHANNEL_VIDEO, condition);
     editor.commit();
   }
 
-  public boolean useChannelVideosSetting(){
+  public boolean useChannelVideosSetting() {
     return getSharedPreferences().getBoolean(USE_CHANNEL_VIDEO, false);
   }
 
@@ -228,4 +234,42 @@ public class SettingsHelper {
     editor.commit();
     EventBus.getInstance().post(new EventBus.RecordingsChangedEvent());
   }
+
+  public int getVideoPosition(String uri) {
+    Map<String, Integer> positions = getVideoPositions();
+    if (positions.containsKey(uri)) {
+      return positions.get(uri);
+    } else {
+      return 0;
+    }
+  }
+
+  public void saveVideoPosition(String uri, int position) {
+    Map<String, Integer> positions = getVideoPositions();
+    positions.put(uri, position);
+    saveVideoPositions(positions);
+  }
+
+  private Map<String, Integer> getVideoPositions() {
+    if (videoPositions == null) {
+      String json = getSharedPreferences().getString(VIDEO_POSITIONS, null);
+      if (json == null) {
+        videoPositions = new HashMap<>();
+      } else {
+        videoPositions = new Gson().fromJson(json, new TypeToken<Map<String, Integer>>() {
+        }.getType());
+      }
+    }
+    return videoPositions;
+  }
+
+  private void saveVideoPositions(Map<String, Integer> positions) {
+    videoPositions = positions;
+    SharedPreferences prefs = getSharedPreferences();
+    SharedPreferences.Editor editor = prefs.edit();
+    editor.putString(VIDEO_POSITIONS, new Gson().toJson(positions));
+    editor.commit();
+  }
+
+
 }
