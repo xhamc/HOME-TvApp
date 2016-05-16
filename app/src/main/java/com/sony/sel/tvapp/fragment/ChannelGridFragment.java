@@ -14,15 +14,20 @@ import android.view.ViewGroup;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.adapter.TvAppAdapter;
+import com.sony.sel.tvapp.util.DlnaCache;
 import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.DlnaObjects;
 import com.sony.sel.tvapp.util.DlnaObjects.VideoBroadcast;
+import com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.sony.sel.tvapp.view.ChannelCell;
 import com.sony.sel.util.ViewUtils;
 
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Fragment for displaying the grid of available channels.
@@ -40,6 +45,8 @@ public class ChannelGridFragment extends BaseFragment {
   private VideoBroadcast currentChannel;
   private boolean currentChannelFocused;
 
+  private Map<String, VideoProgram> epgData = new HashMap<>();
+
   @Nullable
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -52,6 +59,7 @@ public class ChannelGridFragment extends BaseFragment {
     grid.setAdapter(adapter);
 
     getChannels();
+    getEpg();
 
     return contentView;
   }
@@ -94,6 +102,10 @@ public class ChannelGridFragment extends BaseFragment {
           // focus the first channel in the list
           channelCell.requestFocus();
         }
+        if (epgData.containsKey(channelCell.getData().getChannelId())) {
+          // bind current EPG data to the channel cell
+          channelCell.setEpg(epgData.get(channelCell.getData().getChannelId()));
+        }
       }
     }
   }
@@ -109,12 +121,21 @@ public class ChannelGridFragment extends BaseFragment {
     ).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
   }
 
+  private void getEpg() {
+    new GetEpgTask(
+        SettingsHelper.getHelper(getActivity()).getEpgServer(),
+        DlnaHelper.getCache(getActivity())
+    ).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+  }
+
   @Override
   public void onHiddenChanged(boolean hidden) {
     super.onHiddenChanged(hidden);
     if (!hidden) {
-      // reload channels when re-showing
+      // reload channels and EPG when re-showing
       getChannels();
+      getEpg();
     }
   }
 
@@ -154,6 +175,35 @@ public class ChannelGridFragment extends BaseFragment {
       super.onPostExecute(channels);
       layoutManager.setSpanCount(COLUMN_COUNT);
       adapter.setData(channels);
+    }
+  }
+
+  private class GetEpgTask extends AsyncTask<Void, Void, List<VideoProgram>> {
+    private final String udn;
+    private final DlnaCache dlnaCache;
+
+    public GetEpgTask(String udn, DlnaCache dlnaCache) {
+      this.udn = udn;
+      this.dlnaCache = dlnaCache;
+    }
+
+    @Override
+    protected List<VideoProgram> doInBackground(Void... params) {
+      return dlnaCache.searchEpg(
+          udn,
+          null,
+          new Date(),
+          new Date()
+      );
+    }
+
+    @Override
+    protected void onPostExecute(List<VideoProgram> videoPrograms) {
+      super.onPostExecute(videoPrograms);
+      for (VideoProgram program : videoPrograms) {
+        epgData.put(program.getChannelId(), program);
+        adapter.notifyDataSetChanged();
+      }
     }
   }
 }

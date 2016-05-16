@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -95,36 +96,44 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
     new Thread(new Runnable() {
       @Override
       public void run() {
-        // delete any existing cached children at this parent
-        db.delete(
-            "DlnaObjects",
-            "UDN = '" + udn + "' AND ParentID = '" + parentID + "'",
-            null
-        );
-        // insert new child records
-        Gson gson = new Gson();
-        int childIndex = 0;
-        for (DlnaObject child : children) {
-          ContentValues values = new ContentValues();
-          values.put("UDN", udn);
-          values.put("ParentID", parentID);
-          values.put("ID", child.getId());
-          values.put("Title", child.getTitle());
-          values.put("UPNPClass", child.getUpnpClass());
-          values.put("JSON", gson.toJson(child));
-          values.put("ChildIndex", childIndex++);
-          if (child instanceof VideoProgram) {
-            // save EPG-specific fields
-            VideoProgram videoProgram = (VideoProgram) child;
-            values.put("ScheduledStartTime", videoProgram.getScheduledStartTime().getTime());
-            values.put("ScheduledEndTime", videoProgram.getScheduledEndTime().getTime());
-            values.put("ChannelID", videoProgram.getChannelId());
-          }
-          db.insert(
+        try {
+          // delete any existing cached children at this parent
+          int deleted = db.delete(
               "DLNAObjects",
-              null,
-              values
+              "UDN = ? AND ParentID = ?",
+              new String[]{udn, parentID}
           );
+          if (deleted > 0) {
+            Log.d(TAG, String.format("%d items deleted in cache before update.", deleted));
+          }
+          // insert new child records
+          Gson gson = new Gson();
+          int childIndex = 0;
+          for (DlnaObject child : children) {
+            ContentValues values = new ContentValues();
+            values.put("UDN", udn);
+            values.put("ParentID", parentID);
+            values.put("ID", child.getId());
+            values.put("Title", child.getTitle());
+            values.put("UPNPClass", child.getUpnpClass());
+            values.put("JSON", gson.toJson(child));
+            values.put("ChildIndex", childIndex++);
+            if (child instanceof VideoProgram) {
+              // save EPG-specific fields
+              VideoProgram videoProgram = (VideoProgram) child;
+              values.put("ScheduledStartTime", videoProgram.getScheduledStartTime().getTime());
+              values.put("ScheduledEndTime", videoProgram.getScheduledEndTime().getTime());
+              values.put("ChannelID", videoProgram.getChannelId());
+            }
+            db.insert(
+                "DLNAObjects",
+                null,
+                values
+            );
+          }
+          Log.d(TAG, String.format("%d items added to cache.", children.size()));
+        } catch (SQLiteException error) {
+          Log.e(TAG, "Error adding children to cache. udn = " + udn + " parent = " + parentID + " error = " + error);
         }
       }
     }).start();
@@ -177,26 +186,28 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
     }
   }
 
-  private Cursor getEpgItems(@NonNull String udn, @NonNull List<String> channels, @NonNull Date startDateTime, @NonNull Date endDateTime) {
+  private Cursor getEpgItems(@NonNull String udn, @Nullable List<String> channels, @NonNull Date startDateTime, @NonNull Date endDateTime) {
     // build channel list string for sql statement
     StringBuilder channelsString = new StringBuilder();
-    for (String channel : channels) {
-      if (channelsString.length() > 0) {
-        channelsString.append(", ");
+    if (channels != null) {
+      for (String channel : channels) {
+        if (channelsString.length() > 0) {
+          channelsString.append(", ");
+        }
+        channelsString.append("'" + channel + "'");
       }
-      channelsString.append("'" + channel + "'");
     }
 
     DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
     format.setTimeZone(TimeZone.getTimeZone("UTC"));
-    Log.d(TAG, "Find EPG items from " + format.format(startDateTime) + " to " + format.format(endDateTime) + " in channels " + new Gson().toJson(channels) + ".");
+    Log.d(TAG, "Find EPG items from " + format.format(startDateTime) + " to " + format.format(endDateTime) + (channels != null ? " in channels " + new Gson().toJson(channels) : "") + ".");
 
     // build query
     return db.query(
         "DLNAObjects",
         new String[]{"UPNPClass", "JSON"},
         "UDN = '" + udn + "'"
-            + " AND ChannelID IN (" + channelsString.toString() + ")"
+            + (channels != null ? " AND ChannelID IN (" + channelsString.toString() + ")" : "")
             + " AND ScheduledStartTime <= " + endDateTime.getTime()
             + " AND ScheduledEndTime > " + startDateTime.getTime(),
         null,
