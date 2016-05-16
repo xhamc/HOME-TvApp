@@ -170,7 +170,7 @@ public class VideoFragment extends BaseFragment {
   @Override
   public void onResume() {
     super.onResume();
-    if (wasPlaying && videoUri != null) {
+    if (wasPlaying && mediaPlayer == null && videoUri != null) {
       // resume play
       play(videoUri);
     }
