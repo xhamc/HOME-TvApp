@@ -170,7 +170,7 @@ public class ChannelGridFragment extends BaseFragment {
 
     @Override
     protected List<VideoBroadcast> doInBackground(Void... params) {
-      return helper.getChannels(udn, channelObserver);
+      return helper.getChannels(udn, channelObserver, true);
     }
 
     @Override

@@ -34,9 +34,9 @@ public abstract class BaseDlnaHelper implements DlnaInterface {
 
   @NonNull
   @Override
-  public List<DlnaObjects.VideoBroadcast> getChannels(@NonNull String udn, @Nullable ContentObserver contentObserver) {
+  public List<DlnaObjects.VideoBroadcast> getChannels(@NonNull String udn, @Nullable ContentObserver contentObserver, boolean useCache) {
     channelObserver = contentObserver;
-    List<DlnaObjects.VideoBroadcast> channels = getChildren(udn, "0/Channels", DlnaObjects.VideoBroadcast.class, contentObserver, false);
+    List<DlnaObjects.VideoBroadcast> channels = getChildren(udn, "0/Channels", DlnaObjects.VideoBroadcast.class, contentObserver, useCache);
     final Set<String> favoriteChannels = SettingsHelper.getHelper(getContext()).getFavoriteChannels();
     Collections.sort(channels, new Comparator<DlnaObjects.VideoBroadcast>() {
       @Override

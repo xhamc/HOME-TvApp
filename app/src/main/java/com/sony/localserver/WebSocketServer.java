@@ -156,7 +156,7 @@ public class WebSocketServer extends NanoWSD {
       } else if (payload.startsWith("changeChannel:")) {
         // send channel change event
         String channelId = payload.split(":")[1];
-        List<VideoBroadcast> channels = dlnaHelper.getChannels(udn, null);
+        List<VideoBroadcast> channels = dlnaHelper.getChannels(udn, null, true);
         for (final VideoBroadcast channel : channels) {
           if (channel.getChannelId().equals(channelId)) {
             new Handler(Looper.getMainLooper()).post(new Runnable() {
@@ -299,7 +299,7 @@ public class WebSocketServer extends NanoWSD {
      * @return
      */
     private List<String> getChannelIds() {
-      List<VideoBroadcast> channels = dlnaHelper.getChannels(udn, null);
+      List<VideoBroadcast> channels = dlnaHelper.getChannels(udn, null, true);
       List<String> channelIds = new ArrayList<>();
       for (VideoBroadcast channel : channels) {
         channelIds.add(channel.getChannelId());
@@ -317,7 +317,7 @@ public class WebSocketServer extends NanoWSD {
       // build response
       ChannelResponse response = new ChannelResponse(
           settingsHelper.getFavoriteChannels(),
-          dlnaHelper.getChannels(udn, null),
+          dlnaHelper.getChannels(udn, null, true),
           settingsHelper.getCurrentChannel().getChannelId()
       );
 

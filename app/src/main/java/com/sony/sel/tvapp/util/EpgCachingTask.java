@@ -41,7 +41,7 @@ public class EpgCachingTask extends AsyncTask<Void, Void, Void> {
 
     Log.d(TAG, "Start caching EPG for server " + udn + ".");
 
-    List<VideoBroadcast> channels = dlnaHelper.getChannels(udn, null);
+    List<VideoBroadcast> channels = dlnaHelper.getChannels(udn, null, true);
     if (channels.size() == 0) {
       Log.e(TAG, "No channels found.");
       return null;

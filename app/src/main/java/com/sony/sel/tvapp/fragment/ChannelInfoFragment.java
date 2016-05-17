@@ -96,7 +96,7 @@ public class ChannelInfoFragment extends BaseFragment {
   @Subscribe
   public void onFavoriteChannelsChanged(EventBus.FavoriteChannelsChangedEvent event) {
     // refresh the channel list
-    this.channels = dlnaHelper.getChannels(settingsHelper.getEpgServer(), null);
+    this.channels = dlnaHelper.getChannels(settingsHelper.getEpgServer(), null, true);
   }
 
   /**
@@ -227,7 +227,7 @@ public class ChannelInfoFragment extends BaseFragment {
     @Override
     protected List<VideoBroadcast> doInBackground(Void... params) {
       // get channels and register observer for future changes
-      return dlnaHelper.getChannels(udn, channelObserver);
+      return dlnaHelper.getChannels(udn, channelObserver, true);
     }
 
     @Override

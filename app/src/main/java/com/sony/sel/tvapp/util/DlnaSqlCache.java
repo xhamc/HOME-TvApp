@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -18,7 +19,9 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 
 /**
@@ -46,6 +49,7 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
       ");";
 
   SQLiteDatabase db;
+  Map<String, SaveToCacheTask> cachingTasks = new HashMap<>();
 
   DlnaSqlCache(Context context) {
     super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -56,6 +60,7 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
   @Nullable
   @Override
   public <T extends DlnaObject> List<T> getChildren(String udn, String parentId) {
+    waitForCache(udn, parentId);
     // query the cache
     Cursor cursor = db.query(
         "DLNAObjects",
@@ -92,51 +97,18 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
 
   @Override
   public void add(final String udn, final String parentID, final List<DlnaObject> children) {
-    // perform caching on a separate thread so we can return quickly
-    new Thread(new Runnable() {
-      @Override
-      public void run() {
-        try {
-          // delete any existing cached children at this parent
-          int deleted = db.delete(
-              "DLNAObjects",
-              "UDN = ? AND ParentID = ?",
-              new String[]{udn, parentID}
-          );
-          if (deleted > 0) {
-            Log.d(TAG, String.format("%d items deleted in cache before update.", deleted));
-          }
-          // insert new child records
-          Gson gson = new Gson();
-          int childIndex = 0;
-          for (DlnaObject child : children) {
-            ContentValues values = new ContentValues();
-            values.put("UDN", udn);
-            values.put("ParentID", parentID);
-            values.put("ID", child.getId());
-            values.put("Title", child.getTitle());
-            values.put("UPNPClass", child.getUpnpClass());
-            values.put("JSON", gson.toJson(child));
-            values.put("ChildIndex", childIndex++);
-            if (child instanceof VideoProgram) {
-              // save EPG-specific fields
-              VideoProgram videoProgram = (VideoProgram) child;
-              values.put("ScheduledStartTime", videoProgram.getScheduledStartTime().getTime());
-              values.put("ScheduledEndTime", videoProgram.getScheduledEndTime().getTime());
-              values.put("ChannelID", videoProgram.getChannelId());
-            }
-            db.insert(
-                "DLNAObjects",
-                null,
-                values
-            );
-          }
-          Log.d(TAG, String.format("%d items added to cache.", children.size()));
-        } catch (SQLiteException error) {
-          Log.e(TAG, "Error adding children to cache. udn = " + udn + " parent = " + parentID + " error = " + error);
-        }
+    String key = udn + "/" + parentID;
+    synchronized (cachingTasks) {
+      if (cachingTasks.containsKey(key)) {
+        // already in process of caching
+        return;
       }
-    }).start();
+    }
+    SaveToCacheTask task = new SaveToCacheTask(udn, parentID, children);
+    synchronized (cachingTasks) {
+      cachingTasks.put(udn + "/" + parentID, task);
+    }
+    task.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR);
   }
 
   @Override
@@ -231,5 +203,85 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
   @Override
   public void reset() {
     this.onUpgrade(db, db.getVersion(), DATABASE_VERSION);
+  }
+
+
+  private void waitForCache(String udn, String parentId) {
+    String key = udn + "/" + parentId;
+    if (cachingTasks.containsKey(key)) {
+      SaveToCacheTask task = cachingTasks.get(key);
+      synchronized (task) {
+        Log.d(TAG, "Waiting for caching task to complete.");
+        try {
+          task.wait();
+          Log.d(TAG, "Caching task completed, continuing.");
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+    }
+  }
+
+  private class SaveToCacheTask extends AsyncTask<Void, Void, Void> {
+
+    private final String udn;
+    private final String parentID;
+    private final List<DlnaObject> children;
+
+    public SaveToCacheTask(String udn, String parentID, List<DlnaObject> children) {
+      this.udn = udn;
+      this.parentID = parentID;
+      this.children = children;
+    }
+
+    @Override
+    protected Void doInBackground(Void... params) {
+      try {
+        // delete any existing cached children at this parent
+        int deleted = db.delete(
+            "DLNAObjects",
+            "UDN = ? AND ParentID = ?",
+            new String[]{udn, parentID}
+        );
+        if (deleted > 0) {
+          Log.d(TAG, String.format("%d items deleted in cache before update.", deleted));
+        }
+        // insert new child records
+        Gson gson = new Gson();
+        int childIndex = 0;
+        synchronized (this) {
+          for (DlnaObject child : children) {
+            ContentValues values = new ContentValues();
+            values.put("UDN", udn);
+            values.put("ParentID", parentID);
+            values.put("ID", child.getId());
+            values.put("Title", child.getTitle());
+            values.put("UPNPClass", child.getUpnpClass());
+            values.put("JSON", gson.toJson(child));
+            values.put("ChildIndex", childIndex++);
+            if (child instanceof VideoProgram) {
+              // save EPG-specific fields
+              VideoProgram videoProgram = (VideoProgram) child;
+              values.put("ScheduledStartTime", videoProgram.getScheduledStartTime().getTime());
+              values.put("ScheduledEndTime", videoProgram.getScheduledEndTime().getTime());
+              values.put("ChannelID", videoProgram.getChannelId());
+            }
+            db.insert(
+                "DLNAObjects",
+                null,
+                values
+            );
+          }
+          notifyAll();
+        }
+        Log.d(TAG, String.format("%d items added to cache.", children.size()));
+      } catch (SQLiteException error) {
+        Log.e(TAG, "Error adding children to cache. udn = " + udn + " parent = " + parentID + " error = " + error);
+      }
+      synchronized (cachingTasks) {
+        cachingTasks.remove(udn + "/" + parentID);
+      }
+      return null;
+    }
   }
 }

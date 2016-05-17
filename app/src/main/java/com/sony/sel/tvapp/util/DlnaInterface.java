@@ -105,11 +105,12 @@ public interface DlnaInterface {
    *
    * @param udn             Device UDN.
    * @param contentObserver Observer to receive notification of list changes.
+   * @param useCache        Use cached channels if available?
    * @return The list of channels, or empty list if none are found, or an error.
    */
   @NonNull
   List<DlnaObjects.VideoBroadcast> getChannels(@NonNull String udn, @Nullable ContentObserver
-      contentObserver);
+      contentObserver, boolean useCache);
 
   /**
    * Return the current EPG program on a given channel.

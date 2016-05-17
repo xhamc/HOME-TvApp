@@ -72,7 +72,7 @@ public class WebSocketServerTest extends InstrumentationTestCase {
     calendar.add(Calendar.HOUR_OF_DAY, 1);
     Date end = calendar.getTime();
 
-    List<DlnaObjects.VideoBroadcast> channels = dlnaHelper.getChannels(settingsHelper.getEpgServer(), null);
+    List<DlnaObjects.VideoBroadcast> channels = dlnaHelper.getChannels(settingsHelper.getEpgServer(), null, true);
     assertTrue("No channels returned from server.", channels.size() > 0);
     Log.d(TAG, String.format("%d channels found.", channels.size()));
     List<String> channelIds = new ArrayList<>();

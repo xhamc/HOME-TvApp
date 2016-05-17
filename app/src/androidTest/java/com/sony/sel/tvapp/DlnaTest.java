@@ -39,7 +39,7 @@ public class DlnaTest extends InstrumentationTestCase {
     calendar.add(Calendar.HOUR_OF_DAY, 24);
     Date end = calendar.getTime();
 
-    List<VideoBroadcast> channels = dlnaHelper.getChannels(udn, null);
+    List<VideoBroadcast> channels = dlnaHelper.getChannels(udn, null, true);
     assertTrue("No channels returned from server.", channels.size() > 0);
     Log.d(TAG, String.format("%d channels found.", channels.size()));
 
