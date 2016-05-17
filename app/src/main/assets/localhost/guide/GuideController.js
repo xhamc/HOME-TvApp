@@ -10,6 +10,8 @@ function GuideController(){
 	stationDataAvailable=false;
 	epgDataAvailable=false;
 	favoritesAvailable=false;
+	currentChannelGridOffset=0;
+	gridTimeStart=0;
 
 //END GLOBALS
 	var GUIDE_FETCH_REQUEST_TIMER=1000;
@@ -26,7 +28,7 @@ function GuideController(){
     var ws=new WebsocketController(); if (!ws.supported) return;
     var gc=new GridController(ws);
 	var originalGridTimeStart=gc.initialize();
-	var MAXTTIME=2*24*3600*1000;	//start with 10 days of maximum data!
+	var MAXTTIME=10*24*3600*1000;	//start with 10 days of maximum data!
 
 	guideWebsocketControllerTimer(); //TODO switch to callbacks for efficiency
 	var waitTooLong=0;
@@ -207,57 +209,61 @@ function GuideController(){
 
 
 
-	var maxTimeLast=originalGridTimeStart+GRIDINTERVAL*10;
+	var maxTimeLast=originalGridTimeStart+2*GRIDINTERVAL*10;
 	function getNextTimeAndChannelList(){
 		var channelData=[];
 		var timeData=[];
-		console.log("updateTimeNext: "+updateTimeNext);
+		var end=gridTimeStart+GRIDINTERVAL*10;
+		var index=0;
 		var mxt=getTime().ms+MAXTTIME;
+		var start=mxt;
 		if (maxTimeLast>(getTime().ms+MAXTTIME)){
 			var jo={"CHANNELLIST":channelData, "TIMELIST":timeData};
 			return jo;
 		}
 
-		var numChannels=Math.min(5, (currentAvailableDataRange.length-updateChannelStart));
-		var start=mxt;
-		for (var i=0; i<numChannels; i++){
-			if (currentAvailableDataRange[i+updateChannelStart].endProgramStart<start){
-				start=parseInt( currentAvailableDataRange[i+updateChannelStart].endProgramStart );
+
+
+			var end=maxTimeLast;
+			console.log("Update by visible channels NOT");
+			var numChannels=Math.min(5, (currentAvailableDataRange.length-updateChannelStart));
+
+			for (var i=0; i<numChannels; i++){
+				if (currentAvailableDataRange[i+updateChannelStart].endProgramStart<start){
+					start=parseInt( currentAvailableDataRange[i+updateChannelStart].endProgramStart );
+				}
+				channelData[i]=STATION_DATA[CHANNELLIST_DATA[i+updateChannelStart]].channelId;
+
 			}
-			channelData[i]=STATION_DATA[CHANNELLIST_DATA[i+updateChannelStart]].channelId;
+			var index=i;
 
-		}
-		var end=maxTimeLast;
-		timeData[0]=start;
-		timeData[1]=end;
+			for (var i=0; i<Math.min(5, (currentAvailableDataRange.length -	currentChannelGridOffset)); i++){
+					if ((i+currentChannelGridOffset)<updateChannelStart || (i+currentChannelGridOffset)>updateChannelStart+5){
+
+						if (currentAvailableDataRange[i+currentChannelGridOffset].endProgramStart<start){
+							start=currentAvailableDataRange[i+currentChannelGridOffset].endProgramStart;
+						}
+
+						if (currentAvailableDataRange[i+currentChannelGridOffset].endProgramStart<end){
+							channelData[index]=STATION_DATA[CHANNELLIST_DATA[i+currentChannelGridOffset]].channelId;
+							index++;
+						}
+					}
+			}
+
+			timeData[0]=start;
+			timeData[1]=end;
 
 
-		if ((updateChannelStart+5)>=currentAvailableDataRange.length){
-			updateChannelStart=0;
-			maxTimeLast+=GRIDINTERVAL*10;
-		}else{
-			updateChannelStart+=5;
-		}
-//
-//		if (updateTimeNext){
-//			maxTimeLast=end;
-//			if ((updateChannelStart+5)<currentAvailableDataRange.length && maxTimeLast<=MAXTTIME){
-//				updateTimeNext=!updateTimeNext;
-//				updateChannelStart+=5;
-//			}else if (maxTimeLast>MAXTTIME){
-//				return null;		//no more data. return null stops any more requests.
-//			}
-//		}else{
-//
-//			if (end>=maxTimeLast) {
-//				updateTimeNext=!updateTimeNext;
-//				if ((updateChannelStart+5)<currentAvailableDataRange.length){
-//					updateChannelStart+=5;
-//				}else{
-//					updateChannelStart=0;
-//				}
-//			}
-//		}
+			if ((updateChannelStart+5)>=currentAvailableDataRange.length){
+				updateChannelStart=0;
+				maxTimeLast+=GRIDINTERVAL*10;
+			}else{
+				updateChannelStart+=5;
+			}
+
+
+
 		var jo={"CHANNELLIST":channelData, "TIMELIST":timeData};
 
 		return jo;
