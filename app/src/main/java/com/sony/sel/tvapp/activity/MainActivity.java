@@ -115,11 +115,11 @@ public class MainActivity extends BaseActivity {
 
     initFragments();
 
-    // start caching EPG right away
-    startEpgCaching(0);
+    // start caching EPG 10 seconds after starting
+    startEpgCaching(10000);
 
-    // start caching VOD after 1 minute
-    startVodCaching(60000);
+    // start caching VOD 1 minute later
+    startVodCaching(70000);
   }
 
   private void startVodCaching(long delay) {

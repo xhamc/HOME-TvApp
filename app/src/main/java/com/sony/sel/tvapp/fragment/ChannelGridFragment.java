@@ -20,6 +20,7 @@ import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.DlnaObjects;
 import com.sony.sel.tvapp.util.DlnaObjects.VideoBroadcast;
 import com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
+import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.sony.sel.tvapp.view.ChannelCell;
 import com.sony.sel.util.ViewUtils;
@@ -60,6 +61,7 @@ public class ChannelGridFragment extends BaseFragment {
 
     getChannels();
     getEpg();
+    EventBus.getInstance().post(new EventBus.ResetUiTimerLongEvent());
 
     return contentView;
   }
@@ -136,6 +138,7 @@ public class ChannelGridFragment extends BaseFragment {
       // reload channels and EPG when re-showing
       getChannels();
       getEpg();
+      EventBus.getInstance().post(new EventBus.ResetUiTimerLongEvent());
     }
   }
 

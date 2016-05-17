@@ -361,6 +361,7 @@ public class VideoFragment extends BaseFragment {
         if (playAfterSeek) {
           mediaPlayer.start();
         }
+        updateMediaPlaybackState();
       }
     });
   }
@@ -1036,30 +1037,28 @@ public class VideoFragment extends BaseFragment {
     updateMediaPlaybackState();
     // update state of channel or program
     updateMediaMetadata();
-
-
   }
 
   /**
    * Update the playback state based on the current media player status.
    */
   private void updateMediaPlaybackState() {
-    if (mediaSession != null && mediaPlayer != null) {
+    if (mediaSession != null) {
       long position = PlaybackState.PLAYBACK_POSITION_UNKNOWN;
-      if (mediaPlayer.isPlaying()) {
+      if (mediaPlayer != null && mediaPlayer.isPlaying()) {
         position = mediaPlayer.getCurrentPosition();
       }
       PlaybackState.Builder stateBuilder = new PlaybackState.Builder()
           .setActions(
               PlaybackState.ACTION_PLAY_PAUSE
-                  | (mediaPlayer.isPlaying() ? PlaybackState.ACTION_PAUSE : PlaybackState.ACTION_PLAY)
+                  | (mediaPlayer != null && mediaPlayer.isPlaying() ? PlaybackState.ACTION_PAUSE : PlaybackState.ACTION_PLAY)
                   | PlaybackState.ACTION_PLAY_FROM_MEDIA_ID
                   | PlaybackState.ACTION_PLAY_FROM_SEARCH
                   | PlaybackState.ACTION_SKIP_TO_NEXT
                   | PlaybackState.ACTION_SKIP_TO_PREVIOUS
                   | PlaybackState.ACTION_STOP
           )
-          .setState(mediaPlayer != null ? mediaPlayer.isPlaying() ? PlaybackState.STATE_PLAYING : PlaybackState.STATE_PAUSED : PlaybackState.STATE_STOPPED, position, 1.0f);
+          .setState(mediaPlayer != null && mediaPlayer.isPlaying() ? PlaybackState.STATE_PLAYING : PlaybackState.STATE_PAUSED, position, 1.0f);
       mediaSession.setPlaybackState(stateBuilder.build());
     }
   }

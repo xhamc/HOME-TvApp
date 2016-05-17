@@ -157,6 +157,13 @@ public class ChannelCell extends BaseListCell<VideoBroadcast> {
       programTime.setText(time);
       programTime.setVisibility(View.VISIBLE);
 
+      // icon
+      if (epg.getIcon() != null) {
+        // use epg icon
+        icon.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        icon.setPadding(0, 0, 0, 0);
+        Picasso.with(getContext()).load(Uri.parse(epg.getIcon())).into(icon);
+      }
     }
   }
 
@@ -177,11 +184,13 @@ public class ChannelCell extends BaseListCell<VideoBroadcast> {
             settingsHelper.addFavoriteChannel(channel.getChannelId());
             // re-bind to update display
             bind(channel);
+            setEpg(epg);
             return true;
           case R.id.removeFromFavoriteChannels:
             settingsHelper.removeFavoriteChannel(channel.getChannelId());
             // re-bind to update display
             bind(channel);
+            setEpg(epg);
             return true;
         }
         return false;
@@ -201,6 +210,6 @@ public class ChannelCell extends BaseListCell<VideoBroadcast> {
   protected void onFocusChanged(boolean hasFocus, int direction, Rect previouslyFocusedRect) {
     super.onFocusChanged(hasFocus, direction, previouslyFocusedRect);
     // keep the UI alive
-    EventBus.getInstance().post(new EventBus.ResetUiTimerShortEvent());
+    EventBus.getInstance().post(new EventBus.ResetUiTimerLongEvent());
   }
 }
