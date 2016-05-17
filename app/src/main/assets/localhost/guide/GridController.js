@@ -14,10 +14,10 @@ function GridController(ws){
 	var width;
 	var height;
     var gridUpdateTimer;
-    var gridTimeStart=0;
+//    var gridTimeStart=0;
     var lastGridPoint=0;
     var midSelectionPoint;
-	var currentChannelGridOffset=0;
+//	var currentChannelGridOffset=0;
     var offScreenLastGridPoint=0;
     var currentProgramSelected;
     var originalGridTimeStart;
@@ -122,13 +122,13 @@ function GridController(ws){
 			ctx.stroke();
 			ctx.restore();
 			var date=displayTimeOnGrid.date.substring(0,displayTimeOnGrid.date.lastIndexOf(' '));
-			ctx.fillText (date, 80, VERTOFF + VERTCELLSIZE);
+			ctx.fillText (date, 40, VERTOFF + VERTCELLSIZE);
 
 
 		}else{
 
 			var date=displayTimeOnGrid.date.substring(0,displayTimeOnGrid.date.lastIndexOf(' '));
-			ctx.fillText (date, 80, VERTOFF + VERTCELLSIZE*3/4);
+			ctx.fillText (date, 40, VERTOFF + VERTCELLSIZE*3/4);
 		}
 
 		ctx.strokeStyle='#FF0000';
@@ -333,11 +333,14 @@ function GridController(ws){
 				if (null==currentProgramSelected){
 					if (null!=EPG_DATA && null!=CHANNELLIST_DATA){
 						if (null!=CHANNELLIST_DATA[currentChannelGridOffset]){
-							if (null!=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[currentChannelGridOffset]].channelId]){
-								if (null!=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[currentChannelGridOffset]].channelId].metadata){
+//							if (null!=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[currentChannelGridOffset]].channelId]){
+//								if (null!=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[currentChannelGridOffset]].channelId].metadata){
 									updateSelection(currentChannelGridOffset);
-								}
-							}
+									var now=getTime();
+									midSelectionPoint=now.ms
+									drawSelection();
+//								}
+//							}
 						}
 					}
 
@@ -524,6 +527,10 @@ function GridController(ws){
 	console.log("drawing selection box");
 
 		var index=currentProgramSelected.item;
+		if (index<0){
+			drawDescriptionBox=false;
+			return;
+		}
 		channel=currentProgramSelected.channel;
 		var m= EPG_DATA[STATION_DATA[CHANNELLIST_DATA[channel]].channelId].metadata[index];
 
@@ -647,63 +654,107 @@ function GridController(ws){
 
 	function getSelectionParameters(){
 
-			if (null == CHANNELLIST_DATA || null==EPG_DATA ) return {"x":0,"y":0, "h":0, "mid":0};
-
 			index=currentProgramSelected.item;
 			channel=currentProgramSelected.channel;
 
+			if (null == CHANNELLIST_DATA || null==EPG_DATA ) return {"x":0,"y":0, "h":0, "mid":0};
+
 			if (null==CHANNELLIST_DATA[channel]) return {"x":0,"y":0, "h":0, "mid":0};
-			if (null ==EPG_DATA[STATION_DATA[CHANNELLIST_DATA[channel]].channelId].metadata)  return {"x":0,"y":0, "h":0, "mid":0};
-    		var m=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[channel]].channelId].metadata[index];
-			var start =parseInt(m.start);
-			var end =parseInt(m.start) + parseInt(m.length);
 
-			if (start<lastGridPoint  && end>gridTimeStart){
-				var truncated =false;
-				if (start<(gridTimeStart+GRIDINTERVAL)){
-					start = (gridTimeStart+GRIDINTERVAL);
-					truncated=true;
-				}
-				if (end>lastGridPoint) {
-					end = lastGridPoint;
-					truncated=true;
-				}
-
-
+			if (currentProgramSelected.channelOnly){
+				var now=getTime();
+				 var x= 300 +(channel-currentChannelGridOffset)*HORIZCELLSIZE;
+				 var y=VERTOFF;
+				 var h=VERTCELLSIZE;
+				 var start=gridTimeStart;
+				 var end=gridTimeStart;
+				 var mid=now.ms;
+				 return {"x":x,"y":y, "h":h, "mid":mid,"start":start,"end":end };
 			}
-			var midSelectionPoint=(start +end)/2;
-			var y=VERTOFF+ (start-gridTimeStart)*VERTCELLSIZE/GRIDINTERVAL;
-			var h= (end-start)*VERTCELLSIZE/GRIDINTERVAL;
-			var x= 300 +(channel-currentChannelGridOffset)*HORIZCELLSIZE;
 
-			selectionParameter={"x":x,"y":y, "h":h, "mid":midSelectionPoint, "start":start, "end":end};
-//			console.log("Selection Parameters: x"+x+" y"+y+" h:"+h+" mid:"+midSelectionPoint+" start:"+start+ "end:"+end);
-			return selectionParameter;
+			try{
+
+				var m=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[channel]].channelId].metadata[index];
+				var start =parseInt(m.start);
+				var end =parseInt(m.start) + parseInt(m.length);
+
+				if (start<lastGridPoint  && end>gridTimeStart){
+					var truncated =false;
+					if (start<(gridTimeStart+GRIDINTERVAL)){
+						start = (gridTimeStart+GRIDINTERVAL);
+						truncated=true;
+					}
+					if (end>lastGridPoint) {
+						end = lastGridPoint;
+						truncated=true;
+					}
+
+
+				}
+				var midSelectionPoint=(start +end)/2;
+				var y=VERTOFF+ (start-gridTimeStart)*VERTCELLSIZE/GRIDINTERVAL;
+				var h= (end-start)*VERTCELLSIZE/GRIDINTERVAL;
+				var x= 300 +(channel-currentChannelGridOffset)*HORIZCELLSIZE;
+
+				selectionParameter={"x":x,"y":y, "h":h, "mid":midSelectionPoint, "start":start, "end":end};
+	//			console.log("Selection Parameters: x"+x+" y"+y+" h:"+h+" mid:"+midSelectionPoint+" start:"+start+ "end:"+end);
+				return selectionParameter;
+
+
+
+		 	}catch(err){
+
+				if (index<0){
+					 var x= 300 +(channel-currentChannelGridOffset)*HORIZCELLSIZE;
+					 var y=VERTOFF;
+					 var h=VERTCELLSIZE;
+					 var start=gridTimeStart;
+					 var end=gridTimeStart;
+					 var mid=gridTimeStart;
+					 return {"x":x,"y":y, "h":h, "mid":mid,"start":start,"end":end };
+				}
+
+		 	}
+
 	}
 
 
 	function updateSelection(channel, item){
-    		var m=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[channel]].channelId].metadata;
+
 			if (null==item){
     			var time=getTime().ms;
 
-				for (var i=0; i<m.length; i++){
-					var start=parseInt(m[i].start);
-					var end =start + parseInt(m[i].length);
-					if (start<=time && end >time){
-						item=i;
-						break;
+				try{
+
+					var m=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[channel]].channelId].metadata;
+					for (var i=0; i<m.length; i++){
+						var start=parseInt(m[i].start);
+						var end =start + parseInt(m[i].length);
+						if (start<=time && end >time){
+							item=i;
+							break;
+						}
 					}
+//						midSelectionPoint=(start+end)/2;
+					currentProgramSelected={'channel':channel,'item':item, 'channelOnly':false};
+
+				}catch(err){
+
+					console.log("Null Item so select channel: "+err);
+					currentProgramSelected.channel=channel;
+					currentProgramSelected.channelOnly=true;
+
+//					midSelectionPoint=gridTimeStart;
 				}
-				if (null==item) return;
-				midSelectionPoint=(start+end)/2;
+
+    		}else{
+
+				currentProgramSelected={'channel':channel,'item':item, "channelOnly":false};
+
     		}
 			descriptionBoxDrawFlag=false;
 			ws.send("sendBackKeyToEPG:false");
-//    		descriptionBoxStartTimer=setTimeout(function(){
-//    			descriptionBoxDrawFlag=true;
-//    		},200000);
-			currentProgramSelected={'channel':channel,'item':item};
+
 	}
 
 
@@ -806,24 +857,41 @@ function GridController(ws){
 			if (null!=currentProgramSelected){
 				if (currentProgramSelected.channel > 0){
 					var channelIndex=currentProgramSelected.channel-1;
+					try{
+						var m=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[channelIndex]].channelId].metadata;
+						for (var i=0; i<m.length; i++){
+							var start=parseInt(m[i].start);
+							var end=start + parseInt(m[i].length);
+							if (start>midSelectionPoint) break;			//first one is already past
+							if (start<=midSelectionPoint && end>midSelectionPoint) break;	//ideally
+						}
+						if (i==m.length) i=m.length-1; //went beyond, go back one;
+						var item=i;
+						updateSelection(channelIndex, item);
+						var start=parseInt(m[item].start);
+						var end=start+parseInt(m[item].length);
+						var changeGrid=0;
+						while ( (start - gridTimeStart)/GRIDINTERVAL<2 && changeGrid<2){
+							gridTimeStart=gridTimeStart-GRIDINTERVAL;
+							changeGrid++;
 
-					var m=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[channelIndex]].channelId].metadata;
-					for (var i=0; i<m.length; i++){
-						var start=parseInt(m[i].start);
-						var end=start + parseInt(m[i].length);
-						if (start>midSelectionPoint) break;			//first one is already past
-						if (start<=midSelectionPoint && end>midSelectionPoint) break;	//ideally
+						}
+						if (changeGrid==0){
+							while ((start - gridTimeStart)/GRIDINTERVAL>7 && changeGrid<2){
+								gridTimeStart=gridTimeStart+GRIDINTERVAL;
+								changeGrid++;
+							}
+						}
+
+						setMidSelectionPointtoNow(start,end);
+
+					}catch(err){
+						updateSelection(channelIndex);
 					}
-					if (i==m.length) i=m.length-1; //went beyond, go back one;
-					var item=i;
-					updateSelection(channelIndex, item);
 
 					if ((channelIndex-currentChannelGridOffset)<1 && currentChannelGridOffset>0){
 						currentChannelGridOffset--;
 					}
-					var start=parseInt(m[item].start);
-					var end=start+parseInt(m[item].length);
-					setMidSelectionPointtoNow(start,end);
 					descriptionBoxDrawFlag=false;
 				}
 			}
@@ -835,30 +903,28 @@ function GridController(ws){
 
 
 			if (null!=currentProgramSelected){
-//				var m=EPG_DATA[STATION_DATA[currentProgramSelected.channel].channelId].metadata[currentProgramSelected.item];
-
-				if (currentProgramSelected.item>0){
-
+				try{
 					var m=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[currentProgramSelected.channel]].channelId].metadata;
 					var item = currentProgramSelected.item - 1;
+					if (item>=0){
+						console.log("incrementing index selection to "+item);
 
-					console.log("incrementing index selection to "+item);
-
-					updateSelection(currentProgramSelected.channel, item);
-//					var oldGridTimeStart=gridTimeStart;
-					var start=parseInt(m[item].start);
-					var end=start+parseInt(m[item].length);
-					while ( (start - gridTimeStart)/GRIDINTERVAL<2){
-						gridTimeStart=gridTimeStart-GRIDINTERVAL;
+						updateSelection(currentProgramSelected.channel, item);
+						var start=parseInt(m[item].start);
+						var end=start+parseInt(m[item].length);
+						while ( (start - gridTimeStart)/GRIDINTERVAL<2){
+							gridTimeStart=gridTimeStart-GRIDINTERVAL;
+						}
+						var s=getSelectionParameters();
+						if (!setMidSelectionPointtoNow(start,end)) {
+							midSelectionPoint=s.mid;
+						}
 					}
-					var s=getSelectionParameters();
-					if (!setMidSelectionPointtoNow(start,end)) {
-						midSelectionPoint=s.mid;
-					}
-					descriptionBoxDrawFlag=false;
-
+				}catch(err){
+					updateSelection(currentProgramSelected.channel);
 
 				}
+				descriptionBoxDrawFlag=false;
 
 			}
 
@@ -868,25 +934,45 @@ function GridController(ws){
 			if (null!=currentProgramSelected){
 				if (currentProgramSelected.channel < (CHANNELLIST_DATA.length-1)){
 					var channelIndex=currentProgramSelected.channel+1;
+					try{
+						var m=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[channelIndex]].channelId].metadata;
 
-					var m=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[channelIndex]].channelId].metadata;
-					for (var i=0; i<m.length; i++){
-						var start=parseInt(m[i].start);
-						var end=start + parseInt(m[i].length);
-						if (start>midSelectionPoint) break;			//first one is already past
-						if (start<=midSelectionPoint && end>midSelectionPoint) break;	//ideally
+						for (var i=0; i<m.length; i++){
+							var start=parseInt(m[i].start);
+							var end=start + parseInt(m[i].length);
+							if (start>midSelectionPoint) break;			//first one is already past
+							if (start<=midSelectionPoint && end>midSelectionPoint) break;	//ideally
+						}
+						if (i==m.length) i=m.length-1; //went beyond, go back one;
+						var item=i;
+						updateSelection(channelIndex, item);
+						var start=parseInt(m[item].start);
+						var end=start+parseInt(m[item].length);
+
+						var changeGrid=0;
+						while ( (start - gridTimeStart)/GRIDINTERVAL<2 && changeGrid<2){
+							gridTimeStart=gridTimeStart-GRIDINTERVAL;
+							changeGrid++;
+
+						}
+						if (changeGrid==0){
+							while ((start - gridTimeStart)/GRIDINTERVAL>7 && changeGrid<2){
+								gridTimeStart=gridTimeStart+GRIDINTERVAL;
+								changeGrid++;
+							}
+						}
+						setMidSelectionPointtoNow(start,end);
+
+
+					} catch(err){
+						updateSelection(channelIndex);
+
 					}
-					if (i==m.length) i=m.length-1; //went beyond, go back one;
-					var item=i;
-					updateSelection(channelIndex, item);
-
 					if ((channelIndex-currentChannelGridOffset)>3){
 						currentChannelGridOffset++;
 //						scrollGridRight();
 					}
-					var start=parseInt(m[item].start);
-					var end=start+parseInt(m[item].length);
-					setMidSelectionPointtoNow(start,end);
+
 					descriptionBoxDrawFlag=false;
 
 
@@ -900,25 +986,53 @@ function GridController(ws){
 
 
 			if (null!=currentProgramSelected){
-				var m=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[currentProgramSelected.channel]].channelId].metadata;
 
-				if (currentProgramSelected.item<(m.length-1)){
-					var item = currentProgramSelected.item + 1;
-					console.log("incrementing index selection to "+item);
+				try{
+					var m=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[currentProgramSelected.channel]].channelId].metadata;
+					if (currentProgramSelected.channelOnly){
+						for (var i=0; i<m.length; i++){
+							var start=parseInt(m[i].start);
+							var end=start + parseInt(m[i].length);
+							if (start>midSelectionPoint) break;			//first one is already past
+							if (start<=midSelectionPoint && end>midSelectionPoint) break;	//ideally
+						}
+						if (i==m.length) i=m.length-1; //went beyond, go back one;
+						currentProgramSelected.item=i;
+						var item = currentProgramSelected.item;
+						updateSelection(currentProgramSelected.channel, item);
+						var oldGridTimeStart=gridTimeStart;
+						var start=parseInt(m[item].start);
+						var end = start+parseInt(m[item].length);
+						while ((start - gridTimeStart)/GRIDINTERVAL>7){
+							gridTimeStart=gridTimeStart+GRIDINTERVAL;
+						}
+						var s=getSelectionParameters();
+						if (!setMidSelectionPointtoNow(start,end)) {
+							midSelectionPoint=s.mid;
+						}
 
-					updateSelection(currentProgramSelected.channel, item);
-					var oldGridTimeStart=gridTimeStart;
-					var start=parseInt(m[item].start);
-					var end = start+parseInt(m[item].length);
-					while ((start - gridTimeStart)/GRIDINTERVAL>7){
-						gridTimeStart=gridTimeStart+GRIDINTERVAL;
+					}else if (currentProgramSelected.item<(m.length-1)){
+						var item = currentProgramSelected.item + 1;
+						console.log("incrementing index selection to "+item);
+
+						updateSelection(currentProgramSelected.channel, item);
+						var oldGridTimeStart=gridTimeStart;
+						var start=parseInt(m[item].start);
+						var end = start+parseInt(m[item].length);
+						while ((start - gridTimeStart)/GRIDINTERVAL>7){
+							gridTimeStart=gridTimeStart+GRIDINTERVAL;
+						}
+						var s=getSelectionParameters();
+						if (!setMidSelectionPointtoNow(start,end)) {
+							midSelectionPoint=s.mid;
+						}
 					}
-					var s=getSelectionParameters();
-					if (!setMidSelectionPointtoNow(start,end)) {
-						midSelectionPoint=s.mid;
-					}
-					descriptionBoxDrawFlag=false;
+				}catch(err){
+					console.log("incrementing index error "+err);
+					updateSelection(currentProgramSelected.channel);
 				}
+
+				descriptionBoxDrawFlag=false;
 
 			}
 		}
