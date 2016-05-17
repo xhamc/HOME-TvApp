@@ -80,6 +80,7 @@ public class VideoFragment extends BaseFragment {
   private VideoProgram currentProgram;
   private VideoItem currentVod;
   private Double currentPlaySpeed = 1.0;
+  private boolean wasPlaying;
 
   private Uri videoUri;
   private MediaPlayer mediaPlayer;
@@ -142,6 +143,7 @@ public class VideoFragment extends BaseFragment {
   public void onPause() {
     super.onPause();
     if (mediaPlayer != null) {
+      wasPlaying = mediaPlayer.isPlaying();
       // Argument equals true to notify the system that the activity
       // wishes to be visible behind other translucent activities
       if (!getActivity().requestVisibleBehind(true)) {
@@ -162,7 +164,7 @@ public class VideoFragment extends BaseFragment {
   @Override
   public void onResume() {
     super.onResume();
-    if (mediaPlayer != null) {
+    if (mediaPlayer != null && wasPlaying) {
       // resume play
       play();
     }
