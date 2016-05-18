@@ -86,12 +86,14 @@ public class PopupHelper {
       menu.getMenu().findItem(R.id.cancelProgramRecording).setVisible(true);
     } else {
       menu.getMenu().findItem(R.id.recordProgram).setVisible(true);
-      menu.getMenu().findItem(R.id.recordSeries).setVisible(true);
+      if (program.getEpisodeNumber() != null && program.getEpisodeNumber().length() > 0) {
+        menu.getMenu().findItem(R.id.recordSeries).setVisible(true);
+      }
     }
 
     // set favorite menu items
-    String seriesId = program.getSeriesId();
-    if (seriesId != null && seriesId.length() > 0) {
+    if (program.getEpisodeNumber() != null && program.getEpisodeNumber().length() > 0) {
+      // assume this is a series
       if (settingsHelper.isFavoriteProgram(program)) {
         menu.getMenu().findItem(R.id.removeFromFavoritePrograms).setVisible(true);
       } else {
