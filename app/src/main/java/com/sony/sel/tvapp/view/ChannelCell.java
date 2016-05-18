@@ -80,17 +80,6 @@ public class ChannelCell extends BaseListCell<VideoBroadcast> {
     channels.add(channel.getChannelId());
 
     this.channel = channel;
-    List<VideoProgram> epgList = DlnaHelper.getCache(getContext()).searchEpg(
-        SettingsHelper.getHelper(getContext()).getEpgServer(),
-        channels,
-        now,
-        now
-    );
-    if (epgList.size() > 0) {
-      epg = epgList.get(0);
-    } else {
-      epg = null;
-    }
 
     // icon
     if (channel.getIcon() != null) {
