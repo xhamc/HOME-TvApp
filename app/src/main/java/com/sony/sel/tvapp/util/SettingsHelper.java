@@ -189,7 +189,7 @@ public class SettingsHelper {
     EventBus.getInstance().post(new EventBus.FavoriteChannelsChangedEvent(channelList));
   }
 
-  private Set<String> getProgramsToRecord() {
+  public Set<String> getProgramsToRecord() {
     return getSharedPreferences().getStringSet(RECORD_PROGRAMS, new HashSet<String>());
   }
 
@@ -217,7 +217,7 @@ public class SettingsHelper {
     return getProgramsToRecord().contains(program.getProgramId());
   }
 
-  private Set<String> getSeriesToRecord() {
+  public Set<String> getSeriesToRecord() {
     return getSharedPreferences().getStringSet(RECORD_SERIES, new HashSet<String>());
   }
 
@@ -282,7 +282,7 @@ public class SettingsHelper {
     editor.commit();
   }
 
-  private Set<String> getFavoritePrograms() {
+  public Set<String> getFavoritePrograms() {
     return getSharedPreferences().getStringSet(FAVORITE_PROGRAMS, new HashSet<String>());
   }
 
