@@ -10,6 +10,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.sony.sel.tvapp.R;
+import com.sony.sel.tvapp.menu.PopupHelper;
 import com.sony.sel.tvapp.util.DlnaObjects;
 import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.EventBus.FavoriteChannelsChangedEvent;
@@ -140,7 +141,7 @@ public class ProgramInfoView extends FrameLayout {
     return popupAlignView != null ? popupAlignView : this;
   }
 
-  public void bind(VideoProgram program, DlnaObjects.VideoBroadcast channel) {
+  public void bind(final VideoProgram program, final DlnaObjects.VideoBroadcast channel) {
     this.program = program;
     this.channel = channel;
 
@@ -251,6 +252,31 @@ public class ProgramInfoView extends FrameLayout {
       recordSeries.setVisibility(View.GONE);
       recordProgram.setVisibility(View.GONE);
     }
+
+    setOnClickListener(new OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        if (program != null) {
+          PopupHelper.getHelper(getContext()).showPopup(program, getPopupAlignView());
+        } else {
+          PopupHelper.getHelper(getContext()).showPopup(channel, getPopupAlignView());
+        }
+        EventBus.getInstance().post(new EventBus.ResetUiTimerLongEvent());
+      }
+    });
+
+    setOnLongClickListener(new OnLongClickListener() {
+      @Override
+      public boolean onLongClick(View v) {
+        if (program != null) {
+          PopupHelper.getHelper(getContext()).showPopup(program, getPopupAlignView());
+        } else {
+          PopupHelper.getHelper(getContext()).showPopup(channel, getPopupAlignView());
+        }
+        EventBus.getInstance().post(new EventBus.ResetUiTimerLongEvent());
+        return true;
+      }
+    });
   }
 
   /**

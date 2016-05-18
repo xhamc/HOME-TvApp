@@ -89,22 +89,6 @@ public class ChannelEpgView extends FrameLayout {
     final VideoProgram currentProgram = getCurrentProgram();
     nowPlaying.setVisibility(currentProgram != null ? View.VISIBLE : View.INVISIBLE);
     programInfoView.bind(currentProgram, channel);
-    final View alignView = programInfoView.getPopupAlignView();
-    programInfoView.setOnClickListener(new OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        showPopup(alignView, channel, currentProgram);
-        EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
-      }
-    });
-    programInfoView.setOnLongClickListener(new OnLongClickListener() {
-      @Override
-      public boolean onLongClick(View v) {
-        showPopup(alignView, channel, currentProgram);
-        EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
-        return true;
-      }
-    });
 
     // configure the "up next" programs
     List<VideoProgram> nextPrograms = getNextPrograms();
@@ -112,21 +96,6 @@ public class ChannelEpgView extends FrameLayout {
     upNextLayout.removeAllViews();
     for (final VideoProgram program : nextPrograms) {
       final ProgramInfoView upNext = (ProgramInfoView) View.inflate(getContext(), R.layout.program_info_view_small, null);
-      upNext.setOnClickListener(new OnClickListener() {
-        @Override
-        public void onClick(View v) {
-          showPopup(v, channel, program);
-          EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
-        }
-      });
-      upNext.setOnLongClickListener(new OnLongClickListener() {
-        @Override
-        public boolean onLongClick(View v) {
-          showPopup(v, channel, program);
-          EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
-          return true;
-        }
-      });
       upNext.bind(program, channel);
       LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
       params.setMarginEnd(getResources().getDimensionPixelSize(R.dimen.channelThumbPadding));

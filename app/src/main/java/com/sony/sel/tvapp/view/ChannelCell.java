@@ -11,6 +11,7 @@ import android.widget.TextView;
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.menu.PopupHelper;
 import com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
+import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.EventBus.FavoriteProgramsChangedEvent;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.squareup.otto.Subscribe;
@@ -51,13 +52,15 @@ public class ChannelCell extends BaseListCell<VideoBroadcast> {
   @Bind(R.id.programTime)
   TextView programTime;
   @Bind(R.id.favoriteChannel)
-  ImageView favorite;
+  ImageView favoriteChannel;
   @Bind(R.id.favoriteProgram)
   View favoriteProgram;
   @Bind(R.id.recordProgram)
   ImageView recordProgram;
   @Bind(R.id.recordSeries)
   ImageView recordSeries;
+  @Bind(R.id.smallChannelIcon)
+  ImageView smallChannelIcon;
 
   public ChannelCell(Context context) {
     super(context);
@@ -76,6 +79,18 @@ public class ChannelCell extends BaseListCell<VideoBroadcast> {
   }
 
   @Override
+  protected void onAttachedToWindow() {
+    super.onAttachedToWindow();
+    EventBus.getInstance().register(this);
+  }
+
+  @Override
+  protected void onDetachedFromWindow() {
+    super.onDetachedFromWindow();
+    EventBus.getInstance().unregister(this);
+  }
+
+  @Override
   public void bind(final VideoBroadcast channel) {
 
     SettingsHelper settingsHelper = SettingsHelper.getHelper(getContext());
@@ -91,15 +106,17 @@ public class ChannelCell extends BaseListCell<VideoBroadcast> {
     this.channel = channel;
 
     // icon
+    icon.setImageDrawable(null);
     if (channel.getIcon() != null) {
       // use channel icon
       icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
       int padding = getResources().getDimensionPixelSize(R.dimen.channelThumbPadding);
       icon.setPadding(padding, padding, padding, padding);
+      icon.setBackgroundColor(getResources().getColor(android.R.color.white));
       Picasso.with(getContext()).load(Uri.parse(channel.getIcon())).into(icon);
     } else {
       // no icon available
-      icon.setImageDrawable(null);
+      icon.setBackgroundColor(getResources().getColor(android.R.color.transparent));
     }
 
     // call sign
@@ -111,20 +128,15 @@ public class ChannelCell extends BaseListCell<VideoBroadcast> {
     programTime.setVisibility(View.GONE);
 
     if (settingsHelper.getFavoriteChannels().contains(channel.getChannelId())) {
-      favorite.setVisibility(View.VISIBLE);
+      favoriteChannel.setVisibility(View.VISIBLE);
     } else {
-      favorite.setVisibility(View.GONE);
+      favoriteChannel.setVisibility(View.GONE);
     }
 
-    if (epg != null) {
-      favoriteProgram.setVisibility(settingsHelper.isFavoriteProgram(epg) ? VISIBLE : GONE);
-      recordProgram.setVisibility(settingsHelper.isProgramRecorded(epg) ? VISIBLE : GONE);
-      recordSeries.setVisibility(settingsHelper.isSeriesRecorded(epg) ? VISIBLE : GONE);
-    } else {
-      favoriteProgram.setVisibility(View.GONE);
-      recordProgram.setVisibility(View.GONE);
-      recordSeries.setVisibility(View.GONE);
-    }
+    favoriteProgram.setVisibility(View.GONE);
+    recordProgram.setVisibility(View.GONE);
+    recordSeries.setVisibility(View.GONE);
+    smallChannelIcon.setVisibility(View.GONE);
 
     setupFocus(null, 1.1f);
 
@@ -146,6 +158,8 @@ public class ChannelCell extends BaseListCell<VideoBroadcast> {
   public void setEpg(VideoProgram epg) {
     this.epg = epg;
     if (epg != null) {
+
+      SettingsHelper settingsHelper = SettingsHelper.getHelper(getContext());
 
       // title
       if (epg.getTitle().length() > 0) {
@@ -170,8 +184,19 @@ public class ChannelCell extends BaseListCell<VideoBroadcast> {
         // use epg icon
         icon.setScaleType(ImageView.ScaleType.CENTER_CROP);
         icon.setPadding(0, 0, 0, 0);
+        icon.setBackgroundColor(getResources().getColor(android.R.color.black));
         Picasso.with(getContext()).load(Uri.parse(epg.getIcon())).into(icon);
+
+        // move channel icon to small display in corner
+        if (channel.getIcon() != null) {
+          smallChannelIcon.setVisibility(View.VISIBLE);
+          Picasso.with(getContext()).load(Uri.parse(channel.getIcon())).into(smallChannelIcon);
+        }
       }
+
+      favoriteProgram.setVisibility(settingsHelper.isFavoriteProgram(epg) ? VISIBLE : GONE);
+      recordProgram.setVisibility(settingsHelper.isProgramRecorded(epg) ? VISIBLE : GONE);
+      recordSeries.setVisibility(settingsHelper.isSeriesRecorded(epg) ? VISIBLE : GONE);
     }
   }
 

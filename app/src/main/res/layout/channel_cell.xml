@@ -64,6 +64,17 @@
                 android:src="@drawable/series_record"
                 />
 
+            <ImageView
+                android:id="@+id/smallChannelIcon"
+                android:layout_width="75dp"
+                android:layout_height="50dp"
+                android:background="@android:color/white"
+                android:padding="3dp"
+                android:scaleType="fitCenter"
+                android:layout_gravity="bottom|left"
+                android:elevation="2dp"
+                />
+
         </FrameLayout>
 
         <LinearLayout

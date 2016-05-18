@@ -289,12 +289,18 @@ public class SettingsHelper {
   public void addFavoriteProgram(@NonNull VideoProgram program) {
     Set<String> favorites = getFavoritePrograms();
     favorites.add(program.getSeriesId());
+    SharedPreferences.Editor editor = getSharedPreferences().edit();
+    editor.putStringSet(FAVORITE_PROGRAMS, favorites);
+    editor.commit();
     EventBus.getInstance().post(new EventBus.FavoriteProgramsChangedEvent());
   }
 
   public void removeFavoriteProgram(@NonNull VideoProgram program) {
     Set<String> favorites = getFavoritePrograms();
     favorites.remove(program.getSeriesId());
+    SharedPreferences.Editor editor = getSharedPreferences().edit();
+    editor.putStringSet(FAVORITE_PROGRAMS, favorites);
+    editor.commit();
     EventBus.getInstance().post(new EventBus.FavoriteProgramsChangedEvent());
   }
 
