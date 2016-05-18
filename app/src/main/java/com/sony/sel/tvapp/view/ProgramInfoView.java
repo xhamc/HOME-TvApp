@@ -2,7 +2,6 @@ package com.sony.sel.tvapp.view;
 
 import android.content.Context;
 import android.net.Uri;
-import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
@@ -14,6 +13,7 @@ import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.util.DlnaObjects;
 import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.EventBus.FavoriteChannelsChangedEvent;
+import com.sony.sel.tvapp.util.EventBus.FavoriteProgramsChangedEvent;
 import com.sony.sel.tvapp.util.EventBus.RecordingsChangedEvent;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.squareup.otto.Subscribe;
@@ -53,8 +53,8 @@ public class ProgramInfoView extends FrameLayout {
   @Bind(R.id.programDescription)
   TextView description;
   @Nullable
-  @Bind(R.id.favorite)
-  ImageView favorite;
+  @Bind(R.id.favoriteChannel)
+  ImageView favoriteChannel;
   @Nullable
   @Bind(R.id.recordProgram)
   ImageView recordProgram;
@@ -64,6 +64,9 @@ public class ProgramInfoView extends FrameLayout {
   @Nullable
   @Bind(R.id.popupAlignView)
   View popupAlignView;
+  @Nullable
+  @Bind(R.id.favoriteProgram)
+  View favoriteProgram;
 
   private VideoProgram program;
   private VideoBroadcast channel;
@@ -115,6 +118,12 @@ public class ProgramInfoView extends FrameLayout {
 
   @Subscribe
   public void onFavoriteChannelsChanged(FavoriteChannelsChangedEvent event) {
+    // rebind to refresh display
+    bind(program, channel);
+  }
+
+  @Subscribe
+  public void onFavoriteProgramsChanged(FavoriteProgramsChangedEvent event) {
     // rebind to refresh display
     bind(program, channel);
   }
@@ -178,6 +187,10 @@ public class ProgramInfoView extends FrameLayout {
         description.setText(program.getLongDescription());
       }
 
+      if (favoriteProgram != null) {
+        favoriteProgram.setVisibility(settingsHelper.isFavoriteProgram(program) ? VISIBLE : GONE);
+      }
+
     } else if (channel != null) {
 
       // icon
@@ -209,13 +222,17 @@ public class ProgramInfoView extends FrameLayout {
         description.setText(channel.getDescription());
       }
 
+      if (favoriteProgram != null) {
+        favoriteProgram.setVisibility(GONE);
+      }
+
     }
 
-    if (channel != null && favorite != null) {
+    if (channel != null && favoriteChannel != null) {
       if (settingsHelper.getFavoriteChannels().contains(channel.getChannelId())) {
-        favorite.setVisibility(View.VISIBLE);
+        favoriteChannel.setVisibility(View.VISIBLE);
       } else {
-        favorite.setVisibility(View.GONE);
+        favoriteChannel.setVisibility(View.GONE);
       }
     }
 

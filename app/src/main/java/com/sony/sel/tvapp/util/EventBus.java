@@ -136,6 +136,10 @@ public class EventBus extends Bus {
     }
   }
 
+  public static class FavoriteProgramsChangedEvent {
+
+  }
+
   private static EventBus instance;
 
   public static EventBus getInstance() {

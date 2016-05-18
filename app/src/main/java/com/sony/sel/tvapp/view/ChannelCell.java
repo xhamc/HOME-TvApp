@@ -4,19 +4,16 @@ import android.content.Context;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.util.AttributeSet;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.menu.PopupHelper;
-import com.sony.sel.tvapp.util.DlnaHelper;
-import com.sony.sel.tvapp.util.DlnaObjects;
 import com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
-import com.sony.sel.tvapp.util.EventBus;
+import com.sony.sel.tvapp.util.EventBus.FavoriteProgramsChangedEvent;
 import com.sony.sel.tvapp.util.SettingsHelper;
+import com.squareup.otto.Subscribe;
 import com.squareup.picasso.Picasso;
 
 import java.text.DateFormat;
@@ -30,6 +27,10 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 
 import static com.sony.sel.tvapp.util.DlnaObjects.VideoBroadcast;
+import static com.sony.sel.tvapp.util.EventBus.FavoriteChannelsChangedEvent;
+import static com.sony.sel.tvapp.util.EventBus.RecordingsChangedEvent;
+import static com.sony.sel.tvapp.util.EventBus.ResetUiTimerLongEvent;
+import static com.sony.sel.tvapp.util.EventBus.getInstance;
 
 /**
  * Cell for displaying channel info.
@@ -49,9 +50,14 @@ public class ChannelCell extends BaseListCell<VideoBroadcast> {
   TextView programTitle;
   @Bind(R.id.programTime)
   TextView programTime;
-  @Bind(R.id.favorite)
+  @Bind(R.id.favoriteChannel)
   ImageView favorite;
-
+  @Bind(R.id.favoriteProgram)
+  View favoriteProgram;
+  @Bind(R.id.recordProgram)
+  ImageView recordProgram;
+  @Bind(R.id.recordSeries)
+  ImageView recordSeries;
 
   public ChannelCell(Context context) {
     super(context);
@@ -71,6 +77,8 @@ public class ChannelCell extends BaseListCell<VideoBroadcast> {
 
   @Override
   public void bind(final VideoBroadcast channel) {
+
+    SettingsHelper settingsHelper = SettingsHelper.getHelper(getContext());
 
     ButterKnife.bind(this);
 
@@ -102,10 +110,20 @@ public class ChannelCell extends BaseListCell<VideoBroadcast> {
     programTitle.setVisibility(View.GONE);
     programTime.setVisibility(View.GONE);
 
-    if (SettingsHelper.getHelper(getContext()).getFavoriteChannels().contains(channel.getChannelId())) {
+    if (settingsHelper.getFavoriteChannels().contains(channel.getChannelId())) {
       favorite.setVisibility(View.VISIBLE);
     } else {
       favorite.setVisibility(View.GONE);
+    }
+
+    if (epg != null) {
+      favoriteProgram.setVisibility(settingsHelper.isFavoriteProgram(epg) ? VISIBLE : GONE);
+      recordProgram.setVisibility(settingsHelper.isProgramRecorded(epg) ? VISIBLE : GONE);
+      recordSeries.setVisibility(settingsHelper.isSeriesRecorded(epg) ? VISIBLE : GONE);
+    } else {
+      favoriteProgram.setVisibility(View.GONE);
+      recordProgram.setVisibility(View.GONE);
+      recordSeries.setVisibility(View.GONE);
     }
 
     setupFocus(null, 1.1f);
@@ -164,7 +182,7 @@ public class ChannelCell extends BaseListCell<VideoBroadcast> {
       PopupHelper.getHelper(getContext()).showPopup(channel, v);
     }
     // keep ui alive longer if popup is selected
-    EventBus.getInstance().post(new EventBus.ResetUiTimerLongEvent());
+    getInstance().post(new ResetUiTimerLongEvent());
   }
 
   @Override
@@ -176,6 +194,28 @@ public class ChannelCell extends BaseListCell<VideoBroadcast> {
   protected void onFocusChanged(boolean hasFocus, int direction, Rect previouslyFocusedRect) {
     super.onFocusChanged(hasFocus, direction, previouslyFocusedRect);
     // keep the UI alive
-    EventBus.getInstance().post(new EventBus.ResetUiTimerLongEvent());
+    getInstance().post(new ResetUiTimerLongEvent());
   }
+
+  @Subscribe
+  public void onFavoriteProgramsChanged(FavoriteProgramsChangedEvent event) {
+    // rebind to refresh display
+    bind(channel);
+    setEpg(epg);
+  }
+
+  @Subscribe
+  public void onFavoriteChannelsChanged(FavoriteChannelsChangedEvent event) {
+    // rebind to refresh display
+    bind(channel);
+    setEpg(epg);
+  }
+
+  @Subscribe
+  public void onRecordingsChangedEvent(RecordingsChangedEvent event) {
+    // rebind to refresh display
+    bind(channel);
+    setEpg(epg);
+  }
+
 }

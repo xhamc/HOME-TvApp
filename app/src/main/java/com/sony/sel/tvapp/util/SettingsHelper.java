@@ -1,7 +1,6 @@
 package com.sony.sel.tvapp.util;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 
@@ -290,11 +289,13 @@ public class SettingsHelper {
   public void addFavoriteProgram(@NonNull VideoProgram program) {
     Set<String> favorites = getFavoritePrograms();
     favorites.add(program.getSeriesId());
+    EventBus.getInstance().post(new EventBus.FavoriteProgramsChangedEvent());
   }
 
   public void removeFavoriteProgram(@NonNull VideoProgram program) {
     Set<String> favorites = getFavoritePrograms();
     favorites.remove(program.getSeriesId());
+    EventBus.getInstance().post(new EventBus.FavoriteProgramsChangedEvent());
   }
 
   public boolean isFavoriteProgram(@NonNull VideoProgram program) {

@@ -5,25 +5,25 @@
     android:layout_height="wrap_content"
     android:background="@color/menuBackground"
     android:elevation="2dp"
-    android:orientation="horizontal"
     android:focusable="true"
     android:focusableInTouchMode="true"
+    android:orientation="horizontal"
     >
 
     <ImageView
+        android:id="@+id/programIcon"
         android:layout_width="240dp"
         android:layout_height="match_parent"
-        android:minHeight="160dp"
-        android:id="@+id/programIcon"
         android:background="@android:color/white"
+        android:minHeight="160dp"
         android:scaleType="fitCenter"
         />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
         android:duplicateParentState="true"
+        android:orientation="vertical"
         >
 
         <FrameLayout
@@ -36,18 +36,27 @@
                 android:id="@+id/recordProgram"
                 android:layout_width="30dp"
                 android:layout_height="30dp"
-                android:src="@drawable/record"
                 android:layout_gravity="bottom|right"
                 android:layout_margin="10dp"
+                android:src="@drawable/record"
                 />
 
             <ImageView
                 android:id="@+id/recordSeries"
                 android:layout_width="60dp"
                 android:layout_height="30dp"
-                android:src="@drawable/series_record"
                 android:layout_gravity="bottom|right"
                 android:layout_margin="10dp"
+                android:src="@drawable/series_record"
+                />
+
+            <ImageView
+                android:id="@+id/favoriteProgram"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_gravity="top|left"
+                android:layout_marginTop="5dp"
+                android:src="@drawable/heart"
                 />
 
         </FrameLayout>
@@ -57,9 +66,9 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
             android:background="@drawable/cell_background"
+            android:duplicateParentState="true"
             android:orientation="vertical"
             android:padding="10dp"
-            android:duplicateParentState="true"
             >
 
             <TextView
@@ -67,9 +76,9 @@
                 style="@style/normalText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Program Title which might be extra long text"
-                android:lines="1"
                 android:ellipsize="end"
+                android:lines="1"
+                android:text="Program Title which might be extra long text"
                 />
 
             <TextView
@@ -83,8 +92,6 @@
         </LinearLayout>
 
     </LinearLayout>
-
-
 
 
 </com.sony.sel.tvapp.view.ProgramInfoView>
