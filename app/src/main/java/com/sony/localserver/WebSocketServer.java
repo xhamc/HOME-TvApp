@@ -116,7 +116,9 @@ public class WebSocketServer extends NanoWSD {
         Thread t = new Thread(new Runnable() {
           @Override
           public void run() {
+            long time = System.currentTimeMillis();
             String json = searchEpgCache(message.getTextPayload());
+            Log.d(TAG, "Sending search EPG cache result. Time = " + (System.currentTimeMillis() - time) + ".");
             if (json != null) {
               try {
                 ws.send(json);
@@ -217,11 +219,15 @@ public class WebSocketServer extends NanoWSD {
       );
 
       // convert to JSON
-      return new GsonBuilder().
+      Log.d(TAG, "Search EPG cache. Building JSON response.");
+      long time = System.currentTimeMillis();
+      String json = new GsonBuilder().
           registerTypeAdapter(VideoProgram.class, new VideoProgram.WebSerializer())
           .disableHtmlEscaping()
           .create()
           .toJson(response);
+      Log.d(TAG, "Search EPG cache. JSON response took " + (System.currentTimeMillis() - time) + "ms to build.");
+      return json;
     }
 
     /**

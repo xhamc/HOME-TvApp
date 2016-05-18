@@ -684,18 +684,18 @@ public class DlnaObjects {
 
     public void setRating(String rating) {
       // transform certain ratings for EPG grid
-      String ratingConvert="";
-      if (rating.contains("Language")){
-        ratingConvert=ratingConvert.concat("L");
+      String ratingConvert = "";
+      if (rating.contains("Language")) {
+        ratingConvert = ratingConvert.concat("L");
       }
-      if (rating.contains("Violence")){
-        ratingConvert=ratingConvert.concat("V");
+      if (rating.contains("Violence")) {
+        ratingConvert = ratingConvert.concat("V");
       }
-      if (rating.contains("Nudity")){
-        ratingConvert=ratingConvert.concat("N");
+      if (rating.contains("Nudity")) {
+        ratingConvert = ratingConvert.concat("N");
       }
-      if (!ratingConvert.isEmpty()){
-        rating=("Warn:").concat(ratingConvert);
+      if (!ratingConvert.isEmpty()) {
+        rating = ("Warn:").concat(ratingConvert);
       }
 
       switch (rating) {
@@ -800,22 +800,17 @@ public class DlnaObjects {
     public static class WebSerializer implements JsonSerializer<VideoProgram> {
       @Override
       public JsonElement serialize(VideoProgram src, Type typeOfSrc, JsonSerializationContext context) {
-
-        JsonObject obj = new Gson().toJsonTree(src).getAsJsonObject();
-        obj.remove("scheduledStartTime");
-        obj.remove("scheduledEndTime");
-        obj.remove("seriesId");
-        obj.remove("resAdditionalInfo");
-        obj.remove("res");
-        obj.remove("resMimeType");
-        obj.remove("protocolInfo");
-        obj.remove("programId");
+        JsonObject obj = new JsonObject();
+        obj.addProperty("title", src.getTitle());
+        obj.addProperty("programTitle", src.getProgramTitle());
         obj.addProperty("start", String.valueOf(src.getScheduledStartTime().getTime()));
         obj.addProperty("length", String.valueOf(src.getScheduledDurationTime()));
         obj.addProperty("description", src.getLongDescription());
         obj.addProperty("programIcon", src.getIcon());
         obj.addProperty("type", src.getEpisodeType());
-
+        obj.addProperty("channelId", src.getChannelId());
+        obj.addProperty("rating", src.getRating());
+        obj.addProperty("genre", src.getGenre());
         return obj;
       }
     }
@@ -996,15 +991,11 @@ public class DlnaObjects {
     public static class WebSerializer implements JsonSerializer<VideoBroadcast> {
       @Override
       public JsonElement serialize(VideoBroadcast src, Type typeOfSrc, JsonSerializationContext context) {
-        JsonObject obj = new Gson().toJsonTree(src).getAsJsonObject();
-        obj.remove("resAdditionalInfo");
-        obj.remove("res");
-        obj.remove("resMimeType");
-        obj.remove("protocolInfo");
+        JsonObject obj = new JsonObject();
         obj.addProperty("callSign", src.getCallSign());
         obj.addProperty("channelID", src.getChannelId());
+        obj.addProperty("channelNumber", src.getChannelNumber());
         obj.addProperty("channelIcon", src.getIcon());
-
         return obj;
       }
     }

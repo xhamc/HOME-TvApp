@@ -121,9 +121,11 @@ public class EpgCachingTask extends AsyncTask<Void, Void, Void> {
         end,
         end
     );
-    if (cacheCount == channelIds.size()) {
+    if (cacheCount >= channelIds.size()) {
       Log.d(TAG, "EPG data already cached for " + day + ".");
       return true;
+    } else {
+      Log.w(TAG, "Incomplete cached EPG data for " + day + ". Expected count = " + channelIds.size() + ", actual count = " + cacheCount + ".");
     }
 
     // need to cache EPG for this day

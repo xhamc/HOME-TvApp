@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.os.AsyncTask;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -136,10 +137,16 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
 
   @Override
   public List<VideoProgram> searchEpg(String udn, final List<String> channels, Date startDateTime, Date endDateTime) {
+    DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+    Log.d(TAG, String.format("Search EPG cache. udn = " + udn + ", channels = " + channels + ", start = " + format.format(startDateTime) + ", end = " + format.format(endDateTime) + "."));
+    long time = System.currentTimeMillis();
     Cursor cursor = getEpgItems(udn, channels, startDateTime, endDateTime);
+    Log.d(TAG, String.format("Search EPG cache. Query time = " + (System.currentTimeMillis() - time) + "ms."));
     try {
       if (cursor.getCount() > 0) {
-        return buildResults(cursor);
+        List<VideoProgram> results = buildResults(cursor);
+        Log.d(TAG, String.format("Search EPG cache. Results time = " + (System.currentTimeMillis() - time) + "ms."));
+        return results;
       } else {
         return new ArrayList<>();
       }
