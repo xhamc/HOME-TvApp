@@ -69,14 +69,14 @@ public class WebSocketServerTest extends InstrumentationTestCase {
     Calendar calendar = Calendar.getInstance();
     calendar.add(Calendar.HOUR_OF_DAY, -1);
     Date start = calendar.getTime();
-    calendar.add(Calendar.HOUR_OF_DAY, 1);
+    calendar.add(Calendar.HOUR_OF_DAY, 12);
     Date end = calendar.getTime();
 
     List<DlnaObjects.VideoBroadcast> channels = dlnaHelper.getChannels(settingsHelper.getEpgServer(), null, true);
     assertTrue("No channels returned from server.", channels.size() > 0);
     Log.d(TAG, String.format("%d channels found.", channels.size()));
     List<String> channelIds = new ArrayList<>();
-    final int MAX_EPG_CHANNELS = 1;
+    final int MAX_EPG_CHANNELS = 5;
     for (int i = 0; i < channels.size() && i < MAX_EPG_CHANNELS; i++) {
       DlnaObjects.VideoBroadcast channel = channels.get(i);
       channelIds.add(channel.getChannelId());
@@ -111,6 +111,55 @@ public class WebSocketServerTest extends InstrumentationTestCase {
     assertNotNull("Current channel was null.",responseData.currentChannel);
 
   }
+
+  public void test_searchEpg() throws Exception {
+
+    // setup
+    Calendar calendar = Calendar.getInstance();
+    calendar.add(Calendar.HOUR_OF_DAY, -1);
+    Date start = calendar.getTime();
+    calendar.add(Calendar.HOUR_OF_DAY, 12);
+    Date end = calendar.getTime();
+
+    List<DlnaObjects.VideoBroadcast> channels = dlnaHelper.getChannels(settingsHelper.getEpgServer(), null, true);
+    assertTrue("No channels returned from server.", channels.size() > 0);
+    Log.d(TAG, String.format("%d channels found.", channels.size()));
+    List<String> channelIds = new ArrayList<>();
+    final int MAX_EPG_CHANNELS = 5;
+    for (int i = 0; i < channels.size() && i < MAX_EPG_CHANNELS; i++) {
+      DlnaObjects.VideoBroadcast channel = channels.get(i);
+      channelIds.add(channel.getChannelId());
+    }
+    Log.d(TAG, "Searching channels: " + new Gson().toJson(channelIds));
+
+    // given
+    List<String> times = new ArrayList<>();
+    times.add(String.valueOf(start.getTime()));
+    times.add(String.valueOf(end.getTime()));
+    EpgRequest request = new EpgRequest(channelIds, times);
+    String json = new Gson().toJson(request);
+    Log.d(TAG, "Socket request: "+json);
+
+    // when
+    long time = System.currentTimeMillis();
+    String response = webSocket.processEpgRequest(json);
+    time = System.currentTimeMillis() - time;
+    Log.d(TAG, "Socket response: "+response);
+
+    // then
+    Log.d(TAG, String.format("Response processed in " + time + " ms."));
+    assertNotNull("Response was null.", response);
+    assertTrue("Response was empty.", response.length() > 0);
+
+    EpgResponse responseData = new Gson().fromJson(response, EpgResponse.class);
+    assertNotNull("Channel map was null.",responseData.channelMap);
+    assertNotNull("Channels list was null.",responseData.channels);
+    assertTrue("Channels list was empty.",responseData.channels.size() > 0);
+    assertNotNull("Favorites list was null.",responseData.favorites);
+    assertNotNull("Current channel was null.",responseData.currentChannel);
+
+  }
+
 
   /**
    * Stub session to send to {@link WebSocketServer#openWebSocket(IHTTPSession)}.

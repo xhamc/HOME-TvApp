@@ -236,7 +236,7 @@ public class WebSocketServer extends NanoWSD {
      * @param payload message payload
      * @return response in JSON format
      */
-    private String processEpgRequest(String payload) {
+    String processEpgRequest(String payload) {
       // parse request from JSON
       EpgRequest request = new Gson().fromJson(payload, EpgRequest.class);
 
@@ -432,7 +432,7 @@ public class WebSocketServer extends NanoWSD {
   /**
    * Class for the EPG response JSON.
    */
-  private static class EpgResponse {
+  static class EpgResponse {
     @SerializedName("EPG")
     Map<String, Map<String, Map<String, VideoProgram>>> channelMap;
     @SerializedName("FAVORITES")

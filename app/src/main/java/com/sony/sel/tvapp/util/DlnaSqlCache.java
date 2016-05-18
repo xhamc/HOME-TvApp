@@ -33,7 +33,7 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
   public static final String TAG = DlnaSqlCache.class.getSimpleName();
 
   private static final String DATABASE_NAME = "dlnacache.db";
-  public static final int DATABASE_VERSION = 6;
+  public static final int DATABASE_VERSION = 7;
 
   private final String CREATE_DLNA_OBJECTS_TABLE = "CREATE TABLE `DLNAObjects` (\n" +
       "\t`UDN`\tTEXT,\n" +
@@ -47,7 +47,8 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
       "\t`ScheduledEndTime`\tINTEGER,\n" +
       "\t`ChannelID`\tSTRING,\n" +
       "\tPRIMARY KEY(UDN,ParentID,ID)\n" +
-      ");";
+      "); \n" +
+      "CREATE INDEX DLNAObjects_Index ON DLNAObjects(ChannelID,ScheduledStartTime,ScheduledEndTime);";
 
   SQLiteDatabase db;
   Map<String, SaveToCacheTask> cachingTasks = new HashMap<>();
