@@ -220,10 +220,10 @@ public class ProgramInfoView extends FrameLayout {
     }
 
     if (program != null && recordProgram != null && recordSeries != null) {
-      if (settingsHelper.getSeriesToRecord().contains(program.getTitle())) {
+      if (settingsHelper.isSeriesRecorded(program)) {
         recordSeries.setVisibility(View.VISIBLE);
         recordProgram.setVisibility(View.GONE);
-      } else if (settingsHelper.getProgramsToRecord().contains(program.getId())) {
+      } else if (settingsHelper.isProgramRecorded(program)) {
         recordSeries.setVisibility(View.GONE);
         recordProgram.setVisibility(View.VISIBLE);
       } else {

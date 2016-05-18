@@ -11,17 +11,16 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
-import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.adapter.TvAppAdapter;
+import com.sony.sel.tvapp.menu.PopupHelper;
 import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.DlnaObjects.DlnaObject;
@@ -144,44 +143,16 @@ public class SearchFragment extends BaseFragment {
 
   private void showPopup(SearchResultCell cell, int position) {
     final DlnaObject program = cell.getData();
-    PopupMenu menu = new PopupMenu(getActivity(), cell);
-    menu.inflate(R.menu.program_popup_menu);
 
-    menu.getMenu().removeItem(R.id.addToFavoriteChannels);
-    menu.getMenu().removeItem(R.id.removeFromFavoriteChannels);
+    // all menu items are hidden by default
 
-    if (settingsHelper.getSeriesToRecord().contains(program.getTitle())) {
-      menu.getMenu().removeItem(R.id.recordProgram);
-      menu.getMenu().removeItem(R.id.cancelProgramRecording);
-      menu.getMenu().removeItem(R.id.recordSeries);
-    } else if (settingsHelper.getProgramsToRecord().contains(program.getId())) {
-      menu.getMenu().removeItem(R.id.recordProgram);
-      menu.getMenu().removeItem(R.id.cancelSeriesRecording);
-    } else {
-      menu.getMenu().removeItem(R.id.cancelProgramRecording);
-      menu.getMenu().removeItem(R.id.cancelSeriesRecording);
+    if (program instanceof VideoProgram) {
+      // popup for an EPG item
+      PopupHelper.getHelper(getActivity()).showPopup((VideoProgram) program, cell);
+    } else if (program instanceof VideoItem) {
+      // popup for a VOD item
+      PopupHelper.getHelper(getActivity()).showPopup((VideoItem) program, cell);
     }
-    menu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-      @Override
-      public boolean onMenuItemClick(MenuItem item) {
-        switch (item.getItemId()) {
-          case R.id.recordProgram:
-            settingsHelper.addRecording(program.getId());
-            return true;
-          case R.id.recordSeries:
-            settingsHelper.addSeriesRecording(program.getTitle());
-            return true;
-          case R.id.cancelProgramRecording:
-            settingsHelper.removeRecording(program.getId());
-            return true;
-          case R.id.cancelSeriesRecording:
-            settingsHelper.removeSeriesRecording(program.getTitle());
-            return true;
-        }
-        return false;
-      }
-    });
-    menu.show();
   }
 
   /**

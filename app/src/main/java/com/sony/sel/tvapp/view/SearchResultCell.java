@@ -130,16 +130,16 @@ public class SearchResultCell extends BaseListCell<DlnaObject> {
     }
 
     // recording icons
-    if (settingsHelper.getSeriesToRecord().contains(program.getTitle())) {
-      recordSeries.setVisibility(View.VISIBLE);
-      recordProgram.setVisibility(View.GONE);
-    } else if (settingsHelper.getProgramsToRecord().contains(program.getId())) {
-      recordSeries.setVisibility(View.GONE);
-      recordProgram.setVisibility(View.VISIBLE);
-    } else {
-      recordSeries.setVisibility(View.GONE);
-      recordProgram.setVisibility(View.GONE);
+    recordSeries.setVisibility(View.GONE);
+    recordProgram.setVisibility(View.GONE);
+    if (program instanceof VideoProgram) {
+      if (settingsHelper.isSeriesRecorded((VideoProgram) program)) {
+        recordSeries.setVisibility(View.VISIBLE);
+      } else if (settingsHelper.isProgramRecorded((VideoProgram) program)) {
+        recordProgram.setVisibility(View.VISIBLE);
+      }
     }
+
 
     // thumbnail icon
     if (program.getIcon() != null && program.getIcon().length() > 0) {

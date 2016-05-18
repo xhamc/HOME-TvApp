@@ -11,6 +11,7 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import com.sony.sel.tvapp.R;
+import com.sony.sel.tvapp.menu.PopupHelper;
 import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaObjects;
 import com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
@@ -118,7 +119,7 @@ public class ChannelCell extends BaseListCell<VideoBroadcast> {
     setOnLongClickListener(new OnLongClickListener() {
       @Override
       public boolean onLongClick(View v) {
-        showChannelPopup(v, channel);
+        showChannelPopup(v);
         return true;
       }
     });
@@ -156,36 +157,12 @@ public class ChannelCell extends BaseListCell<VideoBroadcast> {
     }
   }
 
-  private void showChannelPopup(View v, final VideoBroadcast channel) {
-    final SettingsHelper settingsHelper = SettingsHelper.getHelper(getContext());
-    PopupMenu menu = new PopupMenu(getContext(), v);
-    menu.inflate(R.menu.channel_popup_menu);
-    if (settingsHelper.getFavoriteChannels().contains(channel.getChannelId())) {
-      menu.getMenu().removeItem(R.id.addToFavoriteChannels);
+  private void showChannelPopup(View v) {
+    if (epg != null) {
+      PopupHelper.getHelper(getContext()).showPopup(epg, v);
     } else {
-      menu.getMenu().removeItem(R.id.removeFromFavoriteChannels);
+      PopupHelper.getHelper(getContext()).showPopup(channel, v);
     }
-    menu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-      @Override
-      public boolean onMenuItemClick(MenuItem item) {
-        switch (item.getItemId()) {
-          case R.id.addToFavoriteChannels:
-            settingsHelper.addFavoriteChannel(channel.getChannelId());
-            // re-bind to update display
-            bind(channel);
-            setEpg(epg);
-            return true;
-          case R.id.removeFromFavoriteChannels:
-            settingsHelper.removeFavoriteChannel(channel.getChannelId());
-            // re-bind to update display
-            bind(channel);
-            setEpg(epg);
-            return true;
-        }
-        return false;
-      }
-    });
-    menu.show();
     // keep ui alive longer if popup is selected
     EventBus.getInstance().post(new EventBus.ResetUiTimerLongEvent());
   }

@@ -54,6 +54,8 @@
     <string name="searchPrompt">Search for a program:</string>
     <string name="searching">Searching...</string>
     <string name="onDemand">On Demand</string>
+    <string name="addToFavoritePrograms">Add to favorite programs</string>
+    <string name="removeFromFavoritePrograms">Remove from favorite programs</string>
 
 
 </resources>
