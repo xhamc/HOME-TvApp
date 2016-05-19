@@ -30,6 +30,7 @@ public class SettingsHelper {
   private static final String RECORD_PROGRAMS = "RecordPrograms";
   private static final String RECORD_SERIES = "RecordSeries";
   private static final String USE_CHANNEL_VIDEO = "UseChannelVideo";
+  private static final String AUTO_PLAY_CHANNEL_VIDEO = "AutoPlayChannelVideo";
   private static final String VIDEO_POSITIONS = "VideoPositions";
   private static final String FAVORITE_PROGRAMS = "FavoritePrograms";
 
@@ -163,6 +164,17 @@ public class SettingsHelper {
 
   public boolean useChannelVideosSetting() {
     return getSharedPreferences().getBoolean(USE_CHANNEL_VIDEO, false);
+  }
+
+  public void setAutoPlay(boolean condition) {
+    SharedPreferences prefs = getSharedPreferences();
+    SharedPreferences.Editor editor = prefs.edit();
+    editor.putBoolean(AUTO_PLAY_CHANNEL_VIDEO, condition);
+    editor.commit();
+  }
+
+  public boolean getAutoPlay() {
+    return getSharedPreferences().getBoolean(AUTO_PLAY_CHANNEL_VIDEO, true);
   }
 
   public Set<String> getFavoriteChannels() {

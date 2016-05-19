@@ -7,10 +7,13 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.RecyclerView.ViewHolder;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.adapter.TvAppAdapter;
@@ -24,6 +27,9 @@ import com.sony.sel.util.ViewUtils;
 
 import java.util.List;
 
+import butterknife.Bind;
+import butterknife.ButterKnife;
+
 import static com.sony.sel.tvapp.util.DlnaObjects.UpnpDevice;
 
 /**
@@ -35,7 +41,13 @@ public class SelectServerFragment extends BaseFragment {
 
   private DlnaInterface dlnaHelper;
 
-  private RecyclerView list;
+  @Bind(android.R.id.list)
+  RecyclerView list;
+  @Bind(R.id.channelVid)
+  CheckBox channelVideo;
+  @Bind(R.id.autoPlay)
+  CheckBox autoPlay;
+
   private DeviceAdapter adapter;
 
   @Nullable
@@ -45,12 +57,40 @@ public class SelectServerFragment extends BaseFragment {
     dlnaHelper = DlnaHelper.getHelper(getActivity());
 
     View contentView = inflater.inflate(R.layout.select_server_fragment, null);
+    ButterKnife.bind(this, contentView);
 
     // setup list and adapter
-    list = ViewUtils.findViewById(contentView, android.R.id.list);
     list.setLayoutManager(new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false));
     adapter = new DeviceAdapter();
     list.setAdapter(adapter);
+    list.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+      @Override
+      public void onFocusChange(View v, boolean hasFocus) {
+        if (hasFocus) {
+          ViewHolder holder = list.findViewHolderForAdapterPosition(0);
+          if (holder != null && holder.getItemViewType() == R.id.server_cell) {
+            holder.itemView.requestFocus();
+          }
+        }
+      }
+    });
+
+    // set up check boxes
+    final SettingsHelper settingsHelper = SettingsHelper.getHelper(getActivity());
+    channelVideo.setChecked(settingsHelper.useChannelVideosSetting());
+    channelVideo.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+      @Override
+      public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+        settingsHelper.setToChannelVideoSetting(isChecked);
+      }
+    });
+    autoPlay.setChecked(settingsHelper.getAutoPlay());
+    autoPlay.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+      @Override
+      public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+        settingsHelper.setAutoPlay(isChecked);
+      }
+    });
 
     // set loading state and get device list
     adapter.setLoading();
@@ -132,6 +172,7 @@ public class SelectServerFragment extends BaseFragment {
     protected void onPostExecute(List<UpnpDevice> deviceList) {
       super.onPostExecute(deviceList);
       adapter.setData(deviceList);
+      list.requestFocus();
     }
   }
 }

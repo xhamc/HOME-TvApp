@@ -86,13 +86,13 @@ public class PopupHelper {
       menu.getMenu().findItem(R.id.cancelProgramRecording).setVisible(true);
     } else {
       menu.getMenu().findItem(R.id.recordProgram).setVisible(true);
-      if (program.getEpisodeNumber() != null && program.getEpisodeNumber().length() > 0) {
+      if (isSeriesProgram(program)) {
         menu.getMenu().findItem(R.id.recordSeries).setVisible(true);
       }
     }
 
     // set favorite menu items
-    if (program.getEpisodeNumber() != null && program.getEpisodeNumber().length() > 0) {
+    if (isSeriesProgram(program)) {
       // assume this is a series
       if (settingsHelper.isFavoriteProgram(program)) {
         menu.getMenu().findItem(R.id.removeFromFavoritePrograms).setVisible(true);
@@ -106,13 +106,25 @@ public class PopupHelper {
   }
 
   /**
+   * Is the EPG program a series (repeating) program?
+   *
+   * @param program The program to inspect.
+   * @return true if the program is part of a series.
+   */
+  boolean isSeriesProgram(VideoProgram program) {
+    // unfortunately getSeriesId() is not a reliable indicator of whether a program repeats.
+    // here we try to do our best...
+    return program.getProgramTitle() != null || program.getEpisodeNumber() != null;
+  }
+
+  /**
    * Show a VOD item popup.
    *
    * @param vodItem VOD item the menu is for.
    * @param anchor  View to anchor the popup menu to.
    */
   public void showPopup(@NonNull VideoItem vodItem, @NonNull View anchor) {
-    // nothing yet for VOD
+    // TODO nothing to pop up for VOD items yet
   }
 
   /**

@@ -16,7 +16,7 @@
     <string name="genericErrorMessage">An error occurred.</string>
 
     <!-- servers -->
-    <string name="selectServerTitle">Select a Server:</string>
+    <string name="selectServerTitle">Settings:</string>
     <string name="searchingForServers">Searching...</string>
     <string name="noServersFound">No supported servers were found.</string>
 
@@ -37,7 +37,6 @@
     <string name="clearChannelVideos">Clear Videos</string>
     <string name="selectVideos">Select Videos</string>
     <string name="noVideosError">You have not yet selected any videos to play.</string>
-    <string name="useChannelVideo">Use actual source for channels</string>
 
     <!-- menu items -->
     <string name="addToFavoriteChannels">Add to favorite channels</string>
@@ -46,7 +45,12 @@
     <string name="recordSeries">Record entire series</string>
     <string name="cancelProgramRecording">Cancel recording</string>
     <string name="cancelSeriesRecording">Cancel series recording</string>
-    <string name="channelVid">Channel Video</string>
+    <string name="addToFavoritePrograms">Add to favorite programs</string>
+    <string name="removeFromFavoritePrograms">Remove from favorite programs</string>
+
+    <!-- settings -->
+    <string name="useChannelVideo">Use actual channel videos</string>
+    <string name="autoPlayOnChannelChange">Play channel videos automatically</string>
 
     <!-- search -->
     <string name="searchHint">Search TV shows</string>
@@ -54,8 +58,6 @@
     <string name="searchPrompt">Search for a program:</string>
     <string name="searching">Searching...</string>
     <string name="onDemand">On Demand</string>
-    <string name="addToFavoritePrograms">Add to favorite programs</string>
-    <string name="removeFromFavoritePrograms">Remove from favorite programs</string>
 
 
 </resources>

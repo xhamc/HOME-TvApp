@@ -92,6 +92,7 @@ public abstract class TvAppAdapter<T, V extends View & Bindable<T>> extends Recy
   public void setData(List<T> data) {
     this.data = data;
     this.error = null;
+    this.firstFocus = false;
     notifyDataSetChanged();
   }
 
