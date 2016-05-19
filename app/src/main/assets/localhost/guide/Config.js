@@ -153,7 +153,7 @@ function getTime(ms){
 		var displayTodayArray=todayUTCstring.split(' ');
 		var displayDate=displayTodayArray[0]+' '+displayTodayArray[1]+' '+displayTodayArray[2]+' '+displayTodayArray[3];
 
-		jsonTime={'ms':today.getTime(),"date":displayDate, "time": displayTime, "duration":duration};
+		jsonTime={'ms':today.getTime(),"date":displayDate, "time": displayTime, "all":(displayDate+ ' '+displayTime), "duration":duration};
 		return jsonTime;
 
 }

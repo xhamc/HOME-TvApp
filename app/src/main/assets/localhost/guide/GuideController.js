@@ -195,7 +195,7 @@ function GuideController(){
 			var updateRequest=getNextTimeAndChannelList();
 	//				if (null!=updateRequest){
 				if (updateRequest.vis){
-					console.log("Visible update");
+					console.log("Visible Channel update");
 					var msg=JSON.stringify({"browseEPGData":updateRequest.req});
 				}else{
 					console.log("non Visible background data update");
@@ -216,23 +216,25 @@ function GuideController(){
 
 
 	var maxTimeLast=originalGridTimeStart+2*GRIDINTERVAL*10;
-	var toggle=false;
+	var toggle=0;
 	function getNextTimeAndChannelList(){
 		var channelData=[];
 		var timeData=[];
-		var end=gridTimeStart+GRIDINTERVAL*10;
+		var end=gridTimeStart+GRIDINTERVAL*15;
 		var index=0;
 		var mxt=getTime().ms+MAXTTIME;
 		var start=mxt;
 		var visibleDataRequest=false;
-//		toggle=!toggle;
-		if (toggle){
+		toggle++;
+		if (toggle==4){
+			toggle=0;
+			console.log("Visible Channel check");
 			for (var i=0; i<Math.min(5, (CHANNELLIST_DATA.length -	currentChannelGridOffset)); i++){
 //					if ((i+currentChannelGridOffset)<updateChannelStart || (i+currentChannelGridOffset)>updateChannelStart+5){
 				try{
 					var m=EPG_DATA[STATION_DATA[CHANNELLIST_DATA[i+currentChannelGridOffset]].channelId].metadata;
 
-					if (m.length==0){
+					if (null==m || m.length==0){
 						start = originalGridTimeStart;
 						channelData[index]=STATION_DATA[CHANNELLIST_DATA[i+currentChannelGridOffset]].channelId;
 						console.log("Visible Channel: No data: " +STATION_DATA[CHANNELLIST_DATA[i+currentChannelGridOffset]].channelNumber);
@@ -242,51 +244,54 @@ function GuideController(){
 					}
 					else if (m.length==1){
 
-						if ( parseInt(m[0].start)>originalGridTimeStart || (parseInt(m[0].start)+parseInt(m[0].length)) < end){
+						if ( parseInt(m[0].start)>originalGridTimeStart && parseInt(m[0].start)>gridTimeStart || (parseInt(m[0].start)+parseInt(m[0].length)) < end){
 							start = originalGridTimeStart;
 							channelData[index]=STATION_DATA[CHANNELLIST_DATA[i+currentChannelGridOffset]].channelId;
 
-							console.log("Visible Channel: start or end missing: "+STATION_DATA[CHANNELLIST_DATA[i+currentChannelGridOffset]].channelNumber);
-							console.log(" start: "+parseInt(m[0].start)+"original start: "+originalGridTimeStart + " end: "+(parseInt(m[0].start)+parseInt(m[0].length))+ "grid end: "+ end);
+							console.log("Visible Channel: 1 program late start or end too early: "+
+							STATION_DATA[CHANNELLIST_DATA[i+currentChannelGridOffset]].channelNumber +
+							" start: "+getTime(parseInt(m[0].start)).all+"original start: "+
+							getTime(originalGridTimeStart).all + " end: "+
+							getTime(parseInt(m[0].start)+parseInt(m[0].length)).all+ "grid end: "+ getTime(end).all);
 							index++;
 						}
 
 					}else if ((parseInt(m[m.length-1].start)+parseInt(m[m.length-1].length)) < end){
-							start = originalGridTimeStart;
+							start = gridTimeStart;
 							channelData[index]=STATION_DATA[CHANNELLIST_DATA[i+currentChannelGridOffset]].channelId;
 
-							console.log("Visible Channel: <END:: "+STATION_DATA[CHANNELLIST_DATA[i+currentChannelGridOffset]].channelNumber);
-							console.log(" data end: "+(parseInt(m[m.length-1].start)+parseInt(m[m.length-1].length))+" end: "+end);
+							console.log("Visible Channel: last data <END:: "+STATION_DATA[CHANNELLIST_DATA[i+currentChannelGridOffset]].channelNumber +
+							" data end: "+getTime(parseInt(m[m.length-1].start)+parseInt(m[m.length-1].length)).all+" end: "+getTime(end).all);
 							index++;
 
 
 					}else{
 						var hole=false;
-
+						loop2:
 						for (var j=1; j<m.length; j++){
-							if ( parseInt(m[j].start)<end && (parseInt(m[j-1].start)+parseInt(m[j-1].length))>originalGridTimeStart && parseInt(m[j].start)>(parseInt(m[j-1].start)+parseInt(m[j-1].length)+10*60*1000)){		//channel to channel holes with 10 minute EPG error allowance
+							var start1=parseInt(m[j-1].start);
+							var end1=start1+parseInt(m[j-1].length);
+							var MAXGAP=10*60*1000;
+							var start2=parseInt(m[j].start);
+							if ( end1>gridTimeStart && start2>end1+MAXGAP){		//channel to channel holes with 10 minute EPG error allowance
+								start = gridTimeStart;
 								hole=true;
 //								if (end<(parseInt(m[j].start)+parseInt(m[j].length))){
 //									end=parseInt(m[j].start)+parseInt(m[j].length);
 //								}
+								console.log("Visible Channel: Hole: "
+								+STATION_DATA[CHANNELLIST_DATA[i+currentChannelGridOffset]].channelNumber+
+							  	"start1: "+ getTime(start1).all
+							   +" end1: "+getTime(end1).all
+							   +" start2: "+getTime(start2).all);
+							   channelData[index]=STATION_DATA[CHANNELLIST_DATA[i+currentChannelGridOffset]].channelId;
+							   index++;
+							   break loop2;
 							}
-						}
-						if (hole){
-							start = originalGridTimeStart;
-							channelData[index]=STATION_DATA[CHANNELLIST_DATA[i+currentChannelGridOffset]].channelId;
-							console.log("Visible Channel: Hole: "+STATION_DATA[CHANNELLIST_DATA[i+currentChannelGridOffset]].channelNumber+
-							  	"start: "+ getTime(originalGridTimeStart).time
-							   +" end: "+getTime(end).time);
-//							console.log("start: "+parseInt(m[j-1].start)+" length: "+parseInt(m[j].length)+" next start: "+parseInt(m[j].start)+ " diff: "+(parseInt(m[j].start)-(parseInt(m[j-1].start)+parseInt(m[j-1].length))));
-							index++;
 						}
 					}
 				}catch(err){
-					start = originalGridTimeStart;
-					channelData[index]=STATION_DATA[CHANNELLIST_DATA[i+currentChannelGridOffset]].channelId;
-					index++;
-					console.log("Visible Channel: No data: " +channelData[index] + " through try catch err: "+err);
-
+					console.log("Visible Channel: Error: " +err);
 				}
 			}
 			if (index>0){
@@ -294,11 +299,8 @@ function GuideController(){
 				timeData[1]=end;
 				var jo={"CHANNELLIST":channelData, "TIMELIST":timeData};
 				for (var i=0; i<channelData.length; i++){
-					console.log("Visible Channels: channels"+channelData[i] + "time[0]: "+getTime(timeData[0]).date + "  " + getTime(timeData[0]).time+"  time[1]: "+getTime(timeData[1]).date+"  "+getTime(timeData[1]).time);
+					console.log("Visible Channels: channels "+channelData[i] + " time[0]: "+getTime(timeData[0]).all+"  time[1]: "+getTime(timeData[1]).all);
 				}
-
-
-
 				var updateRequest={"req":jo,"vis":true};
 				return updateRequest;
 			}
