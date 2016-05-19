@@ -5,16 +5,15 @@ import android.graphics.Rect;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
-import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import com.sony.sel.tvapp.R;
+import com.sony.sel.tvapp.menu.PopupHelper;
 import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.FocusHelper;
 import com.sony.sel.tvapp.util.SettingsHelper;
@@ -90,22 +89,6 @@ public class ChannelEpgView extends FrameLayout {
     final VideoProgram currentProgram = getCurrentProgram();
     nowPlaying.setVisibility(currentProgram != null ? View.VISIBLE : View.INVISIBLE);
     programInfoView.bind(currentProgram, channel);
-    final View alignView = programInfoView.getPopupAlignView();
-    programInfoView.setOnClickListener(new OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        showPopup(alignView, channel, currentProgram);
-        EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
-      }
-    });
-    programInfoView.setOnLongClickListener(new OnLongClickListener() {
-      @Override
-      public boolean onLongClick(View v) {
-        showPopup(alignView, channel, currentProgram);
-        EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
-        return true;
-      }
-    });
 
     // configure the "up next" programs
     List<VideoProgram> nextPrograms = getNextPrograms();
@@ -113,21 +96,6 @@ public class ChannelEpgView extends FrameLayout {
     upNextLayout.removeAllViews();
     for (final VideoProgram program : nextPrograms) {
       final ProgramInfoView upNext = (ProgramInfoView) View.inflate(getContext(), R.layout.program_info_view_small, null);
-      upNext.setOnClickListener(new OnClickListener() {
-        @Override
-        public void onClick(View v) {
-          showPopup(v, channel, program);
-          EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
-        }
-      });
-      upNext.setOnLongClickListener(new OnLongClickListener() {
-        @Override
-        public boolean onLongClick(View v) {
-          showPopup(v, channel, program);
-          EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
-          return true;
-        }
-      });
       upNext.bind(program, channel);
       LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
       params.setMarginEnd(getResources().getDimensionPixelSize(R.dimen.channelThumbPadding));
@@ -155,59 +123,11 @@ public class ChannelEpgView extends FrameLayout {
   }
 
   private void showPopup(View v, final VideoBroadcast channel, final VideoProgram program) {
-    PopupMenu menu = new PopupMenu(getContext(), v);
-    menu.inflate(R.menu.program_popup_menu);
-    if (settingsHelper.getFavoriteChannels().contains(channel.getChannelId())) {
-      menu.getMenu().removeItem(R.id.addToFavoriteChannels);
-    } else {
-      menu.getMenu().removeItem(R.id.removeFromFavoriteChannels);
-    }
     if (program != null) {
-      if (settingsHelper.getSeriesToRecord().contains(program.getTitle())) {
-        menu.getMenu().removeItem(R.id.recordProgram);
-        menu.getMenu().removeItem(R.id.cancelProgramRecording);
-        menu.getMenu().removeItem(R.id.recordSeries);
-      } else if (settingsHelper.getProgramsToRecord().contains(program.getId())) {
-        menu.getMenu().removeItem(R.id.recordProgram);
-        menu.getMenu().removeItem(R.id.cancelSeriesRecording);
-      } else {
-        menu.getMenu().removeItem(R.id.cancelProgramRecording);
-        menu.getMenu().removeItem(R.id.cancelSeriesRecording);
-      }
-    } else {
-      // no current program
-      menu.getMenu().removeItem(R.id.recordProgram);
-      menu.getMenu().removeItem(R.id.recordSeries);
-      menu.getMenu().removeItem(R.id.cancelProgramRecording);
-      menu.getMenu().removeItem(R.id.cancelSeriesRecording);
+      PopupHelper.getHelper(getContext()).showPopup(program, v);
+    } else if (channel != null) {
+      PopupHelper.getHelper(getContext()).showPopup(channel, v);
     }
-    menu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-      @Override
-      public boolean onMenuItemClick(MenuItem item) {
-        switch (item.getItemId()) {
-          case R.id.addToFavoriteChannels:
-            settingsHelper.addFavoriteChannel(channel.getChannelId());
-            return true;
-          case R.id.removeFromFavoriteChannels:
-            settingsHelper.removeFavoriteChannel(channel.getChannelId());
-            return true;
-          case R.id.recordProgram:
-            settingsHelper.addRecording(program.getId());
-            return true;
-          case R.id.recordSeries:
-            settingsHelper.addSeriesRecording(program.getTitle());
-            return true;
-          case R.id.cancelProgramRecording:
-            settingsHelper.removeRecording(program.getId());
-            return true;
-          case R.id.cancelSeriesRecording:
-            settingsHelper.removeSeriesRecording(program.getTitle());
-            return true;
-        }
-        return false;
-      }
-    });
-    menu.show();
   }
 
   @Override

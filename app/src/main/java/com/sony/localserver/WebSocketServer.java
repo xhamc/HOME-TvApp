@@ -109,7 +109,6 @@ public class WebSocketServer extends NanoWSD {
             }
           }
         });
-        t.setPriority(Thread.MIN_PRIORITY);
         t.start();
       } else if (payload.contains("searchEPGCache")) {
         Log.d(TAG, "Search EPG cache.");
@@ -128,7 +127,6 @@ public class WebSocketServer extends NanoWSD {
             }
           }
         });
-        t.setPriority(Thread.MIN_PRIORITY);
         t.start();
       } else if (payload.equals("browseEPGStations")) {
         new Thread(new Runnable() {
@@ -141,6 +139,21 @@ public class WebSocketServer extends NanoWSD {
                 ws.send(json);
               } catch (IOException e) {
                 Log.e(TAG, "Error sending Channels:" + e);
+              }
+            }
+          }
+        }).start();
+      } else if (payload.equals("getRecordingsAndFavorites")) {
+        new Thread(new Runnable() {
+          @Override
+          public void run() {
+            Log.d(TAG, "Get recordings and favorites.");
+            String json = getRecordingsAndFavorites();
+            if (json != null) {
+              try {
+                ws.send(json);
+              } catch (IOException e) {
+                Log.e(TAG, "Error sending recordings and favorites:" + e);
               }
             }
           }
@@ -336,6 +349,26 @@ public class WebSocketServer extends NanoWSD {
     }
 
     /**
+     * Return the list of program recordings, series recordings and favorite programs as JSON.
+     * @return Formatted JSON.
+     */
+    String getRecordingsAndFavorites() {
+
+      RecordingsAndFavoritesResponse response = new RecordingsAndFavoritesResponse(
+          settingsHelper.getProgramsToRecord(),
+          settingsHelper.getSeriesToRecord(),
+          settingsHelper.getFavoritePrograms()
+      );
+
+      // convert to JSON with special serializer
+      return new GsonBuilder().
+          registerTypeAdapter(VideoBroadcast.class, new VideoBroadcast.WebSerializer())
+          .disableHtmlEscaping()
+          .create()
+          .toJson(response);
+    }
+
+    /**
      * Return the list of channels favorite as a JSON string.
      *
      * @return favorite list JSON.
@@ -483,6 +516,21 @@ public class WebSocketServer extends NanoWSD {
       this.favorites = favorites;
       this.channels = channels;
       this.currentChannel = currentChannel;
+    }
+  }
+
+  private static class RecordingsAndFavoritesResponse {
+    @SerializedName("RECORD_PROGRAMS")
+    Set<String> programsToRecord;
+    @SerializedName("RECORD_SERIES")
+    Set<String> seriesToRecord;
+    @SerializedName("FAVORITE_PROGRAMS")
+    Set<String> favoritePrograms;
+
+    public RecordingsAndFavoritesResponse(Set<String> programsToRecord, Set<String> seriesToRecord, Set<String> favoritePrograms) {
+      this.programsToRecord = programsToRecord;
+      this.seriesToRecord = seriesToRecord;
+      this.favoritePrograms = favoritePrograms;
     }
   }
 

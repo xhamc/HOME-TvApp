@@ -44,6 +44,26 @@
                 android:layout_margin="10dp"
                 android:src="@drawable/series_record"
                 />
+
+            <ImageView
+                android:id="@+id/favoriteChannel"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_gravity="top|right"
+                android:src="@drawable/star"
+                android:layout_marginTop="2dp"
+                android:layout_marginRight="5dp"
+                />
+
+            <ImageView
+                android:id="@+id/favoriteProgram"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_gravity="top|left"
+                android:layout_marginTop="5dp"
+                android:src="@drawable/heart"
+                />
+
         </FrameLayout>
 
         <LinearLayout

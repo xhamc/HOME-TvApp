@@ -6,31 +6,49 @@
     <item
         android:id="@+id/addToFavoriteChannels"
         android:title="@string/addToFavoriteChannels"
+        android:visible="false"
         />
 
     <item
         android:id="@+id/removeFromFavoriteChannels"
         android:title="@string/removeFromFavoriteChannels"
+        android:visible="false"
         />
 
     <item
         android:id="@+id/recordProgram"
         android:title="@string/recordProgram"
+        android:visible="false"
         />
 
     <item
         android:id="@+id/recordSeries"
         android:title="@string/recordSeries"
+        android:visible="false"
         />
 
     <item
         android:id="@+id/cancelProgramRecording"
         android:title="@string/cancelProgramRecording"
+        android:visible="false"
         />
 
     <item
         android:id="@+id/cancelSeriesRecording"
         android:title="@string/cancelSeriesRecording"
+        android:visible="false"
+        />
+
+    <item
+        android:id="@+id/addToFavoritePrograms"
+        android:title="@string/addToFavoritePrograms"
+        android:visible="false"
+        />
+
+    <item
+        android:id="@+id/removeFromFavoritePrograms"
+        android:title="@string/removeFromFavoritePrograms"
+        android:visible="false"
         />
 
 </menu>

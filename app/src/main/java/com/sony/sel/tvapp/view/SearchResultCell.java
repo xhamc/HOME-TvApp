@@ -44,6 +44,10 @@ public class SearchResultCell extends BaseListCell<DlnaObject> {
   ImageView recordProgram;
   @Bind(R.id.recordSeries)
   ImageView recordSeries;
+  @Bind(R.id.favoriteProgram)
+  View favoriteProgram;
+  @Bind(R.id.favoriteChannel)
+  View favoriteChannel;
 
   public SearchResultCell(Context context) {
     super(context);
@@ -130,16 +134,24 @@ public class SearchResultCell extends BaseListCell<DlnaObject> {
     }
 
     // recording icons
-    if (settingsHelper.getSeriesToRecord().contains(program.getTitle())) {
-      recordSeries.setVisibility(View.VISIBLE);
-      recordProgram.setVisibility(View.GONE);
-    } else if (settingsHelper.getProgramsToRecord().contains(program.getId())) {
-      recordSeries.setVisibility(View.GONE);
-      recordProgram.setVisibility(View.VISIBLE);
-    } else {
-      recordSeries.setVisibility(View.GONE);
-      recordProgram.setVisibility(View.GONE);
+    recordSeries.setVisibility(View.GONE);
+    recordProgram.setVisibility(View.GONE);
+    favoriteChannel.setVisibility(View.GONE);
+    favoriteProgram.setVisibility(View.GONE);
+    if (program instanceof VideoProgram) {
+      if (settingsHelper.isSeriesRecorded((VideoProgram) program)) {
+        recordSeries.setVisibility(View.VISIBLE);
+      } else if (settingsHelper.isProgramRecorded((VideoProgram) program)) {
+        recordProgram.setVisibility(View.VISIBLE);
+      }
+      if (settingsHelper.isFavoriteProgram((VideoProgram)program)) {
+        favoriteProgram.setVisibility(View.VISIBLE);
+      }
+      if (settingsHelper.getFavoriteChannels().contains(((VideoProgram)program).getChannelId())) {
+        favoriteProgram.setVisibility(View.VISIBLE);
+      }
     }
+
 
     // thumbnail icon
     if (program.getIcon() != null && program.getIcon().length() > 0) {
@@ -157,6 +169,18 @@ public class SearchResultCell extends BaseListCell<DlnaObject> {
 
   @Subscribe
   public void onRecordingsChanged(RecordingsChangedEvent event) {
+    // rebind to refresh display
+    bind(program);
+  }
+
+  @Subscribe
+  public void onFavoriteChannelsChanged(EventBus.FavoriteChannelsChangedEvent event) {
+    // rebind to refresh display
+    bind(program);
+  }
+
+  @Subscribe
+  public void onFavoriteProgramsChanged(EventBus.FavoriteProgramsChangedEvent event) {
     // rebind to refresh display
     bind(program);
   }

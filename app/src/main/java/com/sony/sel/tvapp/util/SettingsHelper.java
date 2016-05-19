@@ -1,11 +1,12 @@
 package com.sony.sel.tvapp.util;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
+import android.support.annotation.NonNull;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,7 +30,9 @@ public class SettingsHelper {
   private static final String RECORD_PROGRAMS = "RecordPrograms";
   private static final String RECORD_SERIES = "RecordSeries";
   private static final String USE_CHANNEL_VIDEO = "UseChannelVideo";
+  private static final String AUTO_PLAY_CHANNEL_VIDEO = "AutoPlayChannelVideo";
   private static final String VIDEO_POSITIONS = "VideoPositions";
+  private static final String FAVORITE_PROGRAMS = "FavoritePrograms";
 
   private static SettingsHelper INSTANCE;
   private List<VideoItem> channelVideos;
@@ -163,6 +166,17 @@ public class SettingsHelper {
     return getSharedPreferences().getBoolean(USE_CHANNEL_VIDEO, false);
   }
 
+  public void setAutoPlay(boolean condition) {
+    SharedPreferences prefs = getSharedPreferences();
+    SharedPreferences.Editor editor = prefs.edit();
+    editor.putBoolean(AUTO_PLAY_CHANNEL_VIDEO, condition);
+    editor.commit();
+  }
+
+  public boolean getAutoPlay() {
+    return getSharedPreferences().getBoolean(AUTO_PLAY_CHANNEL_VIDEO, true);
+  }
+
   public Set<String> getFavoriteChannels() {
     return getSharedPreferences().getStringSet(FAVORITE_CHANNELS, new HashSet<String>());
   }
@@ -191,9 +205,9 @@ public class SettingsHelper {
     return getSharedPreferences().getStringSet(RECORD_PROGRAMS, new HashSet<String>());
   }
 
-  public void addRecording(String programId) {
+  public void addRecording(VideoProgram program) {
     Set<String> recordings = getProgramsToRecord();
-    recordings.add(programId);
+    recordings.add(program.getProgramId());
     SharedPreferences prefs = getSharedPreferences();
     SharedPreferences.Editor editor = prefs.edit();
     editor.putStringSet(RECORD_PROGRAMS, recordings);
@@ -201,23 +215,27 @@ public class SettingsHelper {
     EventBus.getInstance().post(new EventBus.RecordingsChangedEvent());
   }
 
-  public void removeRecording(String programId) {
+  public void removeRecording(VideoProgram program) {
     Set<String> recordings = getProgramsToRecord();
-    recordings.remove(programId);
+    recordings.remove(program.getProgramId());
     SharedPreferences prefs = getSharedPreferences();
     SharedPreferences.Editor editor = prefs.edit();
     editor.putStringSet(RECORD_PROGRAMS, recordings);
     editor.commit();
     EventBus.getInstance().post(new EventBus.RecordingsChangedEvent());
+  }
+
+  public boolean isProgramRecorded(VideoProgram program) {
+    return getProgramsToRecord().contains(program.getProgramId());
   }
 
   public Set<String> getSeriesToRecord() {
     return getSharedPreferences().getStringSet(RECORD_SERIES, new HashSet<String>());
   }
 
-  public void addSeriesRecording(String seriesId) {
+  public void addSeriesRecording(VideoProgram program) {
     Set<String> recordings = getSeriesToRecord();
-    recordings.add(seriesId);
+    recordings.add(program.getSeriesId());
     SharedPreferences prefs = getSharedPreferences();
     SharedPreferences.Editor editor = prefs.edit();
     editor.putStringSet(RECORD_SERIES, recordings);
@@ -225,14 +243,18 @@ public class SettingsHelper {
     EventBus.getInstance().post(new EventBus.RecordingsChangedEvent());
   }
 
-  public void removeSeriesRecording(String seriesId) {
+  public void removeSeriesRecording(VideoProgram program) {
     Set<String> recordings = getSeriesToRecord();
-    recordings.remove(seriesId);
+    recordings.remove(program.getSeriesId());
     SharedPreferences prefs = getSharedPreferences();
     SharedPreferences.Editor editor = prefs.edit();
     editor.putStringSet(RECORD_SERIES, recordings);
     editor.commit();
     EventBus.getInstance().post(new EventBus.RecordingsChangedEvent());
+  }
+
+  public boolean isSeriesRecorded(VideoProgram program) {
+    return getSeriesToRecord().contains(program.getSeriesId());
   }
 
   public int getVideoPosition(String uri) {
@@ -244,12 +266,13 @@ public class SettingsHelper {
     }
   }
 
-  public void saveVideoPosition(String uri, int position) {
+  public void saveVideoPosition(@NonNull String uri, int position) {
     Map<String, Integer> positions = getVideoPositions();
     positions.put(uri, position);
     saveVideoPositions(positions);
   }
 
+  @NonNull
   private Map<String, Integer> getVideoPositions() {
     if (videoPositions == null) {
       String json = getSharedPreferences().getString(VIDEO_POSITIONS, null);
@@ -263,12 +286,38 @@ public class SettingsHelper {
     return videoPositions;
   }
 
-  private void saveVideoPositions(Map<String, Integer> positions) {
+  private void saveVideoPositions(@NonNull Map<String, Integer> positions) {
     videoPositions = positions;
     SharedPreferences prefs = getSharedPreferences();
     SharedPreferences.Editor editor = prefs.edit();
     editor.putString(VIDEO_POSITIONS, new Gson().toJson(positions));
     editor.commit();
+  }
+
+  public Set<String> getFavoritePrograms() {
+    return getSharedPreferences().getStringSet(FAVORITE_PROGRAMS, new HashSet<String>());
+  }
+
+  public void addFavoriteProgram(@NonNull VideoProgram program) {
+    Set<String> favorites = getFavoritePrograms();
+    favorites.add(program.getSeriesId());
+    SharedPreferences.Editor editor = getSharedPreferences().edit();
+    editor.putStringSet(FAVORITE_PROGRAMS, favorites);
+    editor.commit();
+    EventBus.getInstance().post(new EventBus.FavoriteProgramsChangedEvent());
+  }
+
+  public void removeFavoriteProgram(@NonNull VideoProgram program) {
+    Set<String> favorites = getFavoritePrograms();
+    favorites.remove(program.getSeriesId());
+    SharedPreferences.Editor editor = getSharedPreferences().edit();
+    editor.putStringSet(FAVORITE_PROGRAMS, favorites);
+    editor.commit();
+    EventBus.getInstance().post(new EventBus.FavoriteProgramsChangedEvent());
+  }
+
+  public boolean isFavoriteProgram(@NonNull VideoProgram program) {
+    return getFavoritePrograms().contains(program.getSeriesId());
   }
 
 

@@ -155,7 +155,7 @@ public class VideoFragment extends BaseFragment {
       if (!getActivity().requestVisibleBehind(true)) {
         // App-specific method to stop playback and release resources
         // because call to requestVisibleBehind(true) failed
-        stop();
+        stop(true);
       }
     } else {
       // Argument equals false because the activity is not playing
@@ -164,14 +164,14 @@ public class VideoFragment extends BaseFragment {
   }
 
   public void onVisibleBehindCanceled() {
-    stop();
+    stop(true);
   }
 
   @Override
   public void onResume() {
     super.onResume();
     if (wasPlaying && mediaPlayer == null && videoUri != null) {
-      // resume play
+      // resume stopped playback
       play(videoUri);
     }
   }
@@ -179,7 +179,7 @@ public class VideoFragment extends BaseFragment {
   @Override
   public void onDestroy() {
     super.onDestroy();
-    stop();
+    stop(false);
     releaseMediaSession();
   }
 
@@ -276,7 +276,8 @@ public class VideoFragment extends BaseFragment {
       setup(uri);
       return;
     }
-    stop();
+    // stop and clear existing video, if any
+    stop(false);
     if (uri != null) {
       showSpinner();
       // create & execute async task for video playback
@@ -292,7 +293,8 @@ public class VideoFragment extends BaseFragment {
     showProgressBar(PROGRESS_UI_HIDE_DELAY);
     seekPosition = -1;
     if (mediaPlayer == null && videoUri != null) {
-      // restart playback from scratch
+      // restart stopped playback
+      Log.d(TAG, "Restarting video playback.");
       play(videoUri);
     } else if (mediaPlayer != null) {
       // resume play
@@ -300,6 +302,9 @@ public class VideoFragment extends BaseFragment {
       mediaPlayer.start();
       resetPlaySpeed();
       updateMediaPlaybackState();
+    } else if (currentChannel != null) {
+      // start playing channel video
+      playCurrentChannelVideo(0);
     }
   }
 
@@ -317,8 +322,10 @@ public class VideoFragment extends BaseFragment {
 
   /**
    * Stop video playback & release player resources.
+   *
+   * @param allowRestart Allow the video to be restarted after stopping?
    */
-  public void stop() {
+  public void stop(boolean allowRestart) {
     if (mediaPlayer != null) {
       Log.d(TAG, "Stopping and releasing video.");
       wasPlaying = mediaPlayer.isPlaying();
@@ -336,6 +343,9 @@ public class VideoFragment extends BaseFragment {
       playVideoTask.cancel(true);
       playVideoTask = null;
       hideSpinner();
+    }
+    if (!allowRestart) {
+      videoUri = null;
     }
   }
 
@@ -598,16 +608,12 @@ public class VideoFragment extends BaseFragment {
     // update metadata for media session
     updateMediaMetadata();
 
-    if (settingsHelper.useChannelVideosSetting()) {
-      // play actual channel video
-      final String res = currentChannel.getResource();
-      if (res != null) {
-        Log.d(TAG, "Changing video channel to " + res + ".");
-        playChannelVideo(Uri.parse(res), CHANNEL_START_DELAY);
-      }
+    if (settingsHelper.getAutoPlay() == true) {
+      // play channel video
+      playCurrentChannelVideo(CHANNEL_START_DELAY);
     } else {
-      // select a random video to play
-      playPlaceholderVideo();
+      // stop and clear current channel video
+      stop(false);
     }
   }
 
@@ -677,7 +683,7 @@ public class VideoFragment extends BaseFragment {
         public void onPrepareLoad(Drawable placeHolderDrawable) {
 
         }
-      });
+    });
     }
 
     if (settingsHelper.useChannelVideosSetting()) {
@@ -685,14 +691,31 @@ public class VideoFragment extends BaseFragment {
       play(Uri.parse(currentVod.getResource()));
     } else {
       // change to simulated channel
-      playPlaceholderVideo();
+      playPlaceholderVideo(0);
+    }
+  }
+
+  /**
+   * Start playing the current channel's video stream.
+   */
+  private void playCurrentChannelVideo(long delay) {
+    if (settingsHelper.useChannelVideosSetting() && currentChannel != null) {
+      // play actual channel video
+      String res = currentChannel.getResource();
+      if (res != null) {
+        Log.d(TAG, "Changing video channel to " + res + ".");
+        playChannelVideo(Uri.parse(res), delay);
+      }
+    } else {
+      // select a random video to play
+      playPlaceholderVideo(delay);
     }
   }
 
   /**
    * Play a random placeholder video from the "channel videos list" in app settings.
    */
-  private void playPlaceholderVideo() {
+  private void playPlaceholderVideo(long delay) {
     List<VideoItem> videos = settingsHelper.getChannelVideos();
     if (videos.size() > 0) {
       // select a random video to play
@@ -700,7 +723,7 @@ public class VideoFragment extends BaseFragment {
       final String res = video.getResource();
       if (res != null) {
         Log.d(TAG, "Changing video channel to " + res + ".");
-        playChannelVideo(Uri.parse(res), CHANNEL_START_DELAY);
+        playChannelVideo(Uri.parse(res), delay);
       }
     } else if (settingsHelper.useChannelVideosSetting() == false) {
       // show a dialog so the user can pick some videos
@@ -1001,8 +1024,7 @@ public class VideoFragment extends BaseFragment {
 
     @Override
     public void onStop() {
-      stop();
-      mediaSession.setActive(false);
+      stop(true);
     }
 
     @Override
