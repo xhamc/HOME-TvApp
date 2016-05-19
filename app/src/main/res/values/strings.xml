@@ -6,7 +6,6 @@
     <string name="loading">Loading...</string>
     <string name="quit">Quit</string>
     <string name="cancel">Cancel</string>
-    <string name="back">Back</string>
     <string name="done">Done</string>
     <string name="quitConfirmation">Are you sure you want to quit?</string>
     <string name="noItemsFound">No items were found.</string>
@@ -53,8 +52,6 @@
     <string name="autoPlayOnChannelChange">Play channel videos automatically</string>
 
     <!-- search -->
-    <string name="searchHint">Search TV shows</string>
-    <string name="searchDescription">TV show names</string>
     <string name="searchPrompt">Search for a program:</string>
     <string name="searching">Searching...</string>
     <string name="onDemand">On Demand</string>

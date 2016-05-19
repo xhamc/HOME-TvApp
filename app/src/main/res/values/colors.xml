@@ -12,15 +12,9 @@
 
     <!-- text colors -->
     <color name="textColor">@android:color/white</color>
-    <color name="readTextColor">@android:color/white</color>
     <color name="dimmedTextColor">#88ffffff</color>
-    <color name="linkTextColor">#00616a</color>
 
     <!-- navigation bar -->
-    <color name="navbarTextColor">@android:color/white</color>
-    <color name="navbarTextDisabledColor">#22ffffff</color>
-    <color name="navbarGradientStart">#00484f</color>
-    <color name="navbarGradientEnd">#00616a</color>
 
     <!-- window background -->
     <color name="backgroundColor">@android:color/black</color>

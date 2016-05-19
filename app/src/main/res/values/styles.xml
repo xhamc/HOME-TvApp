@@ -85,10 +85,6 @@
         <item name="android:textColor">@android:color/white</item>
     </style>
 
-    <style name="buttonText">
-        <item name="android:textColor">@android:color/white</item>
-    </style>
-
     <style name="navigationText" parent="normalText">
         <item name="android:textSize">@dimen/navigationFontSize</item>
         <item name="android:textAllCaps">true</item>
