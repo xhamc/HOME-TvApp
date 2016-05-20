@@ -297,14 +297,11 @@ public class VideoFragment extends BaseFragment {
       Log.d(TAG, "Restarting video playback.");
       play(videoUri);
     } else if (mediaPlayer != null) {
-      // resume play
+      // existing player, resume play
       Log.d(TAG, "Resuming video playback.");
       mediaPlayer.start();
       resetPlaySpeed();
       updateMediaPlaybackState();
-    } else if (currentChannel != null) {
-      // start playing channel video
-      playCurrentChannelVideo(0);
     }
   }
 
@@ -608,13 +605,47 @@ public class VideoFragment extends BaseFragment {
     // update metadata for media session
     updateMediaMetadata();
 
-    if (settingsHelper.getAutoPlay() == true) {
-      // play channel video
-      playCurrentChannelVideo(CHANNEL_START_DELAY);
+    // set up playback URI
+    Uri uri = settingsHelper.useChannelVideosSetting() ? Uri.parse(channel.getResource()) : getPlaceholderVideo();
+    if (uri == null) {
+      // no video configured to play
+      showConfigureVideosAlert();
+    } else if (settingsHelper.getAutoPlay() == true) {
+      // stop and clear current channel video
+      stop(false);
+      // start channel video after delay to make sure a channel was settled upon
+      playVideoAfterDelay(uri, CHANNEL_START_DELAY);
     } else {
       // stop and clear current channel video
       stop(false);
+      // set uri for later playback if requested
+      videoUri = uri;
     }
+  }
+
+  /**
+   * Start playing a video URI after a delay.
+   *
+   * @param uri     Uri to play for channel video.
+   * @param delayMs Delay before playback task is started
+   */
+  private void playVideoAfterDelay(final Uri uri, long delayMs) {
+    if (channelChangeRunnable != null) {
+      // clear the queued runnable
+      handler.removeCallbacks(channelChangeRunnable);
+    }
+    // create new runnable
+    channelChangeRunnable = new Runnable() {
+      @Override
+      public void run() {
+        // clear this runnable
+        channelChangeRunnable = null;
+        // and start playback
+        play(uri);
+      }
+    };
+    // start timer
+    handler.postDelayed(channelChangeRunnable, delayMs);
   }
 
   /**
@@ -683,88 +714,62 @@ public class VideoFragment extends BaseFragment {
         public void onPrepareLoad(Drawable placeHolderDrawable) {
 
         }
-    });
+      });
     }
 
-    if (settingsHelper.useChannelVideosSetting()) {
-      // play actual VOD item
-      play(Uri.parse(currentVod.getResource()));
+    // set up playback URI
+    Uri uri = settingsHelper.useChannelVideosSetting() ? Uri.parse(currentVod.getResource()) : getPlaceholderVideo();
+    if (uri == null) {
+      // no video configured to play
+      showConfigureVideosAlert();
+    } else if (settingsHelper.getAutoPlay() == true) {
+      // play channel video
+      play(uri);
     } else {
-      // change to simulated channel
-      playPlaceholderVideo(0);
+      // stop and clear current channel video
+      stop(false);
+      // set uri for later playback if requested
+      videoUri = uri;
     }
+
   }
 
   /**
-   * Start playing the current channel's video stream.
+   * Get a random placeholder video if they have been configured.
+   *
+   * @return A placeholder video, or null if no placeholders have been configured.
    */
-  private void playCurrentChannelVideo(long delay) {
-    if (settingsHelper.useChannelVideosSetting() && currentChannel != null) {
-      // play actual channel video
-      String res = currentChannel.getResource();
-      if (res != null) {
-        Log.d(TAG, "Changing video channel to " + res + ".");
-        playChannelVideo(Uri.parse(res), delay);
-      }
-    } else {
-      // select a random video to play
-      playPlaceholderVideo(delay);
-    }
-  }
-
-  /**
-   * Play a random placeholder video from the "channel videos list" in app settings.
-   */
-  private void playPlaceholderVideo(long delay) {
+  private Uri getPlaceholderVideo() {
     List<VideoItem> videos = settingsHelper.getChannelVideos();
     if (videos.size() > 0) {
       // select a random video to play
       VideoItem video = videos.get(Math.abs(new Random().nextInt()) % videos.size());
       final String res = video.getResource();
       if (res != null) {
-        Log.d(TAG, "Changing video channel to " + res + ".");
-        playChannelVideo(Uri.parse(res), delay);
+        return (Uri.parse(res));
       }
-    } else if (settingsHelper.useChannelVideosSetting() == false) {
-      // show a dialog so the user can pick some videos
-      new AlertDialog.Builder(getActivity())
-          .setTitle(R.string.error)
-          .setMessage(R.string.noVideosError)
-          .setNeutralButton(getString(R.string.selectVideos), new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-              startActivity(new Intent(getActivity(), SelectChannelVideosActivity.class));
-            }
-          })
-          .setNegativeButton(getString(android.R.string.cancel), null)
-          .create()
-          .show();
     }
+    // no videos found, or no resource for selected video
+    return null;
   }
 
   /**
-   * Start playing a channel video after a delay.
-   *
-   * @param uri     Uri to play for channel video.
-   * @param delayMs Delay before playback task is started
+   * Show an alert that prompts the user to configure their channel videos list.
    */
-  private void playChannelVideo(final Uri uri, long delayMs) {
-    if (channelChangeRunnable != null) {
-      // clear the queued runnable
-      handler.removeCallbacks(channelChangeRunnable);
-    }
-    // create new runnable
-    channelChangeRunnable = new Runnable() {
-      @Override
-      public void run() {
-        // clear this runnable
-        channelChangeRunnable = null;
-        // and start playback
-        play(uri);
-      }
-    };
-    // start timer
-    handler.postDelayed(channelChangeRunnable, delayMs);
+  private void showConfigureVideosAlert() {
+    // show a dialog so the user can pick some videos
+    new AlertDialog.Builder(getActivity())
+        .setTitle(R.string.error)
+        .setMessage(R.string.noVideosError)
+        .setNeutralButton(getString(R.string.selectVideos), new DialogInterface.OnClickListener() {
+          @Override
+          public void onClick(DialogInterface dialog, int which) {
+            startActivity(new Intent(getActivity(), SelectChannelVideosActivity.class));
+          }
+        })
+        .setNegativeButton(getString(android.R.string.cancel), null)
+        .create()
+        .show();
   }
 
   /**
@@ -936,6 +941,23 @@ public class VideoFragment extends BaseFragment {
         VideoFragment.this.mediaPlayer = mediaPlayer;
         mediaPlayer.setDisplay(surfaceHolder);
         mediaPlayer.setScreenOnWhilePlaying(true);
+        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+          @Override
+          public void onCompletion(MediaPlayer mp) {
+            // loop when done
+            if (settingsHelper.getLoopVideoPlayback() == true) {
+              // restart from beginning
+              Log.d(TAG, "Video complete, restarting.");
+              mp.seekTo(0);
+            } else {
+              Log.d(TAG, "Video completed playback.");
+              // stop video allowing restart
+              stop(true);
+              // reset saved position to start
+              settingsHelper.saveVideoPosition(getUri().toString(),0);
+            }
+          }
+        });
         videoUri = uri;
         playVideoTask = null;
         mediaSession.setActive(true);

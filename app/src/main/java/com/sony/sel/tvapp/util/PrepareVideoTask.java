@@ -93,7 +93,7 @@ public abstract class PrepareVideoTask extends AsyncTask<Void, Void, MediaPlayer
 
   private MediaPlayer prepareMedia(Uri videoUri, long timeout) throws IOException, InterruptedException {
     final Object prepareLock = new Object();
-    MediaPlayer mediaPlayer = new MediaPlayer();
+    final MediaPlayer mediaPlayer = new MediaPlayer();
     try {
       mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
         @Override
@@ -113,15 +113,6 @@ public abstract class PrepareVideoTask extends AsyncTask<Void, Void, MediaPlayer
         public boolean onInfo(MediaPlayer mp, int what, int extra) {
           Log.d(TAG, "Video info: what = " + decodeMediaStatus(what) + ", extra = " + extra + '.');
           return false;
-        }
-      });
-      mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-        @Override
-        public void onCompletion(MediaPlayer mp) {
-          // loop when done
-          Log.d(TAG, "Video complete, restarting.");
-          mp.seekTo(0);
-          mp.start();
         }
       });
       mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {

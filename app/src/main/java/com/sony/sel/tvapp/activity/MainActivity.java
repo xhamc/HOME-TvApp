@@ -352,7 +352,7 @@ public class MainActivity extends BaseActivity {
           handled = true;
           break;
         case KeyEvent.KEYCODE_MEDIA_STOP:
-          videoFragment.stop(false);
+          videoFragment.stop(true);
           handled = true;
           break;
         case KeyEvent.KEYCODE_MEDIA_PLAY:

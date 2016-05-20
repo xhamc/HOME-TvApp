@@ -115,7 +115,7 @@ public class ChannelInfoFragment extends BaseFragment {
         // default to first channel
         channel = channels.get(0);
       }
-      EventBus.getInstance().post(new EventBus.ChannelChangedEvent(channel));
+      SettingsHelper.getHelper(getActivity()).setCurrentChannel(channel);
     }
   }
 

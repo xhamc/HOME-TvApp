@@ -47,6 +47,8 @@ public class SelectServerFragment extends BaseFragment {
   CheckBox channelVideo;
   @Bind(R.id.autoPlay)
   CheckBox autoPlay;
+  @Bind(R.id.loopVideoPlayback)
+  CheckBox loopVideoPlayback;
 
   private DeviceAdapter adapter;
 
@@ -89,6 +91,13 @@ public class SelectServerFragment extends BaseFragment {
       @Override
       public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
         settingsHelper.setAutoPlay(isChecked);
+      }
+    });
+    loopVideoPlayback.setChecked(settingsHelper.getLoopVideoPlayback());
+    loopVideoPlayback.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+      @Override
+      public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+        settingsHelper.setLoopVideoPlayback(isChecked);
       }
     });
 

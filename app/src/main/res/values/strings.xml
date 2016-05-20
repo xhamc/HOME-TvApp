@@ -50,6 +50,7 @@
     <!-- settings -->
     <string name="useChannelVideo">Use actual channel videos</string>
     <string name="autoPlayOnChannelChange">Play channel videos automatically</string>
+    <string name="loopVideoPlayback">Loop playback of fixed length videos</string>
 
     <!-- search -->
     <string name="searchPrompt">Search for a program:</string>
