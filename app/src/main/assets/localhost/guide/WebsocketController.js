@@ -187,6 +187,21 @@
                                         }else if (metadata.start>EPG_DATA[keyChannel].metadata[EPG_DATA[keyChannel].metadata.length-1].start){
                                             epgDataAvailable=true;
                                             EPG_DATA[keyChannel].metadata[EPG_DATA[keyChannel].metadata.length]=metadata;
+//                                        }else{
+//                                            for (var i=1; i<EPG_DATA[keyChannel].metadata.length-1; i++){
+//                                                var start1=EPG_DATA[keyChannel].metadata[EPG_DATA[keyChannel].metadata[i]].start;
+//                                                var end1=EPG_DATA[keyChannel].metadata[EPG_DATA[keyChannel].metadata[i].start +EPG_DATA[keyChannel].metadata[EPG_DATA[keyChannel].metadata.length;
+//                                                var start2=EPG_DATA[keyChannel].metadata[EPG_DATA[keyChannel].metadata[i+1].start;
+//                                                if (metadata.start)> start1){
+//                                                   if (metadata.start < end1){
+//                                                       epgDataAvailable=true;
+//                                                       EPG_DATA[keyChannel].metadata[EPG_DATA[keyChannel].metadata[i]=metadata;
+//                                                       break;
+//                                                   }
+//                                                 }
+//
+//                                            }
+
                                         }
                                     }
 
