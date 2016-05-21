@@ -34,7 +34,7 @@ function GridController(ws){
         width = canvas.width;
         height = canvas.height;
         ctx = canvas.getContext('2d');
-        ctx.font = "30px arial";
+        ctx.font = "30px sans-serif-light";
         background = new Image();
 
         background.src = 'img/background.png';
@@ -55,7 +55,7 @@ function GridController(ws){
 		ctx.clearRect(0,0, width, height);
 		//Draw TODAY DATE
 		ctx.globalAlpha=1*GLOBAL_ALPHA;
-		ctx.font = "50px arial";
+		ctx.font = "50px sans-serif-light";
 		ctx.fillStyle='#FFFFFF';
 		var now=getTime();
 		ctx.fillText ('TODAY  |   '+ now.date+ '    '+now.time, 90, VERTOFF*3/4);
@@ -88,7 +88,7 @@ function GridController(ws){
 
 		//Draw TIMES
 		ctx.globalAlpha=1*GLOBAL_ALPHA;
-		ctx.font = "40px arial";
+		ctx.font = "40px sans-serif-light";
 		ctx.textBaseline="middle";
 		var displayTimeOnGrid;
 
@@ -150,7 +150,7 @@ function GridController(ws){
 	function drawPrograms(){
 		ctx.save();
 		if (null!=CHANNELLIST_DATA ){
-			ctx.font = "50px arial";
+			ctx.font = "50px sans-serif-light";
 			ctx.fillStyle='#FFFFFF';
 
 			var gridChannelMax=Math.min(currentChannelGridOffset+5, CHANNELLIST_DATA.length);
@@ -162,7 +162,7 @@ function GridController(ws){
 					ctx.lineWidth=2;
 					ctx.strokeRect(300+(i-currentChannelGridOffset)*HORIZCELLSIZE,VERTOFF, HORIZCELLSIZE,10*VERTCELLSIZE);
 					var now_playing="CURRENTLY PLAYING           "+ STATION_DATA[CHANNELLIST_DATA[i]].name;
-					ctx.font = "40px arial";
+					ctx.font = "40px sans-serif-light";
 					ctx.globalAlpha=1*GLOBAL_ALPHA;
 					ctx.fillText(now_playing,1100,70)
 
@@ -200,7 +200,7 @@ function GridController(ws){
 
 
 				ctx.save();
-				ctx.font="20px arial";
+				ctx.font="20px sans-serif-light";
 				ctx.fillText(STATION_DATA[CHANNELLIST_DATA[i]].channelNumber, 300+(i-currentChannelGridOffset)*HORIZCELLSIZE+HORIZCELLSIZE*3/4, VERTOFF+VERTCELLSIZE*0.3);
 
 				if (isURL(STATION_DATA[CHANNELLIST_DATA[i]].icon_url) && !STATION_DATA[CHANNELLIST_DATA[i]].icon.imageloaded
@@ -400,7 +400,7 @@ function GridController(ws){
 		ctx.textBaseline="middle";
 		ctx.globalAlpha=1.0*GLOBAL_ALPHA;
 
-		var fonts=["50px arial","40px arial","30px arial","25px arial","20px arial","15px arial", "12px arial", "10px arial", "8px arial"];
+		var fonts=["50px sans-serif-light","40px sans-serif-light","30px sans-serif-light","25px sans-serif-light","20px sans-serif-light","15px sans-serif-light", "12px sans-serif-light", "10px sans-serif-light", "8px sans-serif-light"];
 		var fontheights=[50.0,40.0,30.0,25.0,20.0,15.0,12.0,10.0,8.0];
 		var dim;
 		var left;
@@ -581,7 +581,7 @@ function GridController(ws){
 		ctx.drawImage(background, x,y,w,h);
 		//Draw TODAY DATE
 		ctx.globalAlpha=1*GLOBAL_ALPHA;
-		ctx.font = "50px arial";
+		ctx.font = "50px sans-serif-light";
 		ctx.fillStyle='#FFFFFF';
 
 		if (imageloaded) {
