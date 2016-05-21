@@ -5,6 +5,8 @@ import android.database.ContentObserver;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import com.sony.sel.tvapp.util.DlnaObjects.VideoBroadcast;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -34,13 +36,13 @@ public abstract class BaseDlnaHelper implements DlnaInterface {
 
   @NonNull
   @Override
-  public List<DlnaObjects.VideoBroadcast> getChannels(@NonNull String udn, @Nullable ContentObserver contentObserver, boolean useCache) {
+  public List<VideoBroadcast> getChannels(@NonNull String udn, @Nullable ContentObserver contentObserver, boolean useCache) {
     channelObserver = contentObserver;
-    List<DlnaObjects.VideoBroadcast> channels = getChildren(udn, "0/Channels", DlnaObjects.VideoBroadcast.class, contentObserver, useCache);
+    List<VideoBroadcast> channels = getChildren(udn, "0/Channels", VideoBroadcast.class, contentObserver, useCache);
     final Set<String> favoriteChannels = SettingsHelper.getHelper(getContext()).getFavoriteChannels();
-    Collections.sort(channels, new Comparator<DlnaObjects.VideoBroadcast>() {
+    Collections.sort(channels, new Comparator<VideoBroadcast>() {
       @Override
-      public int compare(DlnaObjects.VideoBroadcast lhs, DlnaObjects.VideoBroadcast rhs) {
+      public int compare(VideoBroadcast lhs, VideoBroadcast rhs) {
         if (favoriteChannels.contains(lhs.getChannelId()) != favoriteChannels.contains(rhs.getChannelId())) {
           // favorite channel is sorted before non-favorite
           return favoriteChannels.contains(lhs.getChannelId()) ? -1 : 1;
@@ -56,7 +58,19 @@ public abstract class BaseDlnaHelper implements DlnaInterface {
 
   @Nullable
   @Override
-  public DlnaObjects.VideoProgram getCurrentEpgProgram(String udn, DlnaObjects.VideoBroadcast channel) {
+  public VideoBroadcast getChannel(@NonNull String udn, @NonNull String channelId) {
+    List<VideoBroadcast> channels = getChannels(udn, null, true);
+    for (VideoBroadcast channel : channels) {
+      if (channelId.equals(channel.getChannelId())) {
+        return channel;
+      }
+    }
+    return null;
+  }
+
+  @Nullable
+  @Override
+  public DlnaObjects.VideoProgram getCurrentEpgProgram(String udn, VideoBroadcast channel) {
     DateFormat format = new SimpleDateFormat("M-d");
     Date now = new Date();
     String day = format.format(now);
@@ -72,7 +86,7 @@ public abstract class BaseDlnaHelper implements DlnaInterface {
 
   @NonNull
   @Override
-  public List<DlnaObjects.VideoProgram> getEpgPrograms(String udn, DlnaObjects.VideoBroadcast channel, Date startDate, Date endDate) {
+  public List<DlnaObjects.VideoProgram> getEpgPrograms(String udn, VideoBroadcast channel, Date startDate, Date endDate) {
     List<DlnaObjects.VideoProgram> shows = new ArrayList<>();
     DateFormat format = new SimpleDateFormat("M-d");
     // use a Calendar to iterate

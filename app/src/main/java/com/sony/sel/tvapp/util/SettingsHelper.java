@@ -34,6 +34,8 @@ public class SettingsHelper {
   private static final String LOOP_VIDEO_PLAYBACK = "LoopVideoPlayback";
   private static final String VIDEO_POSITIONS = "VideoPositions";
   private static final String FAVORITE_PROGRAMS = "FavoritePrograms";
+  private static final String VOD_TO_PLAY = "VodToPlay";
+  private static final String PROGRAM_TO_RECORD = "ProgramToRecord";
 
   private static SettingsHelper INSTANCE;
   private List<VideoItem> channelVideos;
@@ -42,6 +44,7 @@ public class SettingsHelper {
   private static final String[] DEFAULT_CHANNEL_VIDEOS = null; // { "file:///sdcard/Movies/tvapp.mp4" };
 
   private Context context;
+  private boolean mainActivityRunning;
 
   /**
    * Get helper instance.
@@ -330,6 +333,53 @@ public class SettingsHelper {
 
   public boolean isFavoriteProgram(@NonNull VideoProgram program) {
     return getFavoritePrograms().contains(program.getSeriesId());
+  }
+
+  public VideoItem getVodItemToPlay() {
+    String json = getSharedPreferences().getString(VOD_TO_PLAY, null);
+    if (json != null) {
+      return new Gson().fromJson(json, VideoItem.class);
+    } else {
+      return null;
+    }
+  }
+
+  public void setVodItemToPlay(VideoItem vod) {
+    SharedPreferences.Editor editor = getSharedPreferences().edit();
+    if (vod != null) {
+      editor.putString(VOD_TO_PLAY, vod.toString());
+    } else {
+      editor.remove(VOD_TO_PLAY);
+    }
+    editor.commit();
+  }
+
+
+  public VideoProgram getProgramToRecord() {
+    String json = getSharedPreferences().getString(PROGRAM_TO_RECORD, null);
+    if (json != null) {
+      return new Gson().fromJson(json, VideoProgram.class);
+    } else {
+      return null;
+    }
+  }
+
+  public void setProgramToRecord(VideoProgram program) {
+    SharedPreferences.Editor editor = getSharedPreferences().edit();
+    if (program != null) {
+      editor.putString(PROGRAM_TO_RECORD, program.toString());
+    } else {
+      editor.remove(PROGRAM_TO_RECORD);
+    }
+    editor.commit();
+  }
+
+  public boolean isMainActivityRunning() {
+    return mainActivityRunning;
+  }
+
+  public void setMainActivityRunning(boolean running) {
+    mainActivityRunning = running;
   }
 
 

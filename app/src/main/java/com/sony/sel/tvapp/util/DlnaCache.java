@@ -63,6 +63,16 @@ public interface DlnaCache {
   int countEpgItems(@NonNull String udn, @NonNull List<String> channels, @NonNull Date startDateTime, @NonNull Date endDateTime);
 
   /**
+   * Retrieve a single item from the cache by ID.
+   *
+   * @param id  Unique ID.
+   * @param <T> Item type to return.
+   * @return The item, if found in the cache.
+   */
+  @Nullable
+  <T extends DlnaObject> T getItemById(@NonNull String udn, @NonNull String id);
+
+  /**
    * Clear and reset the cache.
    */
   void reset();

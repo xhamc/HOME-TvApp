@@ -70,4 +70,10 @@ public class DlnaMemoryCache implements DlnaCache {
   public void reset() {
     dlnaCache.clear();
   }
+
+  @Nullable
+  @Override
+  public <T extends DlnaObject> T getItemById(@NonNull String udn, @NonNull String id) {
+    return null;
+  }
 }

@@ -11,15 +11,19 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.view.KeyEvent;
 
+import com.google.gson.Gson;
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.fragment.BaseFragment;
 import com.sony.sel.tvapp.fragment.ChannelInfoFragment;
 import com.sony.sel.tvapp.fragment.NavigationFragment;
+import com.sony.sel.tvapp.fragment.RecordEpgFragment;
 import com.sony.sel.tvapp.fragment.VideoFragment;
 import com.sony.sel.tvapp.ui.NavigationItem;
 import com.sony.sel.tvapp.util.DlnaCache;
 import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaInterface;
+import com.sony.sel.tvapp.util.DlnaObjects;
+import com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 import com.sony.sel.tvapp.util.EpgCachingTask;
 import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.EventBus.ChannelChangedEvent;
@@ -36,6 +40,14 @@ import butterknife.ButterKnife;
 public class MainActivity extends BaseActivity {
 
   public static final String TAG = MainActivity.class.getSimpleName();
+
+  // intent action & extra for playing VOD
+  public static final String INTENT_ACTION_PLAY_VOD = "com.sony.sel.tvapp.PLAY_VOD";
+  public static final String INTENT_EXTRA_VIDEO_ITEM = "VideoItem";
+
+  // intent action & extra for viewing a channel
+  public static final String INTENT_ACTION_VIEW_CHANNEL = "com.sony.sel.tvapp.VIEW_CHANNEL";
+  public static final String INTENT_EXTRA_CHANNEL = "VideoBroadcast";
 
   private VideoFragment videoFragment;
   private ChannelInfoFragment channelInfoFragment;

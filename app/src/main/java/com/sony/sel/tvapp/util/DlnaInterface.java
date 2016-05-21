@@ -4,6 +4,8 @@ import android.database.ContentObserver;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import com.sony.sel.tvapp.util.DlnaObjects.VideoBroadcast;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -109,8 +111,18 @@ public interface DlnaInterface {
    * @return The list of channels, or empty list if none are found, or an error.
    */
   @NonNull
-  List<DlnaObjects.VideoBroadcast> getChannels(@NonNull String udn, @Nullable ContentObserver
+  List<VideoBroadcast> getChannels(@NonNull String udn, @Nullable ContentObserver
       contentObserver, boolean useCache);
+
+  /**
+   * Return details for a single EPG channel.
+   *
+   * @param udn       Server UDN.
+   * @param channelId Channel ID.
+   * @return Channel details, or null if no channel data was found.
+   */
+  @Nullable
+  VideoBroadcast getChannel(@NonNull String udn, @NonNull String channelId);
 
   /**
    * Return the current EPG program on a given channel.
@@ -120,7 +132,7 @@ public interface DlnaInterface {
    * @return Current EPG program, or null if none is found.
    */
   @Nullable
-  DlnaObjects.VideoProgram getCurrentEpgProgram(String udn, DlnaObjects.VideoBroadcast channel);
+  DlnaObjects.VideoProgram getCurrentEpgProgram(String udn, VideoBroadcast channel);
 
   /**
    * Return the list of EPG programs available for a current channel and time frame.
@@ -132,10 +144,10 @@ public interface DlnaInterface {
    * @return List of EPG programs, or an empty list if none are found.
    */
   @NonNull
-  List<DlnaObjects.VideoProgram> getEpgPrograms(String udn, DlnaObjects.VideoBroadcast channel, Date startDate, Date endDate);
+  List<DlnaObjects.VideoProgram> getEpgPrograms(String udn, VideoBroadcast channel, Date startDate, Date endDate);
 
   /**
-   * Set the list of favorite channels. Affects the sort order of all subsequent {@link #getChannels(String, ContentObserver)} requests.
+   * Set the list of favorite channels. Affects the sort order of all subsequent {@link #getChannels(String, ContentObserver, boolean)} requests.
    *
    * @param channelIds
    */

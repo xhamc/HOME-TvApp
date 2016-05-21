@@ -166,6 +166,36 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
     }
   }
 
+  @Nullable
+  @Override
+  public <T extends DlnaObject> T getItemById(@NonNull String udn, @NonNull String id) {
+    Cursor cursor = null;
+    try {
+      cursor = db.query(
+          "DLNAObjects",
+          new String[]{"UPNPClass", "JSON"},
+          "UDN = '" + udn + "' AND ID = '" + id + "'",
+          null,
+          null,
+          null,
+          null
+      );
+      if (cursor.getCount() > 0) {
+        cursor.moveToFirst();
+        String upnpClass = cursor.getString(cursor.getColumnIndex("UPNPClass"));
+        String json = cursor.getString(cursor.getColumnIndex("JSON"));
+        Class<? extends DlnaObject> clazz = DlnaObjects.DlnaClass.classOf(upnpClass);
+        return (T) new Gson().fromJson(json, clazz);
+      } else {
+        return null;
+      }
+    } finally {
+      if (cursor != null) {
+        cursor.close();
+      }
+    }
+  }
+
   private Cursor getEpgItems(@NonNull String udn, @Nullable List<String> channels, @NonNull Date startDateTime, @NonNull Date endDateTime) {
     // build channel list string for sql statement
     StringBuilder channelsString = new StringBuilder();

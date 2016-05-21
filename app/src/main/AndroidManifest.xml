@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest
-    package="com.sony.sel.tvapp"
     xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.sony.sel.tvapp"
     >
 
     <uses-permission android:name="android.permission.INTERNET"/>
@@ -45,13 +45,35 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
             </intent-filter>
+
+
         </activity>
 
         <activity
             android:name=".activity.MainActivity"
-            android:launchMode="singleInstance"
+            android:launchMode="singleTop"
             android:screenOrientation="landscape"
             >
+        </activity>
+
+        <activity android:name=".activity.VodSearchActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.app.searchable"
+                android:resource="@xml/searchable_vod"
+                />
+        </activity>
+
+        <activity android:name=".activity.RecordEpgActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.app.searchable"
+                android:resource="@xml/searchable_epg"
+                />
         </activity>
 
         <activity
@@ -67,15 +89,6 @@
 
         </activity>
 
-        <activity
-            android:name=".activity.SearchResultsActivity"
-            android:screenOrientation="landscape"
-            >
-            <intent-filter>
-                <action android:name="android.intent.action.SEARCH"/>
-            </intent-filter>
-        </activity>
-
         <!-- web server for EPG -->
         <service
             android:name="com.sony.localserver.ServerService"
@@ -87,13 +100,13 @@
             android:name="org.fourthline.cling.android.AndroidUpnpServiceImpl"
             android:enabled="true"
             />
-        
+
         <!-- EPG search content provider -->
         <provider
-            android:authorities="com.sony.sel.tvapp"
             android:name=".provider.EpgSearchContentProvider"
-            android:exported="true"
+            android:authorities="com.sony.sel.tvapp"
             android:enabled="true"
+            android:exported="true"
             />
 
     </application>

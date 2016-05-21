@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/menuBackground"
+    android:orientation="vertical"
+    android:padding="100dp"
+    >
+
+    <TextView
+        style="@style/titleText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:text="@string/confirmRecording"
+        />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        >
+
+
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent">
+
+            <ImageView
+                android:id="@+id/programIcon"
+                android:layout_width="240dp"
+                android:layout_height="180dp"
+                android:background="@android:color/white"
+                android:scaleType="fitCenter"
+                />
+
+            <ImageView
+                android:id="@+id/favoriteChannel"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_gravity="top|right"
+                android:layout_margin="5dp"
+                android:src="@drawable/star"
+                />
+
+            <ImageView
+                android:id="@+id/recordProgram"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_gravity="bottom|right"
+                android:layout_margin="10dp"
+                android:src="@drawable/record"
+                />
+
+            <ImageView
+                android:id="@+id/recordSeries"
+                android:layout_width="60dp"
+                android:layout_height="30dp"
+                android:layout_gravity="bottom|right"
+                android:layout_margin="10dp"
+                android:src="@drawable/series_record"
+                />
+
+            <ImageView
+                android:id="@+id/favoriteProgram"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_gravity="top|left"
+                android:layout_marginTop="5dp"
+                android:src="@drawable/heart"
+                />
+
+        </FrameLayout>
+
+        <LinearLayout
+            android:id="@+id/popupAlignView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="10dp"
+            >
+
+            <TextView
+                android:id="@+id/title"
+                style="@style/normalText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:text="Title that might become very long"
+                />
+
+            <TextView
+                android:id="@+id/programTitle"
+                style="@style/smallText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:text="Program Title that also might become very long"
+                android:textSize="16dp"
+                />
+
+            <TextView
+                android:id="@+id/programChannel"
+                style="@style/smallText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Channel"
+                />
+
+            <TextView
+                android:id="@+id/programTime"
+                style="@style/smallText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="7:00-8:00"
+                />
+
+            <TextView
+                android:id="@+id/programDescription"
+                style="@style/dimmedSmallText"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:ellipsize="end"
+                android:text="Long description\nof the program goes here, there can\nbe a lot of text and it shold wrap\nacross multiple lines."
+                />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal"
+        >
+
+        <Button
+            android:id="@+id/recordProgramButton"
+            style="@style/button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/recordProgram"
+            android:layout_margin="10dp"
+            />
+
+        <Button
+            android:id="@+id/cancelProgramRecordingButton"
+            style="@style/button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/cancelProgramRecording"
+            android:layout_margin="10dp"
+            />
+
+        <Button
+            android:id="@+id/recordSeriesButton"
+            style="@style/button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/recordSeries"
+            android:layout_margin="10dp"
+            />
+
+        <Button
+            android:id="@+id/cancelSeriesRecordingButton"
+            style="@style/button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/cancelSeriesRecording"
+            android:layout_margin="10dp"
+            />
+
+
+        <Button
+            android:id="@+id/cancelButton"
+            style="@style/button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/cancel"
+            android:layout_margin="10dp"
+            />
+
+    </LinearLayout>
+
+</LinearLayout>

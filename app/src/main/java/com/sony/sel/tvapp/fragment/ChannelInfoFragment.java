@@ -7,33 +7,27 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.google.gson.Gson;
 import com.sony.sel.tvapp.R;
+import com.sony.sel.tvapp.activity.MainActivity;
 import com.sony.sel.tvapp.util.DlnaCache;
 import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaInterface;
-import com.sony.sel.tvapp.util.DlnaObjects;
 import com.sony.sel.tvapp.util.DlnaObjects.VideoItem;
 import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.sony.sel.tvapp.view.ChannelEpgView;
-import com.sony.sel.tvapp.view.ProgramInfoView;
 import com.sony.sel.tvapp.view.VideoItemInfoView;
 import com.squareup.otto.Subscribe;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -109,13 +103,23 @@ public class ChannelInfoFragment extends BaseFragment {
       // set channel grid
       this.channels = channels;
 
-      // setup current channel
-      VideoBroadcast channel = SettingsHelper.getHelper(getActivity()).getCurrentChannel();
-      if (channel == null && channels.size() > 0) {
-        // default to first channel
-        channel = channels.get(0);
+      if (getActivity().getIntent().getAction() != null && getActivity().getIntent().getAction().equals(MainActivity.INTENT_ACTION_PLAY_VOD)) {
+        // play VOD instead of setting channel
+        VideoItem vod = new Gson().fromJson(getActivity().getIntent().getStringExtra(MainActivity.INTENT_EXTRA_VIDEO_ITEM), VideoItem.class);
+        EventBus.getInstance().post(new EventBus.PlayVodEvent(vod));
+      } else if (getActivity().getIntent().getAction() != null && getActivity().getIntent().getAction().equals(MainActivity.INTENT_ACTION_VIEW_CHANNEL)) {
+        // received intent to set channel, so set it
+        VideoBroadcast channel = new Gson().fromJson(getActivity().getIntent().getStringExtra(MainActivity.INTENT_EXTRA_CHANNEL), VideoBroadcast.class);
+        SettingsHelper.getHelper(getActivity()).setCurrentChannel(channel);
+      } else {
+        // setup the current channel
+        VideoBroadcast channel = SettingsHelper.getHelper(getActivity()).getCurrentChannel();
+        if (channel == null && channels.size() > 0) {
+          // default to first channel
+          channel = channels.get(0);
+        }
+        SettingsHelper.getHelper(getActivity()).setCurrentChannel(channel);
       }
-      SettingsHelper.getHelper(getActivity()).setCurrentChannel(channel);
     }
   }
 

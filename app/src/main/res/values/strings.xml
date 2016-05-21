@@ -57,5 +57,12 @@
     <string name="searching">Searching...</string>
     <string name="onDemand">On Demand</string>
 
+    <!-- system search (VOD) -->
+    <string name="searchHint">Search Video on Demand</string>
+    <string name="searchDescription">Show title</string>
+    <string name="videoOnDemand">Video on Demand</string>
+    <string name="searchEpg">Search TOV shows</string>
+    <string name="tvShows">TV Shows</string>
+    <string name="confirmRecording">Confirm Recording</string>
 
 </resources>
