@@ -32,6 +32,7 @@ import java.util.Map;
 
 /**
  * Android content provider for searching EPG data.
+ * This provider can be bound using "content://com.sony.sel.tvapp" URI.
  */
 public class EpgSearchContentProvider extends ContentProvider {
 
@@ -63,6 +64,7 @@ public class EpgSearchContentProvider extends ContentProvider {
   }
 
   Cursor searchEpg(String query) {
+    Log.d(TAG, "Search EPG for \"" + query + "\".");
     List<VideoProgram> epgSearch = cache.search(settingsHelper.getEpgServer(), "0/EPG", query);
     List<VideoProgram> results = new ArrayList<>();
     Date now = new Date();
@@ -78,10 +80,12 @@ public class EpgSearchContentProvider extends ContentProvider {
         return (lhs.getScheduledStartTime().compareTo(rhs.getScheduledStartTime()));
       }
     });
+    Log.d(TAG, String.format("%d EPG results found.", results.size()));
     return new EpgSearchSuggestionsCursor(results, dlnaHelper.getChannels(settingsHelper.getEpgServer(), null, true));
   }
 
   Cursor searchVod(String query) {
+    Log.d(TAG, "Search VOD for \"" + query + "\".");
     List<VideoItem> vodSearch = cache.search(settingsHelper.getEpgServer(), "0/VOD", query);
     // sort VOD by title
     Collections.sort(vodSearch, new Comparator<VideoItem>() {
@@ -90,6 +94,7 @@ public class EpgSearchContentProvider extends ContentProvider {
         return (lhs.getTitle().compareTo(rhs.getTitle()));
       }
     });
+    Log.d(TAG, String.format("%d VOD results found.", vodSearch.size()));
     return new VodSearchSuggestionsCursor(vodSearch);
   }
 

@@ -6,7 +6,7 @@ import android.content.Intent;
 import android.util.Log;
 
 /**
- * Receiver to start the DlnaService when the device starts up.
+ * Receiver to receive broadcast intents from Android and start/restart the {@link DlnaService}.
  */
 public class BootReceiver extends BroadcastReceiver {
 
@@ -37,7 +37,7 @@ public class BootReceiver extends BroadcastReceiver {
   }
 
   private void startServer(Context context) {
-    Log.d(TAG, "Starting web service.");
+    Log.d(TAG, "Starting DLNA background service.");
     DlnaService.startService(context);
   }
 }

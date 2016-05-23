@@ -108,7 +108,7 @@
             android:exported="true"
             />
 
-        <!-- boot completed receiver -->
+        <!-- receiver for system broadcast intents -->
         <receiver
             android:name=".service.BootReceiver"
             android:enabled="true"
