@@ -98,8 +98,6 @@ public class RecordEpgFragment extends BaseFragment {
     VideoBroadcast channel = new Gson().fromJson(getArguments().getString(CHANNEL), VideoBroadcast.class);
     bind(program, channel);
 
-    recordProgramButton.requestFocus();
-
     recordProgramButton.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View v) {
@@ -138,6 +136,13 @@ public class RecordEpgFragment extends BaseFragment {
         getActivity().finish();
       }
     });
+
+    // focus the first visible button
+    if (recordProgramButton.getVisibility() == View.VISIBLE) {
+      recordProgramButton.requestFocus();
+    } else {
+      cancelProgramRecordingButton.requestFocus();
+    }
 
     return contentView;
   }
