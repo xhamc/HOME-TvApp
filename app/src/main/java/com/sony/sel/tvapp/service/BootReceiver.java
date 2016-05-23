@@ -17,17 +17,20 @@ public class BootReceiver extends BroadcastReceiver {
     Log.d(TAG, "Received Intent. Action = " + (intent.getAction() != null ? intent.getAction() : "null"));
 
     switch (intent.getAction()) {
-      case DlnaService.SERVICE_STARTED:
-        Log.d(TAG, "DLNA service started.");
-        break;
-      case DlnaService.SERVICE_STOPPED:
-        Log.d(TAG, "DLNA service stopped.");
-        break;
-      case DlnaService.SERVICE_ERROR:
-        Log.d(TAG, "DLNA service error: " + intent.getSerializableExtra(DlnaService.EXTRA_ERROR));
-        break;
       case Intent.ACTION_BOOT_COMPLETED:
         Log.d(TAG, "ACTION_BOOT_COMPLETED received.");
+        startServer(context);
+        break;
+      case Intent.ACTION_DATE_CHANGED:
+        Log.d(TAG, "ACTION_DATE_CHANGED received.");
+        startServer(context);
+        break;
+      case Intent.ACTION_TIME_CHANGED:
+        Log.d(TAG, "ACTION_TIME_CHANGED received.");
+        startServer(context);
+        break;
+      case Intent.ACTION_TIMEZONE_CHANGED:
+        Log.d(TAG, "ACTION_TIMEZONE_CHANGED received.");
         startServer(context);
         break;
     }
@@ -35,7 +38,6 @@ public class BootReceiver extends BroadcastReceiver {
 
   private void startServer(Context context) {
     Log.d(TAG, "Starting web service.");
-    context.registerReceiver(this, DlnaService.getServerIntentFilter());
     DlnaService.startService(context);
   }
 }

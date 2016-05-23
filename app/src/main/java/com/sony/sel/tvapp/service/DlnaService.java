@@ -1,11 +1,13 @@
 package com.sony.sel.tvapp.service;
 
-import android.app.IntentService;
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.os.Handler;
+import android.os.IBinder;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.google.gson.Gson;
@@ -23,7 +25,7 @@ import java.util.List;
  * Background service for setting up UPnP services, verifying the EPG server is available,
  * and performing EPG and VOD caching.
  */
-public class DlnaService extends IntentService {
+public class DlnaService extends Service {
 
   public static final String TAG = DlnaService.class.getSimpleName();
 
@@ -31,7 +33,7 @@ public class DlnaService extends IntentService {
    * Intent action to start the service.
    * <p/>
    * It is also valid to send this Intent action when the service is already running.
-   * In this case, the server will be validated.
+   * In this case, the server will be validated and EPG and VOD caching tasks will be re-run.
    * <p/>
    * The response to this aciton is a broadcast Intent with action {@link #SERVICE_STARTED} when successful,
    * or {@link #SERVICE_ERROR if a problem occurs.}
@@ -146,12 +148,9 @@ public class DlnaService extends IntentService {
     context.startService(intent);
   }
 
-  public DlnaService() {
-    super(TAG);
-  }
-
   @Override
   public void onCreate() {
+    Log.d(TAG, "Service onCreate().");
     super.onCreate();
     settingsHelper = SettingsHelper.getHelper(this);
     dlnaHelper = DlnaHelper.getHelper(this);
@@ -161,20 +160,37 @@ public class DlnaService extends IntentService {
 
   @Override
   public void onDestroy() {
+    Log.d(TAG, "Service onDestroy().");
     super.onDestroy();
     stop();
     EventBus.getInstance().unregister(this);
   }
 
   @Override
-  protected void onHandleIntent(Intent intent) {
-    Log.d(TAG, "Service Intent Received: action = " + (intent.getAction() != null ? intent.getAction() : "null"));
+  public int onStartCommand(Intent intent, int flags, int startId) {
+    int result =  super.onStartCommand(intent, flags, startId);
+    onHandleIntent(intent);
+    return result;
+  }
+
+  @Nullable
+  @Override
+  public IBinder onBind(Intent intent) {
+    return null;
+  }
+
+  /**
+   * Handle intents sent to the service.
+   * @param intent
+   */
+  private void onHandleIntent(Intent intent) {
+    Log.d(TAG, "Service onHandleIntent(): action = " + (intent.getAction() != null ? intent.getAction() : "null"));
     switch (intent.getAction()) {
       case START:
         start();
         break;
       case STOP:
-        stop();
+        stopSelf();
         break;
       default:
         break;
@@ -387,7 +403,7 @@ public class DlnaService extends IntentService {
         Log.d(TAG, "Checking root of DLNA server " + udn + ".");
         List<DlnaObject> root = dlnaHelper.getChildren(udn, DlnaHelper.DLNA_ROOT, DlnaObject.class, null, false);
         Log.d(TAG, "DLNA server root = " + new Gson().toJson(root));
-        if (root != null) {
+        if (root != null && root.size() > 0) {
           return true;
         }
 
