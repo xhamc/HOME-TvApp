@@ -1,8 +1,10 @@
-package com.sony.sel.tvapp.util;
+package com.sony.sel.tvapp.service;
 
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.sony.sel.tvapp.util.DlnaCache;
+import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.DlnaObjects.VideoBroadcast;
 import com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 

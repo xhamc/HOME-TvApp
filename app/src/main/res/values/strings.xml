@@ -13,6 +13,7 @@
     <!-- errors -->
     <string name="error">Error</string>
     <string name="genericErrorMessage">An error occurred.</string>
+    <string name="startupError">An error occurred during startup.\n\n%s</string>
 
     <!-- servers -->
     <string name="selectServerTitle">Settings:</string>

@@ -101,6 +101,23 @@
             android:enabled="true"
             />
 
+        <!-- DLNA helper service -->
+        <service
+            android:name=".service.DlnaService"
+            android:enabled="true"
+            android:exported="true"
+            />
+
+        <!-- boot completed receiver -->
+        <receiver
+            android:name=".service.BootReceiver"
+            android:enabled="true"
+            >
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
+
         <!-- EPG search content provider -->
         <provider
             android:name=".provider.EpgSearchContentProvider"
