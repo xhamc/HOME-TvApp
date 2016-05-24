@@ -220,9 +220,13 @@ public class SettingsHelper {
     return getSharedPreferences().getStringSet(RECORD_PROGRAMS, new HashSet<String>());
   }
 
-  public void addRecording(VideoProgram program) {
+  public void addRecording(@NonNull VideoProgram program) {
+    addRecording(program.getId());
+  }
+
+  public void addRecording(@NonNull String id) {
     Set<String> recordings = getProgramsToRecord();
-    recordings.add(program.getProgramId());
+    recordings.add(id);
     SharedPreferences prefs = getSharedPreferences();
     SharedPreferences.Editor editor = prefs.edit();
     editor.putStringSet(RECORD_PROGRAMS, recordings);
@@ -230,9 +234,13 @@ public class SettingsHelper {
     EventBus.getInstance().post(new EventBus.RecordingsChangedEvent());
   }
 
-  public void removeRecording(VideoProgram program) {
+  public void removeRecording(@NonNull VideoProgram program) {
+    removeRecording(program.getId());
+  }
+
+  public void removeRecording(@NonNull String id) {
     Set<String> recordings = getProgramsToRecord();
-    recordings.remove(program.getProgramId());
+    recordings.remove(id);
     SharedPreferences prefs = getSharedPreferences();
     SharedPreferences.Editor editor = prefs.edit();
     editor.putStringSet(RECORD_PROGRAMS, recordings);
@@ -248,9 +256,13 @@ public class SettingsHelper {
     return getSharedPreferences().getStringSet(RECORD_SERIES, new HashSet<String>());
   }
 
-  public void addSeriesRecording(VideoProgram program) {
+  public void addSeriesRecording(@NonNull VideoProgram program) {
+    addSeriesRecording(program.getSeriesId());
+  }
+
+  public void addSeriesRecording(@NonNull String seriesId) {
     Set<String> recordings = getSeriesToRecord();
-    recordings.add(program.getSeriesId());
+    recordings.add(seriesId);
     SharedPreferences prefs = getSharedPreferences();
     SharedPreferences.Editor editor = prefs.edit();
     editor.putStringSet(RECORD_SERIES, recordings);
@@ -258,9 +270,13 @@ public class SettingsHelper {
     EventBus.getInstance().post(new EventBus.RecordingsChangedEvent());
   }
 
-  public void removeSeriesRecording(VideoProgram program) {
+  public void removeSeriesRecording(@NonNull VideoProgram program) {
+    removeSeriesRecording(program.getSeriesId());
+  }
+
+  public void removeSeriesRecording(@NonNull String seriesId) {
     Set<String> recordings = getSeriesToRecord();
-    recordings.remove(program.getSeriesId());
+    recordings.remove(seriesId);
     SharedPreferences prefs = getSharedPreferences();
     SharedPreferences.Editor editor = prefs.edit();
     editor.putStringSet(RECORD_SERIES, recordings);
@@ -314,8 +330,12 @@ public class SettingsHelper {
   }
 
   public void addFavoriteProgram(@NonNull VideoProgram program) {
+    addFavoriteProgram(program.getSeriesId());
+  }
+
+  public void addFavoriteProgram(@NonNull String seriesId) {
     Set<String> favorites = getFavoritePrograms();
-    favorites.add(program.getSeriesId());
+    favorites.add(seriesId);
     SharedPreferences.Editor editor = getSharedPreferences().edit();
     editor.putStringSet(FAVORITE_PROGRAMS, favorites);
     editor.commit();
@@ -323,8 +343,12 @@ public class SettingsHelper {
   }
 
   public void removeFavoriteProgram(@NonNull VideoProgram program) {
+    removeFavoriteProgram(program.getSeriesId());
+  }
+
+  public void removeFavoriteProgram(@NonNull String seriesId) {
     Set<String> favorites = getFavoritePrograms();
-    favorites.remove(program.getSeriesId());
+    favorites.remove(seriesId);
     SharedPreferences.Editor editor = getSharedPreferences().edit();
     editor.putStringSet(FAVORITE_PROGRAMS, favorites);
     editor.commit();
