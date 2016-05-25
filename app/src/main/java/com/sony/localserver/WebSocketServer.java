@@ -434,8 +434,8 @@ public class WebSocketServer extends NanoWSD {
           settingsHelper.addSeriesRecording(id);
         }
       }
-      if (data.getRemoveProgramsToRecord() != null) {
-        for (String id : data.getRemoveProgramsToRecord()) {
+      if (data.getRemoveSeriesToRecord() != null) {
+        for (String id : data.getRemoveSeriesToRecord()) {
           settingsHelper.removeSeriesRecording(id);
         }
       }
