@@ -44,11 +44,15 @@ import com.squareup.otto.Subscribe;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import butterknife.Bind;
@@ -68,6 +72,7 @@ public class VideoFragment extends BaseFragment {
 
   private Method mediaPlayerInvoke = null;
   private Method setSpeedMethod = null;
+  private static final boolean USE_SETSPEED_FLOAT_METHOD=false;
   private ProtocolInfo protocolInfo;
 
   @Bind(R.id.videoSurfaceView)
@@ -119,12 +124,44 @@ public class VideoFragment extends BaseFragment {
   private long seekPosition = -1;
 
   // values for setting playback speed
-  private final Double[] fixedSpeeds = {-16.0, -4.0, -2.0, -1.0, -0.5, 0.5, 1.0, 2.0, 4.0, 16.0};
+  private final Double[] fixedSpeeds = {-64.0, -32.0, -16.0, -8.0, -4.0, -2.0, -0.5, 0.03125, 0.0625, 0.125, 0.25, 0.5, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0};
   private final static int INVOKE_ID_SET_SPEED_FLOAT = 100;
+  private final static int INVOKE_ID_SET_PLAY_MODE = 0x2000;
+
+  private final static int  IMTK_PB_CTRL_SPEED_FR_64X   =   -6400000;   ///< Fast Rewind 64X
+  private final static int  IMTK_PB_CTRL_SPEED_FR_32X   =   -3200000;   ///< Fast Rewind 32X
+  private final static int  IMTK_PB_CTRL_SPEED_FR_16X   =   -1600000;   ///< Fast Rewind 16X
+  private final static int  IMTK_PB_CTRL_SPEED_FR_8X    =   -800000;    ///< Fast Rewind 8X
+  private final static int  IMTK_PB_CTRL_SPEED_FR_4X    =   -400000;    ///< Fast Rewind 4X
+  private final static int  IMTK_PB_CTRL_SPEED_FR_2X    =   -200000;    ///< Fast Rewind 2X
+  private final static int  IMTK_PB_CTRL_SPEED_ZERO     =   0;          ///< paused; only for IMtkPb_Ctrl_GetPlayParam() and not for IMtkPb_Ctrl_SetSpeed().
+  private final static int  IMTK_PB_CTRL_SPEED_1X       =   100000;     ///< normal play; only for IMtkPb_Ctrl_GetPlayParam() and not for IMtkPb_Ctrl_SetSpeed().
+  private final static int  IMTK_PB_CTRL_SPEED_FF_2X    =   200000;     ///< Fast Forward 2X
+  private final static int  IMTK_PB_CTRL_SPEED_FF_4X    =   400000;     ///< Fast Forward 4X
+  private final static int  IMTK_PB_CTRL_SPEED_FF_8X    =   800000;     ///< Fast Forward 8X
+  private final static int  IMTK_PB_CTRL_SPEED_FF_16X   =   1600000;    ///< Fast Forward 16X
+  private final static int  IMTK_PB_CTRL_SPEED_FF_32X   =   3200000;     ///< Fast Forward 32X
+  private final static int  IMTK_PB_CTRL_SPEED_FF_64X   =   6400000;     ///< Fast Forward 64X
+  private final static int  IMTK_PB_CTRL_SPEED_SF_1_2X    =  200;    ///< Slow Forward 1/2X, Lib Master only
+  private final static int  IMTK_PB_CTRL_SPEED_SF_1_4X    =  400;    ///< Slow Forward 1/4X, Lib Master only
+  private final static int  IMTK_PB_CTRL_SPEED_SF_1_8X    =  800;    ///< Slow Forward 1/8X, Lib Master only
+  private final static int  IMTK_PB_CTRL_SPEED_SF_1_16X   =  1600;   ///< Slow Forward 1/16X, Lib Master only
+  private final static int  IMTK_PB_CTRL_SPEED_SF_1_32X   =  3200;   ///< Slow Forward 1/32X, Lib Master only
+  private final static int  IMTK_PB_CTRL_SPEED_SR_1_2X    =  -200;   ///< Slow Rewind 1/2X, Lib Master only,   Slow reverse function is not ready now.
+  private final static int  IMTK_PB_CTRL_SPEED_SR_1_4X    =  -400;   ///< Slow Rewind 1/4X, Lib Master only,   Slow reverse function is not ready now.
+  private final static int  IMTK_PB_CTRL_SPEED_SR_1_8X    =  -800;   ///< Slow Rewind 1/8X, Lib Master only,   Slow reverse function is not ready now.
+  private final static int  IMTK_PB_CTRL_SPEED_SR_1_16X   =  -1600;  ///< Slow Rewind 1/16X, Lib Master only,   Slow reverse function is not ready now.
+  private final static int  IMTK_PB_CTRL_SPEED_SR_1_32X   =  -3200;  ///< Slow Rewind 1/32X, Lib Master only,   Slow reverse function is not ready now.
+
   private final static String IMEDIA_PLAYER = "android.media.IMediaPlayer";
 
   private SettingsHelper settingsHelper;
   private DlnaInterface dlnaHelper;
+
+
+  private final static List<Double> playModeSpeedsDouble = new ArrayList<>();
+  private final static List<Integer> playModeSpeedsIMTK = new ArrayList<>();
+
 
   @Nullable
   @Override
@@ -142,6 +179,9 @@ public class VideoFragment extends BaseFragment {
 
     // retrieve invoke method for setting playback speed
     getInvokeMethod();
+
+    // create speed map to IMTK fixed speeds
+    populatePlaySpeeds();
 
     return contentView;
   }
@@ -184,6 +224,7 @@ public class VideoFragment extends BaseFragment {
   }
 
 
+
   /**
    * Retrieve the media player's invoke and setSpeed methods if they are available
    * so we can set playback speed.
@@ -194,15 +235,59 @@ public class VideoFragment extends BaseFragment {
     } catch (Exception e) {
       Log.e(TAG, "Class method not supported :" + e.getMessage());
     }
-    try {
-      setSpeedMethod = MediaPlayer.class.getMethod("setSpeed", new Class[]{float.class});
-    } catch (Exception e) {
-      Log.e(TAG, "Class method not supported :" + e.getMessage());
-    }
+//    try {
+//      setSpeedMethod = MediaPlayer.class.getMethod("setSpeed", new Class[]{float.class});
+//    } catch (Exception e) {
+//      Log.e(TAG, "Class method not supported :" + e.getMessage());
+//    }
   }
 
   /**
-   * Set the playback speed.
+   *
+   **/
+  private void populatePlaySpeeds(){
+    playModeSpeedsDouble.add(0,-64.0);
+    playModeSpeedsDouble.add(1,-32.0);
+    playModeSpeedsDouble.add(2,-16.0);
+    playModeSpeedsDouble.add(3,-8.0);
+    playModeSpeedsDouble.add(4,-4.0);
+    playModeSpeedsDouble.add(5,-2.0);
+    playModeSpeedsDouble.add(6,-0.5);
+    playModeSpeedsDouble.add(7,0.03125);
+    playModeSpeedsDouble.add(8,0.0625);
+    playModeSpeedsDouble.add(9,0.125);
+    playModeSpeedsDouble.add(10,0.25);
+    playModeSpeedsDouble.add(11,0.5);
+    playModeSpeedsDouble.add(12,1.0);
+    playModeSpeedsDouble.add(13,2.0);
+    playModeSpeedsDouble.add(14,4.0);
+    playModeSpeedsDouble.add(15,8.0);
+    playModeSpeedsDouble.add(16,16.0);
+    playModeSpeedsDouble.add(17,32.0);
+    playModeSpeedsDouble.add(18,64.0);
+    playModeSpeedsIMTK.add(0,IMTK_PB_CTRL_SPEED_FR_64X);
+    playModeSpeedsIMTK.add(1,IMTK_PB_CTRL_SPEED_FR_32X);
+    playModeSpeedsIMTK.add(2,IMTK_PB_CTRL_SPEED_FR_16X);
+    playModeSpeedsIMTK.add(3,IMTK_PB_CTRL_SPEED_FR_8X);
+    playModeSpeedsIMTK.add(4,IMTK_PB_CTRL_SPEED_FR_4X);
+    playModeSpeedsIMTK.add(5,IMTK_PB_CTRL_SPEED_FR_2X);
+    playModeSpeedsIMTK.add(6,IMTK_PB_CTRL_SPEED_SR_1_2X);
+    playModeSpeedsIMTK.add(7,IMTK_PB_CTRL_SPEED_SF_1_32X);
+    playModeSpeedsIMTK.add(8,IMTK_PB_CTRL_SPEED_SF_1_16X);
+    playModeSpeedsIMTK.add(9,IMTK_PB_CTRL_SPEED_SF_1_8X);
+    playModeSpeedsIMTK.add(10,IMTK_PB_CTRL_SPEED_SF_1_4X);
+    playModeSpeedsIMTK.add(11,IMTK_PB_CTRL_SPEED_SF_1_2X);
+    playModeSpeedsIMTK.add(12,IMTK_PB_CTRL_SPEED_1X);
+    playModeSpeedsIMTK.add(13,IMTK_PB_CTRL_SPEED_FF_2X);
+    playModeSpeedsIMTK.add(14,IMTK_PB_CTRL_SPEED_FF_4X);
+    playModeSpeedsIMTK.add(15,IMTK_PB_CTRL_SPEED_FF_8X);
+    playModeSpeedsIMTK.add(16,IMTK_PB_CTRL_SPEED_FF_16X);
+    playModeSpeedsIMTK.add(17,IMTK_PB_CTRL_SPEED_FF_32X);
+    playModeSpeedsIMTK.add(18,IMTK_PB_CTRL_SPEED_FF_64X);
+  }
+
+  /**
+   * Set the playback speed using INVOKE_ID_SET_SPEED_FLOAT method.
    *
    * @param speed The speed multiple.
    * @return Response from the player's speed setting method.
@@ -220,6 +305,33 @@ public class VideoFragment extends BaseFragment {
     } catch (Exception e) {
       Log.e(TAG, "Error setting speed to " + speed + ": " + e);
     } finally {
+      request.recycle();
+      reply.recycle();
+    }
+    return 0;
+  }
+
+  /**
+   * Set the playback speed using INVOKE_ID_SET_PLAY_MODE method.
+   *
+   * @param speed The speed multiple.
+   * @return Response from the player's speed setting method.
+   */
+  private int setPlaySpeed(int speed) {
+    Parcel request = Parcel.obtain();
+    Parcel reply = Parcel.obtain();
+    try {
+      request.writeInterfaceToken(IMEDIA_PLAYER);
+      request.writeInt(INVOKE_ID_SET_PLAY_MODE);
+      request.writeInt(speed);
+      mediaPlayerInvoke.invoke(mediaPlayer, request, reply);
+      Log.d(TAG, "Set speed to " + speed + ", response: " + reply.readInt());
+      return reply.readInt();
+    } catch (InvocationTargetException e) {
+      Log.e(TAG, "Invoke Error setting speed to " + speed + ": " + e.getCause());
+    } catch (IllegalAccessException e) {
+      Log.e(TAG, "Access Error setting speed to " + speed + ": " + e);
+    }finally {
       request.recycle();
       reply.recycle();
     }
@@ -312,6 +424,7 @@ public class VideoFragment extends BaseFragment {
     if (canPause()) {
       Log.d(TAG, "Pausing video.");
       mediaPlayer.pause();
+      currentPlaySpeed=0.0;
       updateMediaPlaybackState();
       showProgressBar(PROGRESS_UI_HIDE_DELAY);
     }
@@ -443,37 +556,24 @@ public class VideoFragment extends BaseFragment {
     List<Double> ps = new ArrayList<>();
     if (protocolInfo != null && protocolInfo.playSpeedSupported()) {
       ps = protocolInfo.getPlaySpeedDoubles();
-
     } else {
       ps.addAll(Arrays.asList(fixedSpeeds));
     }
-    Double speed = 1.0;
-    if (mediaPlayer.isPlaying()) {
-
-      Double minSpeedChange = Double.POSITIVE_INFINITY;
-      for (Double s : ps) {
-        if (s > currentPlaySpeed) {
-          if (minSpeedChange > s && s > 1.0) {
-            speed = s;
-            minSpeedChange = s;
-          }
-        }
-      }
-
-    } else {
-
-      Double minSpeedChange = 1.0;
-      for (Double s : ps) {
-        if (s > 0.0 && s < 1.0) {
-          if (minSpeedChange > s) {
-            speed = s;
-            minSpeedChange = s;
-          }
-        }
-      }
-
+    Double speed = 1.0;       //start with regular playback as default so that speed increase loops back to beginning
+    Double maxS=0.0;          //If playing or doing fast reverse then forward goes into fast forward. If paused, it goes into slow forward.
+    if (currentPlaySpeed<0.0) {
+      maxS = 1.0;
     }
 
+    Double minSpeedChange = Double.POSITIVE_INFINITY;
+    for (Double s : ps) {
+      if (s > currentPlaySpeed) {
+        if (minSpeedChange > s && s > maxS) {
+          speed = s;
+          minSpeedChange = s;
+        }
+      }
+    }
     invokeSetSpeed(speed);
     updateProgressBar();
   }
@@ -489,25 +589,17 @@ public class VideoFragment extends BaseFragment {
     } else {
       ps.addAll(Arrays.asList(fixedSpeeds));
     }
-    Double speed = 1.0;
-    if (mediaPlayer.isPlaying()) {
-      Double minSpeedChange = Double.NEGATIVE_INFINITY;
-      for (Double s : ps) {
-        if (s < currentPlaySpeed) {
-          if (minSpeedChange < s) {
-            speed = s;
-            minSpeedChange = s;
-          }
-        }
-      }
-    } else {
-      Double minSpeedChange = -1.0;
-      for (Double s : ps) {
-        if (s < 0.0 && s > -1.0) {
-          if (minSpeedChange < s) {
-            speed = s;
-            minSpeedChange = s;
-          }
+    Double speed = 1.0;       //start with regular playback as default so that speed increase loops back to beginning
+    Double maxS=0.0;          //If playing or doing fast forward then reverse goes into fast reverse. If paused, it goes into slow reverse.
+    if (currentPlaySpeed>=1.0) {
+      maxS = -1.0;
+    }
+    Double minSpeedChange = Double.NEGATIVE_INFINITY;
+    for (Double s : ps) {
+      if (s < currentPlaySpeed && s<maxS) {
+        if (minSpeedChange < s) {
+          speed = s;
+          minSpeedChange = s;
         }
       }
     }
@@ -529,21 +621,53 @@ public class VideoFragment extends BaseFragment {
    */
   void invokeSetSpeed(Double speed) {
 
-    try {
-      if (speed != currentPlaySpeed) {
-        //setSpeedMethod.invoke(mediaPlayer, speed.floatValue());
-        if (speed > 0.0 && speed < 1.0) speed = 0.5;
-        if (speed < 0.0 && speed > -1.0) speed = -0.5;
-        if (speed > 1.0) speed = 10.0;
-        if (speed <= -1.0) speed = -10.0;
-        int result = setPlaySpeed(speed);
-        Log.d(TAG, "Setting speed to " + speed + " gives return value of: " + result);
+    if (USE_SETSPEED_FLOAT_METHOD){
+
+      try {
+        if (speed != currentPlaySpeed) {
+          //setSpeedMethod.invoke(mediaPlayer, speed.floatValue());
+          if (speed > 0.0 && speed < 1.0) speed = 0.5;
+          if (speed < 0.0 && speed > -1.0) speed = -0.5;
+          if (speed > 1.0) speed = 10.0;
+          if (speed <= -1.0) speed = -10.0;
+          int result = setPlaySpeed(speed);
+          Log.d(TAG, "Setting speed to " + speed + " gives return value of: " + result);
+        }
+      } catch (Exception e) {
+        Log.e(TAG, "Error setting speed: " + e.getMessage());
+        return;
       }
-    } catch (Exception e) {
-      Log.e(TAG, "Error setting speed: " + e.getMessage());
-      return;
+      currentPlaySpeed = speed;
+
+    }else {
+      try {
+        if (speed != currentPlaySpeed) {
+
+          for (int i = 0; i < playModeSpeedsDouble.size() - 1; i++) {
+            if (speed.compareTo(playModeSpeedsDouble.get(i)) >= 0) {
+              if (speed.compareTo(playModeSpeedsDouble.get(i + 1)) < 0) {
+                currentPlaySpeed = playModeSpeedsDouble.get(i);
+                setPlaySpeed(playModeSpeedsIMTK.get(i));
+                Log.d(TAG, "Setting speed to Forward at: " + playModeSpeedsDouble.get(i));
+                break;
+              } else if (i == playModeSpeedsDouble.size() - 2) {
+                currentPlaySpeed = playModeSpeedsDouble.get(i + 1);
+                setPlaySpeed(playModeSpeedsIMTK.get(i + 1));
+
+                Log.d(TAG, "Setting speed to Forward at: " + playModeSpeedsDouble.get(i + 1));
+                break;
+              }
+            }
+          }
+        }
+
+
+      } catch (Exception e) {
+        Log.e(TAG, "Error setting speed: " + e.getMessage());
+        return;
+      }
     }
-    currentPlaySpeed = speed;
+
 
   }
 
