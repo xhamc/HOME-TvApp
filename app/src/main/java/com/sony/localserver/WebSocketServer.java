@@ -9,7 +9,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 import com.sony.sel.tvapp.util.DlnaCache;
-import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.DlnaObjects;
 import com.sony.sel.tvapp.util.EventBus;
@@ -193,8 +192,10 @@ public class WebSocketServer extends NanoWSD {
         try {
           ws.send(getFavorites());
         } catch (IOException e) {
-          Log.e(TAG, "Error sending Channels:" + e);
+          Log.e(TAG, "Error sending favorites:" + e);
         }
+      } else if (payload.contains("editFavorites")) {
+        editFavorites(payload);
       }
     }
 
@@ -350,6 +351,7 @@ public class WebSocketServer extends NanoWSD {
 
     /**
      * Return the list of program recordings, series recordings and favorite programs as JSON.
+     *
      * @return Formatted JSON.
      */
     String getRecordingsAndFavorites() {
@@ -391,6 +393,51 @@ public class WebSocketServer extends NanoWSD {
       } catch (Exception e) {
         Log.e(TAG, "Exception parsing json: " + e);
         return "{CURRENT:{}}";
+      }
+    }
+
+    void editFavorites(String payload) {
+      EditFavoritesRequest request = new Gson().fromJson(payload, EditFavoritesRequest.class);
+      EditFavoritesRequest.RequestData data = request.getRequestData();
+      if (data.getAddFavoriteChannels() != null) {
+        for (String channelId : data.getAddFavoriteChannels()) {
+          settingsHelper.addFavoriteChannel(channelId);
+        }
+      }
+      if (data.getRemoveFavoriteChannels() != null) {
+        for (String channelId : data.getRemoveFavoriteChannels()) {
+          settingsHelper.removeFavoriteChannel(channelId);
+        }
+      }
+      if (data.getAddFavoritePrograms() != null) {
+        for (String id : data.getAddFavoritePrograms()) {
+          settingsHelper.addFavoriteProgram(id);
+        }
+      }
+      if (data.getRemoveFavoritePrograms() != null) {
+        for (String id : data.getRemoveFavoritePrograms()) {
+          settingsHelper.removeFavoriteProgram(id);
+        }
+      }
+      if (data.getAddProgramsToRecord() != null) {
+        for (String id : data.getAddProgramsToRecord()) {
+          settingsHelper.addRecording(id);
+        }
+      }
+      if (data.getRemoveProgramsToRecord() != null) {
+        for (String id : data.getRemoveProgramsToRecord()) {
+          settingsHelper.removeRecording(id);
+        }
+      }
+      if (data.getAddSeriesToRecord() != null) {
+        for (String id : data.getAddSeriesToRecord()) {
+          settingsHelper.addSeriesRecording(id);
+        }
+      }
+      if (data.getRemoveProgramsToRecord() != null) {
+        for (String id : data.getRemoveProgramsToRecord()) {
+          settingsHelper.removeSeriesRecording(id);
+        }
       }
     }
 
@@ -531,6 +578,67 @@ public class WebSocketServer extends NanoWSD {
       this.programsToRecord = programsToRecord;
       this.seriesToRecord = seriesToRecord;
       this.favoritePrograms = favoritePrograms;
+    }
+  }
+
+  private static class EditFavoritesRequest {
+
+    @SerializedName("editFavorites")
+    private RequestData requestData;
+
+    public RequestData getRequestData() {
+      return requestData;
+    }
+
+    private static class RequestData {
+      @SerializedName("ADD_FAVORITE_PROGRAMS")
+      private Set<String> addFavoritePrograms;
+      @SerializedName("REMOVE_FAVORITE_PROGRAMS")
+      private Set<String> removeFavoritePrograms;
+      @SerializedName("ADD_FAVORITE_CHANNELS")
+      private Set<String> addFavoriteChannels;
+      @SerializedName("REMOVE_FAVORITE_CHANNELS")
+      private Set<String> removeFavoriteChannels;
+      @SerializedName("ADD_PROGRAMS_TO_RECORD")
+      private Set<String> addProgramsToRecord;
+      @SerializedName("REMOVE_PROGRAMS_TO_RECORD")
+      private Set<String> removeProgramsToRecord;
+      @SerializedName("ADD_SERIES_TO_RECORD")
+      private Set<String> addSeriesToRecord;
+      @SerializedName("REMOVE_SERIES_TO_RECORD")
+      private Set<String> removeSeriesToRecord;
+
+      public Set<String> getAddFavoritePrograms() {
+        return addFavoritePrograms;
+      }
+
+      public Set<String> getRemoveFavoritePrograms() {
+        return removeFavoritePrograms;
+      }
+
+      public Set<String> getAddProgramsToRecord() {
+        return addProgramsToRecord;
+      }
+
+      public Set<String> getRemoveProgramsToRecord() {
+        return removeProgramsToRecord;
+      }
+
+      public Set<String> getAddFavoriteChannels() {
+        return addFavoriteChannels;
+      }
+
+      public Set<String> getRemoveFavoriteChannels() {
+        return removeFavoriteChannels;
+      }
+
+      public Set<String> getAddSeriesToRecord() {
+        return addSeriesToRecord;
+      }
+
+      public Set<String> getRemoveSeriesToRecord() {
+        return removeSeriesToRecord;
+      }
     }
   }
 
