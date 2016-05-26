@@ -12,6 +12,13 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS"/>
+    <!-- Required to update or read existing channel and program information in TvProvider. -->
+    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS"/>
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS"/>
+    <uses-permission android:name="com.android.providers.tv.permission.READ_EPG_DATA" />
+    <!-- Required to update channel and program information in TvProvider. -->
+    <uses-permission android:name="com.android.providers.tv.permission.WRITE_EPG_DATA" />
 
     <!-- Android TV -->
     <uses-feature
@@ -134,6 +141,44 @@
             android:enabled="true"
             android:exported="true"
             />
+
+        <service android:name="com.sony.sel.tvinput.SonyTvInputService"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_TV_INPUT">
+            <intent-filter>
+                <action android:name="android.media.tv.TvInputService" />
+            </intent-filter>
+            <meta-data android:name="android.media.tv.input"
+                android:resource="@xml/xfin_tv_input" />
+        </service>
+        <activity
+            android:name="com.sony.sel.tvinput.SetupActivity"
+            android:windowNoTitle="true"
+            android:screenOrientation="landscape">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
+        <!-- This service implements the SyncAdapter for updating program information regularly in
+    the background. It needs to be exported, so that the sync framework can access it. -->
+        <service android:name="com.sony.sel.tvinput.syncadapter.SyncService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter" />
+            </intent-filter>
+            <meta-data android:name="android.content.SyncAdapter"
+                android:resource="@xml/syncadapter" />
+        </service>
+
+        <!-- Since the channel/program feed here does not require any authentication, we use a dummy
+        account used for SyncAdapter. -->
+        <service android:name="com.sony.sel.tvinput.syncadapter.DummyAccountService">
+            <intent-filter>
+                <action android:name="android.accounts.AccountAuthenticator" />
+            </intent-filter>
+            <meta-data android:name="android.accounts.AccountAuthenticator"
+                android:resource="@xml/authenticator" />
+        </service>
 
     </application>
 
