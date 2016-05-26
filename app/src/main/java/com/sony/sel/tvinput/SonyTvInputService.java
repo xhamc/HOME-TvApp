@@ -1,12 +1,14 @@
 package com.sony.sel.tvinput;
 
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.media.MediaPlayer;
 import android.media.PlaybackParams;
 import android.media.tv.TvInputManager;
 import android.media.tv.TvInputService;
 import android.net.Uri;
+import android.os.Build;
 import android.util.Log;
 import android.view.Surface;
 
@@ -89,7 +91,11 @@ public class SonyTvInputService extends TvInputService
 
                      }
                      notifyVideoAvailable();
-                     notifyTimeShiftStatusChanged(TvInputManager.TIME_SHIFT_STATUS_AVAILABLE);
+
+                     if(Build.VERSION.SDK_INT >= 23)
+                     {
+                        notifyTimeShiftStatusChanged(TvInputManager.TIME_SHIFT_STATUS_AVAILABLE);
+                     }
                  }
              };
              task.execute();
@@ -98,6 +104,7 @@ public class SonyTvInputService extends TvInputService
 		}
 
 
+         @TargetApi(23)
          @Override
          public void onTimeShiftPause()
          {
@@ -105,6 +112,7 @@ public class SonyTvInputService extends TvInputService
              myPlayer.pause();
          }
 
+         @TargetApi(23)
          @Override
          public void onTimeShiftResume()
          {
@@ -112,12 +120,14 @@ public class SonyTvInputService extends TvInputService
              myPlayer.start();
          }
 
+         @TargetApi(23)
          @Override
          public void onTimeShiftSeekTo(long value)
          {
              Log.d(TAG, "seek to: " + value);
          }
 
+         @TargetApi(23)
          @Override
          public long onTimeShiftGetStartPosition()
          {
@@ -126,6 +136,7 @@ public class SonyTvInputService extends TvInputService
              return  TvInputManager.TIME_SHIFT_INVALID_TIME;
          }
 
+         @TargetApi(23)
          @Override
          public long onTimeShiftGetCurrentPosition()
          {
@@ -133,6 +144,7 @@ public class SonyTvInputService extends TvInputService
              return myPlayer.getCurrentPosition();
          }
 
+         @TargetApi(23)
          @Override
          public void onTimeShiftSetPlaybackParams(PlaybackParams params)
          {
