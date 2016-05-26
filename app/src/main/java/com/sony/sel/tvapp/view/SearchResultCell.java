@@ -25,9 +25,9 @@ import butterknife.ButterKnife;
 /**
  * View
  */
-public class SearchResultCell extends BaseListCell<DlnaObject> {
+public class SearchResultCell extends BaseListCell<VideoProgram> {
 
-  private DlnaObject program;
+  private VideoProgram program;
   private SettingsHelper settingsHelper;
 
   @Bind(R.id.title)
@@ -89,19 +89,14 @@ public class SearchResultCell extends BaseListCell<DlnaObject> {
   }
 
   @Override
-  public void bind(DlnaObject data) {
+  public void bind(VideoProgram data) {
     program = data;
 
     // main title
     title.setText(data.getTitle());
 
     // program title
-    String progTitle = null;
-    if (data instanceof VideoProgram) {
-      progTitle = ((VideoProgram) data).getProgramTitle();
-    } else if (data instanceof VideoItem) {
-      progTitle = ((VideoItem) data).getProgramTitle();
-    }
+    String progTitle = program.getProgramTitle();
     if (progTitle != null && progTitle.length() > 0) {
       programTitle.setVisibility(View.VISIBLE);
       programTitle.setText(progTitle);
@@ -110,22 +105,26 @@ public class SearchResultCell extends BaseListCell<DlnaObject> {
     }
 
     // time
-    if (data instanceof VideoProgram) {
-      // display program date/time
-      String t = new SimpleDateFormat("M/d/yy h:mm a").format(((VideoProgram) data).getScheduledStartTime());
-      time.setText(t);
+    StringBuilder builder = new StringBuilder();
+    if (isVodItem()) {
+      if (data.getEpisodeNumber() != null && data.getEpisodeSeason() != null) {
+        builder.append(String.format("Season %s Episode %s", data.getEpisodeNumber(), data.getEpisodeSeason()));
+      } else {
+        builder.append(getContext().getString(R.string.onDemand));
+      }
     } else {
-      // video on demand
-      time.setText(R.string.onDemand);
+      builder.append(new SimpleDateFormat("M/d/yy h:mm a").format(data.getScheduledStartTime()));
     }
+    if (data.getGenre() != null) {
+      builder.append(", " + data.getGenre());
+    }
+    if (data.getRating() != null) {
+      builder.append(", " + data.getRating());
+    }
+    time.setText(builder.toString());
 
     // description
-    String desc = null;
-    if (data instanceof VideoProgram) {
-      desc = ((VideoProgram) data).getLongDescription();
-    } else if (data instanceof VideoItem) {
-      desc = ((VideoItem) data).getLongDescription();
-    }
+    String desc = data.getLongDescription();
     if (desc != null && desc.length() > 0) {
       description.setVisibility(View.VISIBLE);
       description.setText(desc);
@@ -138,20 +137,19 @@ public class SearchResultCell extends BaseListCell<DlnaObject> {
     recordProgram.setVisibility(View.GONE);
     favoriteChannel.setVisibility(View.GONE);
     favoriteProgram.setVisibility(View.GONE);
-    if (program instanceof VideoProgram) {
-      if (settingsHelper.isSeriesRecorded((VideoProgram) program)) {
+    if (!isVodItem()) {
+      if (settingsHelper.isSeriesRecorded(program)) {
         recordSeries.setVisibility(View.VISIBLE);
-      } else if (settingsHelper.isProgramRecorded((VideoProgram) program)) {
+      } else if (settingsHelper.isProgramRecorded(program)) {
         recordProgram.setVisibility(View.VISIBLE);
       }
-      if (settingsHelper.isFavoriteProgram((VideoProgram)program)) {
+      if (settingsHelper.isFavoriteProgram(program)) {
         favoriteProgram.setVisibility(View.VISIBLE);
       }
-      if (settingsHelper.getFavoriteChannels().contains(((VideoProgram)program).getChannelId())) {
+      if (settingsHelper.getFavoriteChannels().contains(program.getChannelId())) {
         favoriteProgram.setVisibility(View.VISIBLE);
       }
     }
-
 
     // thumbnail icon
     if (program.getIcon() != null && program.getIcon().length() > 0) {
@@ -162,8 +160,13 @@ public class SearchResultCell extends BaseListCell<DlnaObject> {
 
   }
 
+  private boolean isVodItem() {
+    // TODO this is fiber-specific implementation
+    return program.getId().startsWith("0/VOD");
+  }
+
   @Override
-  public DlnaObject getData() {
+  public VideoProgram getData() {
     return program;
   }
 

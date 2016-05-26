@@ -1,24 +1,26 @@
 package com.sony.sel.tvapp.fragment;
 
+import android.app.Activity;
+import android.app.SearchManager;
+import android.app.SearchableInfo;
+import android.content.ComponentName;
 import android.content.Context;
+import android.media.tv.TvInputManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
-import android.widget.TextView;
+import android.widget.SearchView;
 
 import com.sony.sel.tvapp.R;
+import com.sony.sel.tvapp.activity.MainActivity;
 import com.sony.sel.tvapp.adapter.TvAppAdapter;
 import com.sony.sel.tvapp.menu.PopupHelper;
 import com.sony.sel.tvapp.util.DlnaHelper;
@@ -47,9 +49,10 @@ public class SearchFragment extends BaseFragment {
 
 
   @Bind(R.id.searchView)
-  EditText searchView;
+  SearchView searchView;
   @Bind(android.R.id.list)
   RecyclerView list;
+  EditText searchViewEditText;
 
   private DlnaInterface dlnaHelper;
   private SettingsHelper settingsHelper;
@@ -83,62 +86,84 @@ public class SearchFragment extends BaseFragment {
 
     // disable UI timeout
     EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
-    focusSearchText();
 
-    searchView.addTextChangedListener(new TextWatcher() {
+    searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
       @Override
-      public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-        // nothing
+      public boolean onQueryTextSubmit(String query) {
+        hideSoftKeyboard(searchViewEditText);
+        list.requestFocus();
+        search(query);
+        return true;
       }
 
       @Override
-      public void onTextChanged(CharSequence s, int start, int before, int count) {
-        if (s.length() > 1) {
-          search(s.toString());
-        } else {
-          clearSearch();
-        }
-      }
-
-      @Override
-      public void afterTextChanged(Editable s) {
-        // nothing
-      }
-    });
-    searchView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-      @Override
-      public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-        if (actionId == EditorInfo.IME_ACTION_DONE) {
-          // TODO why isn't it hiding?
-          searchView.clearFocus();
-          InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-          imm.hideSoftInputFromWindow(searchView.getWindowToken(), 0);
-          return true;
-        }
+      public boolean onQueryTextChange(String newText) {
         return false;
       }
     });
 
+    int id = searchView.getContext()
+        .getResources()
+        .getIdentifier("android:id/search_src_text", null, null);
+    searchViewEditText = (EditText) searchView.findViewById(id);
+    if (searchViewEditText != null) {
+      searchViewEditText.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+          showSoftKeyboard(v);
+        }
+      });
+    }
+
+    // extract search configuration from manifest
+    SearchManager searchManager = (SearchManager) getActivity().getSystemService(Context.SEARCH_SERVICE);
+    ComponentName componentName = new ComponentName(getActivity().getApplicationContext(), MainActivity.class);
+    SearchableInfo info = searchManager.getSearchableInfo(componentName);
+    searchView.setSearchableInfo(info);
+
+    setVoiceSearchResult();
+
+    // disable UI timeout
+    EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
+
     return contentView;
+  }
+
+  private void setVoiceSearchResult() {
+    if (settingsHelper.getCurrentSearchQuery() != null) {
+      String query = settingsHelper.getCurrentSearchQuery();
+      settingsHelper.setCurrentSearchQuery(null);
+      searchView.setQuery(query, false);
+      search(query);
+      list.requestFocus();
+    } else {
+      searchView.requestFocus();
+    }
+  }
+
+  private void showSoftKeyboard(View v) {
+    InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+    imm.showSoftInput(v, 0);
+  }
+
+  private void hideSoftKeyboard(View v) {
+    InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+    imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
   }
 
   @Override
   public void onHiddenChanged(boolean hidden) {
     super.onHiddenChanged(hidden);
     if (!hidden) {
+      // set search text
+      setVoiceSearchResult();
       // disable UI timeout
       EventBus.getInstance().post(new EventBus.CancelUiTimerEvent());
-      // reset search text to empty
-      searchView.setText("");
-      // focus search text
-      focusSearchText();
+    } else if (searchView != null) {
+      // clear the search when hiding
+      searchView.setQuery("", false);
+      clearSearch();
     }
-  }
-
-  private void focusSearchText() {
-    searchView.requestFocus();
-    InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-    imm.showSoftInput(searchView, 0);
   }
 
   private void showPopup(SearchResultCell cell, int position) {
@@ -162,30 +187,31 @@ public class SearchFragment extends BaseFragment {
     if (searchTask != null) {
       searchTask.cancel(true);
     }
+    adapter.setLoading();
     searchTask = new SearchTask(searchText);
     searchTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
   }
 
   private void clearSearch() {
-    adapter.setData(new ArrayList<DlnaObject>());
+    adapter.setData(new ArrayList<VideoProgram>());
   }
 
-  private class VideoProgramAdapter extends TvAppAdapter<DlnaObject, SearchResultCell> {
+  private class VideoProgramAdapter extends TvAppAdapter<VideoProgram, SearchResultCell> {
     public VideoProgramAdapter() {
       super(getActivity(),
           R.id.searchResultCell,
           R.layout.search_result_cell,
           getString(R.string.searching),
           getString(R.string.noItemsFound),
-          new OnClickListener<DlnaObject, SearchResultCell>() {
+          new OnClickListener<VideoProgram, SearchResultCell>() {
             @Override
             public void onClick(SearchResultCell view, int position) {
-              if (view.getData() instanceof VideoProgram) {
+              if (view.getData().getId().startsWith("0/VOD")) {
+                // VOD item
+                EventBus.getInstance().post(new EventBus.PlayVodEvent(view.getData()));
+              } else {
                 // program popup
                 showPopup(view, position);
-              } else if (view.getData() instanceof VideoItem) {
-                // VOD item
-                EventBus.getInstance().post(new EventBus.PlayVodEvent((VideoItem) view.getData()));
               }
             }
           },
@@ -199,15 +225,18 @@ public class SearchFragment extends BaseFragment {
       holder.itemView.setNextFocusLeftId(R.id.searchView);
       if (position == 0) {
         holder.itemView.setNextFocusUpId(R.id.searchView);
+        if (holder.itemView instanceof SearchResultCell && list.hasFocus()) {
+          holder.itemView.requestFocus();
+        }
       }
     }
   }
 
 
   /**
-   * Async task to get the device list.
+   * Async task to get the search results.
    */
-  private class SearchTask extends AsyncTask<Void, Void, List<DlnaObject>> {
+  private class SearchTask extends AsyncTask<Void, Void, List<VideoProgram>> {
 
     private final String searchText;
 
@@ -216,32 +245,38 @@ public class SearchFragment extends BaseFragment {
     }
 
     @Override
-    protected List<DlnaObject> doInBackground(Void... params) {
+    protected List<VideoProgram> doInBackground(Void... params) {
       String udn = SettingsHelper.getHelper(getActivity()).getEpgServer();
       Log.d(TAG, "Searching for \'" + searchText + "\'.");
-      List<DlnaObject> results = dlnaHelper.search(udn, "0/EPG", searchText, DlnaObject.class);
-      List<DlnaObject> vodResults = dlnaHelper.search(udn, "0/VOD", searchText, DlnaObject.class);
+      List<VideoProgram> results = dlnaHelper.search(udn, "0/EPG", searchText, VideoProgram.class);
+      List<VideoProgram> vodResults = dlnaHelper.search(udn, "0/VOD", searchText, VideoProgram.class);
       results.addAll(vodResults);
       return results;
     }
 
     @Override
-    protected void onPostExecute(List<DlnaObject> searchResults) {
-      List<DlnaObject> results = new ArrayList<>();
+    protected void onPostExecute(List<VideoProgram> searchResults) {
+      List<VideoProgram> results = new ArrayList<>();
       Date now = new Date();
-      for (DlnaObject program : searchResults) {
-        if (program instanceof VideoProgram) {
-          if (((VideoProgram) program).getScheduledEndTime().after(now)) {
+      for (VideoProgram program : searchResults) {
+        if (program.getId().startsWith("0/VOD")) {
+          // a VOD item
+          results.add(program);
+        } else {
+          // an EPG item
+          if (program.getScheduledEndTime().after(now)) {
             results.add(program);
           }
-        } else {
-          // probably VOD item
-          results.add(program);
         }
       }
       list.setAdapter(adapter);
       adapter.setData(results);
       searchTask = null;
     }
+  }
+
+  void blah() {
+    TvInputManager manager = (TvInputManager) getActivity().getSystemService(Activity.TV_INPUT_SERVICE);
+    manager.getTvInputList();
   }
 }

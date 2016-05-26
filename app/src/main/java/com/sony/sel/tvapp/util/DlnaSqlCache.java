@@ -119,7 +119,7 @@ public class DlnaSqlCache extends SQLiteOpenHelper implements DlnaCache {
     Cursor cursor = db.query(
         "DLNAObjects",
         new String[]{"UPNPClass", "JSON"},
-        "UDN = '" + udn + "' AND ParentID LIKE '" + parentId + "%' AND Title LIKE '%" + searchText + "%'",
+        "UDN = '" + udn + "' AND ParentID LIKE '" + parentId + "%' AND Title LIKE '%" + searchText.replaceAll("[^a-zA-Z0-9]","%") + "%'",
         null,
         null,
         null,

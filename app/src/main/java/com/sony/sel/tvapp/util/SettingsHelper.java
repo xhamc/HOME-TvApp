@@ -45,6 +45,7 @@ public class SettingsHelper {
 
   private Context context;
   private boolean mainActivityRunning;
+  private String currentSearchQuery;
 
   /**
    * Get helper instance.
@@ -398,12 +399,12 @@ public class SettingsHelper {
     editor.commit();
   }
 
-  public boolean isMainActivityRunning() {
-    return mainActivityRunning;
+  public String getCurrentSearchQuery() {
+    return currentSearchQuery;
   }
 
-  public void setMainActivityRunning(boolean running) {
-    mainActivityRunning = running;
+  public void setCurrentSearchQuery(String currentSearchQuery) {
+    this.currentSearchQuery = currentSearchQuery;
   }
 
 

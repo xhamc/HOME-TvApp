@@ -8,12 +8,16 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.speech.RecognizerIntent;
+import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.fragment.BaseFragment;
 import com.sony.sel.tvapp.fragment.ChannelInfoFragment;
 import com.sony.sel.tvapp.fragment.NavigationFragment;
+import com.sony.sel.tvapp.fragment.SearchFragment;
 import com.sony.sel.tvapp.fragment.VideoFragment;
 import com.sony.sel.tvapp.ui.NavigationItem;
 import com.sony.sel.tvapp.util.DlnaCache;
@@ -24,6 +28,8 @@ import com.sony.sel.tvapp.util.EventBus.ChannelChangedEvent;
 import com.sony.sel.tvapp.util.EventBus.PlayVodEvent;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.squareup.otto.Subscribe;
+
+import java.util.ArrayList;
 
 import butterknife.ButterKnife;
 
@@ -52,6 +58,9 @@ public class MainActivity extends BaseActivity {
 
   /// long timeout allows time for more viewing/longer processes but still times out eventually
   public static final long HIDE_UI_TIMEOUT_LONG = 30000;
+
+  // request code for speech recognition
+  private static final int RECOGNIZE_SPEECH = 7893;
 
 
   private DlnaInterface dlnaHelper;
@@ -99,6 +108,35 @@ public class MainActivity extends BaseActivity {
     initFragments();
   }
 
+  @Override
+  public boolean onSearchRequested() {
+    startSpeechRecognition();
+    return true;
+  }
+
+  private void startSpeechRecognition() {
+    Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+    intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+    intent.putExtra(RecognizerIntent.EXTRA_PROMPT, getString(R.string.voicePromptText));
+    intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+    startActivityForResult(intent, RECOGNIZE_SPEECH);
+  }
+
+  @Override
+  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    Log.d(TAG, "onActivityResult(): requestCode = "+requestCode+", resultCode = "+resultCode+", data = "+data);
+    super.onActivityResult(requestCode, resultCode, data);
+    if (requestCode == RECOGNIZE_SPEECH && resultCode == RESULT_OK) {
+      ArrayList<String> results = data.getStringArrayListExtra(
+          RecognizerIntent.EXTRA_RESULTS);
+      if (results.size() > 0) {
+        String query = results.get(0);
+        settingsHelper.setCurrentSearchQuery(query);
+      }
+      showNavigation();
+      onNavigate(new EventBus.NavigationClickedEvent(NavigationItem.SEARCH));
+    }
+  }
 
   @Override
   public void onVisibleBehindCanceled() {

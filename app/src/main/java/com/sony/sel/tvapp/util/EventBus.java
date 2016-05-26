@@ -3,6 +3,7 @@ package com.sony.sel.tvapp.util;
 import com.sony.sel.tvapp.activity.MainActivity;
 import com.sony.sel.tvapp.ui.NavigationItem;
 import com.sony.sel.tvapp.util.DlnaObjects.VideoItem;
+import com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 import com.squareup.otto.Bus;
 import com.squareup.otto.ThreadEnforcer;
 
@@ -125,14 +126,14 @@ public class EventBus extends Bus {
   }
 
   public static class PlayVodEvent {
-    private final VideoItem videoItem;
+    private final VideoProgram videoProgram;
 
-    public PlayVodEvent(VideoItem videoItem) {
-      this.videoItem = videoItem;
+    public PlayVodEvent(VideoProgram videoProgram) {
+      this.videoProgram = videoProgram;
     }
 
-    public VideoItem getVideoItem() {
-      return videoItem;
+    public VideoProgram getVideoProgram() {
+      return videoProgram;
     }
   }
 
