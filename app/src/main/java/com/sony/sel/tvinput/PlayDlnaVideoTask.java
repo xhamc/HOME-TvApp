@@ -1,4 +1,4 @@
-package com.sony.sel.tvapp.service;
+package com.sony.sel.tvinput;
 
 import android.content.Context;
 import android.media.MediaPlayer;
@@ -33,7 +33,7 @@ public class PlayDlnaVideoTask extends PrepareVideoTask {
    * @param timeout      Time in milliseconds to wait before canceling media prepare with a timeout.
    * @param videoSurface Surface to play the video on when prepare is successful.
    */
-  protected PlayDlnaVideoTask(Context context, Uri uri, long timeout, Surface videoSurface) {
+  public PlayDlnaVideoTask(Context context, Uri uri, long timeout, Surface videoSurface) {
     super(context, uri, timeout);
     this.videoSurface = videoSurface;
       this.context = context;

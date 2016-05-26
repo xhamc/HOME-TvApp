@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest
-    xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.sony.sel.tvapp"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     >
 
     <uses-permission android:name="android.permission.INTERNET"/>
@@ -16,9 +16,9 @@
     <!-- Required to update or read existing channel and program information in TvProvider. -->
     <uses-permission android:name="android.permission.READ_SYNC_SETTINGS"/>
     <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS"/>
-    <uses-permission android:name="com.android.providers.tv.permission.READ_EPG_DATA" />
+    <uses-permission android:name="com.android.providers.tv.permission.READ_EPG_DATA"/>
     <!-- Required to update channel and program information in TvProvider. -->
-    <uses-permission android:name="com.android.providers.tv.permission.WRITE_EPG_DATA" />
+    <uses-permission android:name="com.android.providers.tv.permission.WRITE_EPG_DATA"/>
 
     <!-- Android TV -->
     <uses-feature
@@ -142,42 +142,50 @@
             android:exported="true"
             />
 
-        <service android:name="com.sony.sel.tvinput.SonyTvInputService"
+        <service
+            android:name="com.sony.sel.tvinput.SonyTvInputService"
             android:label="@string/app_name"
             android:permission="android.permission.BIND_TV_INPUT">
             <intent-filter>
-                <action android:name="android.media.tv.TvInputService" />
+                <action android:name="android.media.tv.TvInputService"/>
             </intent-filter>
-            <meta-data android:name="android.media.tv.input"
-                android:resource="@xml/xfin_tv_input" />
+            <meta-data
+                android:name="android.media.tv.input"
+                android:resource="@xml/xfin_tv_input"
+                />
         </service>
+
         <activity
             android:name="com.sony.sel.tvinput.SetupActivity"
-            android:windowNoTitle="true"
-            android:screenOrientation="landscape">
+            android:screenOrientation="landscape"
+            android:windowNoTitle="true">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.intent.action.MAIN"/>
             </intent-filter>
         </activity>
+
         <!-- This service implements the SyncAdapter for updating program information regularly in
     the background. It needs to be exported, so that the sync framework can access it. -->
-        <service android:name="com.sony.sel.tvinput.syncadapter.SyncService"
+        <service
+            android:name="com.sony.sel.tvinput.syncadapter.SyncService"
             android:exported="true">
             <intent-filter>
-                <action android:name="android.content.SyncAdapter" />
+                <action android:name="android.content.SyncAdapter"/>
             </intent-filter>
-            <meta-data android:name="android.content.SyncAdapter"
-                android:resource="@xml/syncadapter" />
+            <meta-data
+                android:name="android.content.SyncAdapter"
+                android:resource="@xml/syncadapter"/>
         </service>
 
         <!-- Since the channel/program feed here does not require any authentication, we use a dummy
         account used for SyncAdapter. -->
         <service android:name="com.sony.sel.tvinput.syncadapter.DummyAccountService">
             <intent-filter>
-                <action android:name="android.accounts.AccountAuthenticator" />
+                <action android:name="android.accounts.AccountAuthenticator"/>
             </intent-filter>
-            <meta-data android:name="android.accounts.AccountAuthenticator"
-                android:resource="@xml/authenticator" />
+            <meta-data
+                android:name="android.accounts.AccountAuthenticator"
+                android:resource="@xml/authenticator"/>
         </service>
 
     </application>

@@ -12,9 +12,6 @@ import android.os.Build;
 import android.util.Log;
 import android.view.Surface;
 
-
-import com.sony.sel.tvapp.service.PlayDlnaVideoTask;
-
 public class SonyTvInputService extends TvInputService
 {
 
