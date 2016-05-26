@@ -26,18 +26,17 @@
                 android:text="@string/searchPrompt"
                 />
 
-            <EditText
+            <SearchView
                 android:id="@+id/searchView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:focusable="true"
                 android:nextFocusDown="@android:id/list"
                 android:nextFocusRight="@android:id/list"
-                android:lines="1"
+                android:iconifiedByDefault="false"
                 >
 
-            </EditText>
+            </SearchView>
 
 
         </LinearLayout>

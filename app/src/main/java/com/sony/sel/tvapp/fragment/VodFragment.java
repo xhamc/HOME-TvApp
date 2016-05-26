@@ -16,6 +16,7 @@ import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.DlnaObjects;
 import com.sony.sel.tvapp.util.DlnaObjects.DlnaObject;
 import com.sony.sel.tvapp.util.DlnaObjects.VideoItem;
+import com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.sony.sel.tvapp.view.BrowseDlnaCell;
@@ -91,7 +92,7 @@ public class VodFragment extends BaseFragment {
                 drillDown(view.getData().getId());
               } else {
                 // send event to play video item
-                EventBus.getInstance().post(new EventBus.PlayVodEvent((VideoItem) view.getData()));
+                EventBus.getInstance().post(new EventBus.PlayVodEvent((VideoProgram) view.getData()));
               }
             }
           }

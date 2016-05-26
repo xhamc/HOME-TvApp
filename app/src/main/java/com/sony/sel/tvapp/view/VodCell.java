@@ -9,6 +9,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.sony.sel.tvapp.R;
+import com.sony.sel.tvapp.util.DlnaObjects;
+import com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.squareup.picasso.Picasso;
 

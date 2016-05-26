@@ -86,11 +86,11 @@ public class EpgSearchContentProvider extends ContentProvider {
 
   Cursor searchVod(String query) {
     Log.d(TAG, "Search VOD for \"" + query + "\".");
-    List<VideoItem> vodSearch = cache.search(settingsHelper.getEpgServer(), "0/VOD", query);
+    List<VideoProgram> vodSearch = cache.search(settingsHelper.getEpgServer(), "0/VOD", query);
     // sort VOD by title
-    Collections.sort(vodSearch, new Comparator<VideoItem>() {
+    Collections.sort(vodSearch, new Comparator<DlnaObject>() {
       @Override
-      public int compare(VideoItem lhs, VideoItem rhs) {
+      public int compare(DlnaObject lhs, DlnaObject rhs) {
         return (lhs.getTitle().compareTo(rhs.getTitle()));
       }
     });
@@ -221,9 +221,9 @@ public class EpgSearchContentProvider extends ContentProvider {
 
   private class VodSearchSuggestionsCursor extends AbstractCursor {
 
-    private final List<VideoItem> dlnaObjects;
+    private final List<VideoProgram> dlnaObjects;
 
-    public VodSearchSuggestionsCursor(List<VideoItem> dlnaObjects) {
+    public VodSearchSuggestionsCursor(List<VideoProgram> dlnaObjects) {
       this.dlnaObjects = dlnaObjects;
     }
 
@@ -239,7 +239,7 @@ public class EpgSearchContentProvider extends ContentProvider {
 
     @Override
     public String getString(int column) {
-      VideoItem data = dlnaObjects.get(getPosition());
+      VideoProgram data = dlnaObjects.get(getPosition());
       switch (column) {
         case 1:
           if (data.getProgramTitle() != null && data.getProgramTitle().length() > 0) {
@@ -251,12 +251,6 @@ public class EpgSearchContentProvider extends ContentProvider {
           StringBuilder builder = new StringBuilder();
           if (data.getGenre() != null) {
             builder.append(data.getGenre());
-          }
-          if (data.getLanguage() != null) {
-            if (builder.length() > 0) {
-              builder.append(", ");
-            }
-            builder.append(data.getLanguage());
           }
           if (data.getRating() != null) {
             if (builder.length() > 0) {

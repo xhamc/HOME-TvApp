@@ -17,11 +17,10 @@ import com.sony.sel.tvapp.activity.MainActivity;
 import com.sony.sel.tvapp.util.DlnaCache;
 import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaInterface;
-import com.sony.sel.tvapp.util.DlnaObjects.VideoItem;
 import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.sony.sel.tvapp.view.ChannelEpgView;
-import com.sony.sel.tvapp.view.VideoItemInfoView;
+import com.sony.sel.tvapp.view.VodInfoView;
 import com.squareup.otto.Subscribe;
 
 import java.util.ArrayList;
@@ -45,11 +44,11 @@ public class ChannelInfoFragment extends BaseFragment {
   @Bind(R.id.channelEpgInfo)
   ChannelEpgView channelEpgInfo;
   @Bind(R.id.vodVideoInfo)
-  VideoItemInfoView vodVideoInfo;
+  VodInfoView vodVideoInfo;
 
   private List<VideoBroadcast> channels = new ArrayList<>();
   private VideoBroadcast currentChannel;
-  private VideoItem currentVod;
+  private VideoProgram currentVod;
   private List<VideoProgram> currentEpg;
 
   private DlnaInterface dlnaHelper;
@@ -105,7 +104,7 @@ public class ChannelInfoFragment extends BaseFragment {
 
       if (getActivity().getIntent().getAction() != null && getActivity().getIntent().getAction().equals(MainActivity.INTENT_ACTION_PLAY_VOD)) {
         // play VOD instead of setting channel
-        VideoItem vod = new Gson().fromJson(getActivity().getIntent().getStringExtra(MainActivity.INTENT_EXTRA_VIDEO_ITEM), VideoItem.class);
+        VideoProgram vod = new Gson().fromJson(getActivity().getIntent().getStringExtra(MainActivity.INTENT_EXTRA_VIDEO_ITEM), VideoProgram.class);
         EventBus.getInstance().post(new EventBus.PlayVodEvent(vod));
       } else if (getActivity().getIntent().getAction() != null && getActivity().getIntent().getAction().equals(MainActivity.INTENT_ACTION_VIEW_CHANNEL)) {
         // received intent to set channel, so set it
@@ -130,7 +129,7 @@ public class ChannelInfoFragment extends BaseFragment {
 
   @Subscribe
   public void onVodVideoPlayback(EventBus.PlayVodEvent event) {
-    setVodVideo(event.getVideoItem());
+    setVodVideo(event.getVideoProgram());
   }
 
   public void setCurrentChannel(VideoBroadcast channel) {
@@ -163,7 +162,7 @@ public class ChannelInfoFragment extends BaseFragment {
     }
   }
 
-  private void setVodVideo(VideoItem vodVideo) {
+  private void setVodVideo(VideoProgram vodVideo) {
     currentVod = vodVideo;
     currentChannel = null;
     if (currentVod != null) {

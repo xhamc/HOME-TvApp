@@ -10,16 +10,18 @@ import android.widget.TextView;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.adapter.Bindable;
+import com.sony.sel.tvapp.util.DlnaObjects;
 import com.sony.sel.tvapp.util.DlnaObjects.VideoItem;
+import com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 import com.squareup.picasso.Picasso;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 
 /**
- * View for displaying information about a VideoItem (i.e. a VOD video).
+ * View for displaying information about a VOD VideoProgram
  */
-public class VideoItemInfoView extends FrameLayout implements Bindable<VideoItem> {
+public class VodInfoView extends FrameLayout implements Bindable<VideoProgram> {
 
   @Bind(R.id.icon)
   ImageView icon;
@@ -34,21 +36,21 @@ public class VideoItemInfoView extends FrameLayout implements Bindable<VideoItem
   @Bind(R.id.description)
   TextView description;
 
-  private VideoItem data;
+  private VideoProgram data;
 
-  public VideoItemInfoView(Context context) {
+  public VodInfoView(Context context) {
     super(context);
   }
 
-  public VideoItemInfoView(Context context, AttributeSet attrs) {
+  public VodInfoView(Context context, AttributeSet attrs) {
     super(context, attrs);
   }
 
-  public VideoItemInfoView(Context context, AttributeSet attrs, int defStyleAttr) {
+  public VodInfoView(Context context, AttributeSet attrs, int defStyleAttr) {
     super(context, attrs, defStyleAttr);
   }
 
-  public VideoItemInfoView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+  public VodInfoView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
     super(context, attrs, defStyleAttr, defStyleRes);
   }
 
@@ -62,7 +64,7 @@ public class VideoItemInfoView extends FrameLayout implements Bindable<VideoItem
   }
 
   @Override
-  public void bind(VideoItem data) {
+  public void bind(VideoProgram data) {
     this.data = data;
 
     if (data != null) {
@@ -89,12 +91,6 @@ public class VideoItemInfoView extends FrameLayout implements Bindable<VideoItem
       StringBuilder line2text = new StringBuilder();
       if (data.getGenre() != null) {
         line2text.append(data.getGenre());
-      }
-      if (data.getLanguage() != null) {
-        if (line2text.length() > 0) {
-          line2text.append(", ");
-        }
-        line2text.append(data.getLanguage());
       }
       if (line2text.length() > 0) {
         line2.setVisibility(View.VISIBLE);
@@ -128,7 +124,7 @@ public class VideoItemInfoView extends FrameLayout implements Bindable<VideoItem
   }
 
   @Override
-  public VideoItem getData() {
+  public VideoProgram getData() {
     return data;
   }
 }

@@ -62,8 +62,9 @@
     <string name="searchHint">Search Video on Demand</string>
     <string name="searchDescription">Show title</string>
     <string name="videoOnDemand">Video on Demand</string>
-    <string name="searchEpg">Search TOV shows</string>
+    <string name="searchEpg">Search TV shows</string>
     <string name="tvShows">TV Shows</string>
     <string name="confirmRecording">Confirm Recording</string>
+    <string name="voicePromptText">Speak a TV show to search for</string>
 
 </resources>

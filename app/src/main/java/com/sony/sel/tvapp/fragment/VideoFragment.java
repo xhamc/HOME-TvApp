@@ -84,7 +84,7 @@ public class VideoFragment extends BaseFragment {
 
   private VideoBroadcast currentChannel;
   private VideoProgram currentProgram;
-  private VideoItem currentVod;
+  private VideoProgram currentVod;
   private Double currentPlaySpeed = 1.0;
   private boolean wasPlaying;
 
@@ -811,7 +811,7 @@ public class VideoFragment extends BaseFragment {
    *
    * @param video Video to play.
    */
-  private void setCurrentVodItem(VideoItem video) {
+  private void setCurrentVodItem(VideoProgram video) {
     currentVod = video;
     currentChannel = null;
     currentProgram = null;
@@ -913,7 +913,7 @@ public class VideoFragment extends BaseFragment {
    */
   @Subscribe
   public void onPlayVod(PlayVodEvent event) {
-    setCurrentVodItem(event.getVideoItem());
+    setCurrentVodItem(event.getVideoProgram());
   }
 
   /**
