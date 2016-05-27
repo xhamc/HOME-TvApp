@@ -156,8 +156,9 @@ public class InputChannelsUtil {
 
   public void addProgramData() {
     Calendar calendar = Calendar.getInstance();
+    calendar.add(Calendar.HOUR_OF_DAY, -1);
     Date startTime = calendar.getTime();
-    calendar.add(Calendar.HOUR_OF_DAY, 12);
+    calendar.add(Calendar.HOUR_OF_DAY, 13);
     Date endTime = calendar.getTime();
 
     List<VideoBroadcast> channels = dlnaHelper.getChannels(udn, null, true);
@@ -186,13 +187,8 @@ public class InputChannelsUtil {
     contentValues.put(TvContract.Programs.COLUMN_LONG_DESCRIPTION, videoProgram.getLongDescription());
     contentValues.put(TvContract.Programs.COLUMN_SHORT_DESCRIPTION, videoProgram.getDescription());
 
-    Date startTime = videoProgram.getScheduledStartTime();
-    Date endTime = videoProgram.getScheduledEndTime();
-    int startOffset = TimeZone.getDefault().getOffset(startTime.getTime());
-    int endOffset = TimeZone.getDefault().getOffset(endTime.getTime());
-
-    contentValues.put(TvContract.Programs.COLUMN_START_TIME_UTC_MILLIS, startTime.getTime() - startOffset);
-    contentValues.put(TvContract.Programs.COLUMN_END_TIME_UTC_MILLIS, endTime.getTime() - endOffset);
+    contentValues.put(TvContract.Programs.COLUMN_START_TIME_UTC_MILLIS, videoProgram.getScheduledStartTime().getTime());
+    contentValues.put(TvContract.Programs.COLUMN_END_TIME_UTC_MILLIS, videoProgram.getScheduledEndTime().getTime());
 
     if (videoProgram.getIcon() != null) {
       Uri icon_uri = Uri.parse(videoProgram.getIcon());
