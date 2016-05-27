@@ -13,6 +13,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 
+import com.google.gson.Gson;
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.fragment.BaseFragment;
 import com.sony.sel.tvapp.fragment.ChannelInfoFragment;
@@ -23,6 +24,8 @@ import com.sony.sel.tvapp.ui.NavigationItem;
 import com.sony.sel.tvapp.util.DlnaCache;
 import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaInterface;
+import com.sony.sel.tvapp.util.DlnaObjects;
+import com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 import com.sony.sel.tvapp.util.EventBus;
 import com.sony.sel.tvapp.util.EventBus.ChannelChangedEvent;
 import com.sony.sel.tvapp.util.EventBus.PlayVodEvent;
@@ -42,7 +45,7 @@ public class MainActivity extends BaseActivity {
 
   // intent action & extra for playing VOD
   public static final String INTENT_ACTION_PLAY_VOD = "com.sony.sel.tvapp.PLAY_VOD";
-  public static final String INTENT_EXTRA_VIDEO_ITEM = "VideoItem";
+  public static final String INTENT_EXTRA_VOD_ITEM = "VideoProgram";
 
   // intent action & extra for viewing a channel
   public static final String INTENT_ACTION_VIEW_CHANNEL = "com.sony.sel.tvapp.VIEW_CHANNEL";
@@ -62,9 +65,6 @@ public class MainActivity extends BaseActivity {
   // request code for speech recognition
   private static final int RECOGNIZE_SPEECH = 7893;
 
-
-  private DlnaInterface dlnaHelper;
-  private DlnaCache dlnaCache;
   private SettingsHelper settingsHelper;
 
   private final Handler handler = new Handler();
@@ -90,8 +90,6 @@ public class MainActivity extends BaseActivity {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    dlnaHelper = DlnaHelper.getHelper(this);
-    dlnaCache = DlnaHelper.getCache(this);
     settingsHelper = SettingsHelper.getHelper(this);
 
     String urn = settingsHelper.getEpgServer();
@@ -106,6 +104,15 @@ public class MainActivity extends BaseActivity {
     ButterKnife.bind(this);
 
     initFragments();
+  }
+
+  @Override
+  protected void onNewIntent(Intent intent) {
+    super.onNewIntent(intent);
+    if (INTENT_ACTION_PLAY_VOD.equals(intent.getAction())) {
+      VideoProgram vod = new Gson().fromJson(intent.getStringExtra(INTENT_EXTRA_VOD_ITEM), VideoProgram.class);
+      EventBus.getInstance().post(new PlayVodEvent(vod));
+    }
   }
 
   @Override

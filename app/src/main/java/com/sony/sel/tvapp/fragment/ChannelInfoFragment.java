@@ -104,7 +104,7 @@ public class ChannelInfoFragment extends BaseFragment {
 
       if (getActivity().getIntent().getAction() != null && getActivity().getIntent().getAction().equals(MainActivity.INTENT_ACTION_PLAY_VOD)) {
         // play VOD instead of setting channel
-        VideoProgram vod = new Gson().fromJson(getActivity().getIntent().getStringExtra(MainActivity.INTENT_EXTRA_VIDEO_ITEM), VideoProgram.class);
+        VideoProgram vod = new Gson().fromJson(getActivity().getIntent().getStringExtra(MainActivity.INTENT_EXTRA_VOD_ITEM), VideoProgram.class);
         EventBus.getInstance().post(new EventBus.PlayVodEvent(vod));
       } else if (getActivity().getIntent().getAction() != null && getActivity().getIntent().getAction().equals(MainActivity.INTENT_ACTION_VIEW_CHANNEL)) {
         // received intent to set channel, so set it

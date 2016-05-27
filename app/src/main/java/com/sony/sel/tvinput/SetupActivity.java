@@ -13,7 +13,6 @@ import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.activity.SelectServerActivity;
 import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaInterface;
-import com.sony.sel.tvapp.util.DlnaObjects;
 import com.sony.sel.tvapp.util.DlnaObjects.VideoBroadcast;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.sony.sel.tvinput.syncadapter.SyncUtils;
@@ -24,7 +23,7 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 
 /**
- * Activity called by the system for setting up our Streaming Channels.
+ * Activity called by the system for setting up the application's Streaming Channels.
  */
 public class SetupActivity extends Activity {
 

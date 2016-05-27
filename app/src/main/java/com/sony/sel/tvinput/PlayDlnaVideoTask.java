@@ -21,9 +21,8 @@ import java.util.Random;
 public class PlayDlnaVideoTask extends PrepareVideoTask {
 
   private final Surface videoSurface;
-    private final Context context;
-    private final SettingsHelper settingsHelper;
-    String videoUri;
+  private final SettingsHelper settingsHelper;
+  String videoUri;
 
   /**
    * Initialize the async task.
@@ -36,16 +35,19 @@ public class PlayDlnaVideoTask extends PrepareVideoTask {
   public PlayDlnaVideoTask(Context context, Uri uri, long timeout, Surface videoSurface) {
     super(context, uri, timeout);
     this.videoSurface = videoSurface;
-      this.context = context;
-      this.settingsHelper = SettingsHelper.getHelper(context);
-      this.videoUri = uri.toString();
+    this.settingsHelper = SettingsHelper.getHelper(context);
+    this.videoUri = uri.toString();
   }
 
 
   @Override
   protected MediaPlayer doInBackground(Void... params) {
-      // use the provided video URI if the settings are configured that way, otherwise a placeholder
-      Uri uri = settingsHelper.useChannelVideosSetting() ? Uri.parse(videoUri) : getPlaceholderVideo();
+    // use the provided video URI if the settings are configured that way, otherwise a placeholder
+    Uri uri = settingsHelper.useChannelVideosSetting() ? Uri.parse(videoUri) : getPlaceholderVideo();
+    if (uri == null) {
+      Log.e(TAG, "No video to play.");
+      return null;
+    }
     if (uri.getScheme().equals("http")) {
       // transform the URI to a DLNA version before prepare
       Log.d(TAG, "Creating DLNA URI.");
@@ -76,23 +78,23 @@ public class PlayDlnaVideoTask extends PrepareVideoTask {
     }
   }
 
-    /**
-     * Get a random placeholder video if they have been configured.
-     *
-     * @return A placeholder video, or null if no placeholders have been configured.
-     */
-    private Uri getPlaceholderVideo() {
-        List<DlnaObjects.VideoItem> videos = settingsHelper.getChannelVideos();
-        if (videos.size() > 0) {
-            // select a random video to play
-            DlnaObjects.VideoItem video = videos.get(Math.abs(new Random().nextInt()) % videos.size());
-            final String res = video.getResource();
-            if (res != null) {
-                return (Uri.parse(res));
-            }
-        }
-        // no videos found, or no resource for selected video
-        return null;
+  /**
+   * Get a random placeholder video if they have been configured.
+   *
+   * @return A placeholder video, or null if no placeholders have been configured.
+   */
+  private Uri getPlaceholderVideo() {
+    List<DlnaObjects.VideoItem> videos = settingsHelper.getChannelVideos();
+    if (videos.size() > 0) {
+      // select a random video to play
+      DlnaObjects.VideoItem video = videos.get(Math.abs(new Random().nextInt()) % videos.size());
+      final String res = video.getResource();
+      if (res != null) {
+        return (Uri.parse(res));
+      }
     }
+    // no videos found, or no resource for selected video
+    return null;
+  }
 }
 

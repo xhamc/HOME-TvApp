@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.sony.sel.tvapp.util.DlnaHelper;
-import com.sony.sel.tvapp.util.DlnaObjects.VideoItem;
+import com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 import com.sony.sel.tvapp.util.SettingsHelper;
 
 /**
@@ -28,10 +28,10 @@ public class VodSearchActivity extends BaseActivity {
     Log.d(TAG, "Search intent received. Data = " + uri + ".");
     // get the object id
     String id = uri.getPath().substring(1);
-    VideoItem vod = DlnaHelper.getCache(this).getItemById(settingsHelper.getEpgServer(), id);
+    VideoProgram vod = DlnaHelper.getCache(this).getItemById(settingsHelper.getEpgServer(), id);
     Intent intent = new Intent(this, MainActivity.class);
     intent.setAction(MainActivity.INTENT_ACTION_PLAY_VOD);
-    intent.putExtra(MainActivity.INTENT_EXTRA_VIDEO_ITEM, vod.toString());
+    intent.putExtra(MainActivity.INTENT_EXTRA_VOD_ITEM, vod.toString());
     startActivity(intent);
     finish();
   }
