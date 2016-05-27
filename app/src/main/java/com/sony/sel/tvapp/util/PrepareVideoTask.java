@@ -44,7 +44,7 @@ public abstract class PrepareVideoTask extends AsyncTask<Void, Void, MediaPlayer
     this.context = context;
     this.uri = uri;
     this.timeout = timeout;
-    Log.d(TAG, "Prepare video task created.");
+    Log.d(TAG, "Prepare video task created for " + uri.toString() + ".");
   }
 
   public Uri getUri() {

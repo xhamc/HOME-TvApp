@@ -1,99 +1,137 @@
 package com.sony.sel.tvinput;
 
 import android.app.Activity;
-import android.content.Context;
+import android.content.Intent;
 import android.media.tv.TvInputInfo;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Button;
+import android.view.View;
 import android.widget.TextView;
+
 import com.sony.sel.tvapp.R;
+import com.sony.sel.tvapp.activity.SelectServerActivity;
 import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.DlnaObjects;
+import com.sony.sel.tvapp.util.DlnaObjects.VideoBroadcast;
 import com.sony.sel.tvapp.util.SettingsHelper;
 import com.sony.sel.tvinput.syncadapter.SyncUtils;
+
 import java.util.List;
 
+import butterknife.Bind;
+import butterknife.ButterKnife;
 
+/**
+ * Activity called by the system for setting up our Streaming Channels.
+ */
 public class SetupActivity extends Activity {
 
+  public static final String TAG = SetupActivity.class.getSimpleName();
 
-    public static final String TAG = "SetupActivity";
-    private DlnaInterface dlnaHelper;
-    private String udn;
-    private SettingsHelper settingsHelper;
-    private Context context = null;
-    private String mInputId;
-    private InputChannelsUtil inputChannelsUtil = null;// = new InputChannelsUtil(mInputId, context);
+  @Bind(R.id.textViewSetup)
+  TextView messageText;
+  @Bind(R.id.scanChannelsButton)
+  View scanButton;
+  @Bind(R.id.selectEpgServerButton)
+  View epgServerButton;
+  @Bind(R.id.syncEpgButton)
+  View syncEpg;
 
+  private DlnaInterface dlnaHelper;
+  private SettingsHelper settingsHelper;
+  private SyncUtils syncUtils;
+  private String inputId;
 
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
-        super.onCreate(savedInstanceState);
-        context = this;
-        dlnaHelper = DlnaHelper.getHelper(context);
-        settingsHelper = SettingsHelper.getHelper(context);
-        udn = settingsHelper.getEpgServer();
-        if(udn == null)
-        {
-            Log.e(TAG, "failed to get epg server udn");
-        }
-        mInputId = getIntent().getStringExtra(TvInputInfo.EXTRA_INPUT_ID);
-        inputChannelsUtil = new InputChannelsUtil(mInputId, context);
-        inputChannelsUtil.saveInputId(mInputId);
-        setContentView(R.layout.activity_setup);
-        onScanButtonClicked();
-        /*Button scanButton = (Button)findViewById(R.id.button_scan);
-        scanButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v)
-            {
-                Log.d(TAG, "scanClicked");
-                onScanButtonClicked();
-            }
-        });*/
-    }
+    setContentView(R.layout.activity_setup);
+    ButterKnife.bind(this);
 
-    private void onScanButtonClicked()
-    {
-        log("onScanButtonClicked");
-        TextView messageText = (TextView)findViewById(R.id.textViewSetup);
-        messageText.setText("Scanning.....");
-        Button scanButton = (Button)findViewById(R.id.button_scan);
+    dlnaHelper = DlnaHelper.getHelper(this);
+    settingsHelper = SettingsHelper.getHelper(this);
+    syncUtils = SyncUtils.getInstance();
+
+    inputId = getIntent().getStringExtra(TvInputInfo.EXTRA_INPUT_ID);
+    Log.d(TAG, "Input ID is " + inputId + ".");
+
+    epgServerButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        // launch EPG server selection activity
+        Log.d(TAG, "Select EPG server.");
+        startActivity(new Intent(SetupActivity.this, SelectServerActivity.class));
+      }
+    });
+
+    scanButton.setOnClickListener(new View.OnClickListener() {
+      public void onClick(View v) {
+        // scan for channels
+        Log.d(TAG, "Scan for channels.");
+        messageText.setText(R.string.scanning);
         scanButton.setEnabled(false);
-        List<DlnaObjects.VideoBroadcast> channels = dlnaHelper.getChannels(udn, null, true);
-        if(channels != null)
-        {
-            Log.d(TAG,channels.toString());
-            addChannelsToDatabase(channels);
-        }
-        else
-        {
-            Log.d(TAG,"no channels found");
-        }
+        new GetChannelsTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+      }
+    });
+
+    syncEpg.setOnClickListener(new View.OnClickListener() {
+      public void onClick(View v) {
+        // sync EPG now
+        Log.d(TAG, "Sync EPG.");
+        syncUtils.requestSync(inputId, false);
+      }
+    });
+  }
+
+  @Override
+  protected void onResume() {
+    super.onResume();
+    if (settingsHelper.getEpgServer() == null) {
+      messageText.setText(R.string.noEpgServerSet);
+      scanButton.setEnabled(false);
+      epgServerButton.requestFocus();
+    } else {
+      messageText.setText(R.string.setupChannelsPrompt);
+      scanButton.setEnabled(true);
+      scanButton.requestFocus();
+    }
+  }
+
+  private class GetChannelsTask extends AsyncTask<Void, Void, List<VideoBroadcast>> {
+
+    @Override
+    protected List<VideoBroadcast> doInBackground(Void... params) {
+      List<VideoBroadcast> channels = dlnaHelper.getChannels(settingsHelper.getEpgServer(), null, true);
+      if (channels.size() > 0) {
+        Log.d(TAG, "Found " + channels.size() + " channels.");
+
+        TvInputUtil tvInputUtil = new TvInputUtil(inputId, SetupActivity.this);
+
+        // register the channels
+        tvInputUtil.registerChannels(channels);
+
+        // Set up EPG sync to happen once per minute
+        // TODO adjust frequency for a "real" release.
+        syncUtils.setUpPeriodicSync(getApplicationContext(), inputId, 60);
+
+      } else {
+        Log.e(TAG, "No channels found");
+      }
+      return channels;
     }
 
     @Override
-    protected void onDestroy()
-    {
-        super.onDestroy();
+    protected void onPostExecute(List<VideoBroadcast> channels) {
+      if (channels.size() > 0) {
+        messageText.setText(getString(R.string.channelsFound, channels.size()));
+      } else {
+        messageText.setText(R.string.noChannelsFound);
+      }
+      scanButton.setEnabled(true);
     }
-
-    private void addChannelsToDatabase(List<DlnaObjects.VideoBroadcast> channels)
-    {
-        int num_channels = channels.size();
-        Log.d(TAG, "Number of channels found is: " + num_channels);
-        TextView messageText = (TextView)findViewById(R.id.textViewSetup);
-        messageText.setText("Finished scanning.  Found " + Integer.toString(num_channels) + " channels");
-        inputChannelsUtil.registerChannels(channels);
-        SyncUtils.setUpPeriodicSync(this, mInputId);
-        SyncUtils.requestSync(mInputId,false);
-    }
-
-    public static void log(String s) {
-        Log.d(TAG, s);
-    }
+  }
 
 }

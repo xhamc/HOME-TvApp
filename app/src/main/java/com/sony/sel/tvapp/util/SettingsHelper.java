@@ -36,6 +36,7 @@ public class SettingsHelper {
   private static final String FAVORITE_PROGRAMS = "FavoritePrograms";
   private static final String VOD_TO_PLAY = "VodToPlay";
   private static final String PROGRAM_TO_RECORD = "ProgramToRecord";
+  private static final String INPUT_ID = "InputID";
 
   private static SettingsHelper INSTANCE;
   private List<VideoItem> channelVideos;
@@ -405,6 +406,16 @@ public class SettingsHelper {
 
   public void setCurrentSearchQuery(String currentSearchQuery) {
     this.currentSearchQuery = currentSearchQuery;
+  }
+
+  public String getInputId() {
+    return getSharedPreferences().getString(INPUT_ID, null);
+  }
+
+  public void setInputId(String inputId) {
+    SharedPreferences.Editor editor = getSharedPreferences().edit();
+    editor.putString(INPUT_ID, inputId);
+    editor.commit();
   }
 
 

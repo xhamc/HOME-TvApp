@@ -25,22 +25,30 @@ import android.util.Log;
  * Service which provides the SyncAdapter implementation to the framework on request.
  */
 public class SyncService extends Service {
-    private static final Object sSyncAdapterLock = new Object();
-    private static SyncAdapter sSyncAdapter = null;
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        Log.d("SyncService", "sync service created");
-        synchronized (sSyncAdapterLock) {
-            if (sSyncAdapter == null) {
-                sSyncAdapter = new SyncAdapter(getApplicationContext(), true);
-            }
-        }
-    }
+  public static final String TAG = SyncService.class.getSimpleName();
 
-    @Override
-    public IBinder onBind(Intent intent) {
-        return sSyncAdapter.getSyncAdapterBinder();
+  private SyncAdapter syncAdapter = null;
+
+  @Override
+  public void onCreate() {
+    super.onCreate();
+    Log.d(TAG, "Sync service onCreate().");
+    if (syncAdapter == null) {
+      syncAdapter = new SyncAdapter(this, true);
     }
+  }
+
+  @Override
+  public void onDestroy() {
+    Log.d(TAG, "Sync service onDestroy().");
+    super.onDestroy();
+    syncAdapter = null;
+   }
+
+  @Override
+  public IBinder onBind(Intent intent) {
+    Log.d(TAG, "Sync service onBind().");
+    return syncAdapter.getSyncAdapterBinder();
+  }
 }

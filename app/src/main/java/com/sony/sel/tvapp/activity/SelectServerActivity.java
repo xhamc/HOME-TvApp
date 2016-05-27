@@ -5,6 +5,7 @@ import android.os.Bundle;
 
 import com.sony.sel.tvapp.R;
 import com.sony.sel.tvapp.fragment.SelectServerFragment;
+import com.sony.sel.tvapp.service.DlnaService;
 import com.sony.sel.tvapp.util.EventBus;
 import com.squareup.otto.Subscribe;
 
@@ -26,10 +27,13 @@ public class SelectServerActivity extends BaseActivity {
     transaction.add(R.id.contentFrame, new SelectServerFragment());
     transaction.commit();
 
+    // make sure DLNA service is started
+    DlnaService.startService(this);
   }
 
   @Subscribe
   public void onServerSelected(EventBus.EpgServerChangedEvent event) {
     finish();
   }
+
 }

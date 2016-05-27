@@ -67,4 +67,14 @@
     <string name="confirmRecording">Confirm Recording</string>
     <string name="voicePromptText">Speak a TV show to search for</string>
 
+    <!-- system EPG channel setup activity -->
+    <string name="sonyTvChannelsSetup">Set Up Sony TV Channels</string>
+    <string name="setupChannelsPrompt">Press the Scan button to set up channels.</string>
+    <string name="scanChannels">Scan Channels</string>
+    <string name="selectEpgServer">Select EPG Server</string>
+    <string name="noEpgServerSet">No EPG server has been set.</string>
+    <string name="channelsFound">%d channels found.</string>
+    <string name="scanning">Scanning...</string>
+    <string name="syncEpg">Sync EPG Data</string>
+
 </resources>
