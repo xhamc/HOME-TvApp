@@ -11,12 +11,14 @@ import android.graphics.BitmapFactory;
 import android.media.tv.TvContract;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.provider.BaseColumns;
 import android.util.Log;
 
 import com.sony.sel.tvapp.util.DlnaHelper;
 import com.sony.sel.tvapp.util.DlnaInterface;
 import com.sony.sel.tvapp.util.DlnaObjects;
 import com.sony.sel.tvapp.util.DlnaObjects.VideoBroadcast;
+import com.sony.sel.tvapp.util.DlnaObjects.VideoProgram;
 import com.sony.sel.tvapp.util.SettingsHelper;
 
 import org.fourthline.cling.support.messagebox.model.DateTime;
@@ -165,8 +167,8 @@ public class InputChannelsUtil {
 
     for (VideoBroadcast x : channels) {
       ArrayList<ContentProviderOperation> ops = new ArrayList<>();
-      List<DlnaObjects.VideoProgram> programData = dlnaHelper.getEpgPrograms(udn, x, startTime, endTime);
-      for (DlnaObjects.VideoProgram y : programData) {
+      List<VideoProgram> programData = dlnaHelper.getEpgPrograms(udn, x, startTime, endTime);
+      for (VideoProgram y : programData) {
         ops.add(ContentProviderOperation.newInsert(TvContract.Programs.CONTENT_URI).withValues(videoProgramToContentValues(y)).build());
       }
       try {
@@ -180,16 +182,18 @@ public class InputChannelsUtil {
 
   }
 
-  private ContentValues videoProgramToContentValues(DlnaObjects.VideoProgram videoProgram) {
+  private ContentValues videoProgramToContentValues(VideoProgram videoProgram) {
     ContentValues contentValues = new ContentValues();
+    contentValues.put(BaseColumns._ID, videoProgram.getId());
     contentValues.put(TvContract.Programs.COLUMN_CHANNEL_ID, videoProgram.getChannelId());
-    contentValues.put(TvContract.Programs.COLUMN_TITLE, videoProgram.getTitle());
+    contentValues.put(TvContract.Programs.COLUMN_CHANNEL_ID, videoProgram.getChannelId());
+    contentValues.put(TvContract.Programs.COLUMN_SEASON_NUMBER, videoProgram.getEpisodeSeason());
+    contentValues.put(TvContract.Programs.COLUMN_EPISODE_NUMBER, videoProgram.getEpisodeNumber());
+    contentValues.put(TvContract.Programs.COLUMN_EPISODE_TITLE, videoProgram.getProgramTitle());
     contentValues.put(TvContract.Programs.COLUMN_LONG_DESCRIPTION, videoProgram.getLongDescription());
-    contentValues.put(TvContract.Programs.COLUMN_SHORT_DESCRIPTION, videoProgram.getDescription());
-
+    contentValues.put(TvContract.Programs.COLUMN_SHORT_DESCRIPTION, videoProgram.getProgramTitle() != null ? videoProgram.getProgramTitle() : videoProgram.getLongDescription());
     contentValues.put(TvContract.Programs.COLUMN_START_TIME_UTC_MILLIS, videoProgram.getScheduledStartTime().getTime());
     contentValues.put(TvContract.Programs.COLUMN_END_TIME_UTC_MILLIS, videoProgram.getScheduledEndTime().getTime());
-
     if (videoProgram.getIcon() != null) {
       Uri icon_uri = Uri.parse(videoProgram.getIcon());
       contentValues.put(TvContract.Programs.COLUMN_POSTER_ART_URI, icon_uri.toString());
