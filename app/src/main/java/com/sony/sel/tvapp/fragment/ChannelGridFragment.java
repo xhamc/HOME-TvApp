@@ -25,6 +25,7 @@ import com.sony.sel.tvapp.util.SettingsHelper;
 import com.sony.sel.tvapp.view.ChannelCell;
 import com.sony.sel.util.ViewUtils;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -60,7 +61,6 @@ public class ChannelGridFragment extends BaseFragment {
     grid.setAdapter(adapter);
 
     getChannels();
-    getEpg();
     EventBus.getInstance().post(new EventBus.ResetUiTimerLongEvent());
 
     return contentView;
@@ -137,7 +137,6 @@ public class ChannelGridFragment extends BaseFragment {
     if (!hidden) {
       // reload channels and EPG when re-showing
       getChannels();
-      getEpg();
       EventBus.getInstance().post(new EventBus.ResetUiTimerLongEvent());
     }
   }
@@ -170,14 +169,17 @@ public class ChannelGridFragment extends BaseFragment {
 
     @Override
     protected List<VideoBroadcast> doInBackground(Void... params) {
+      Log.d(TAG, "Loading channel data.");
       return helper.getChannels(udn, channelObserver, true);
     }
 
     @Override
     protected void onPostExecute(List<VideoBroadcast> channels) {
       super.onPostExecute(channels);
+      Log.d(TAG, "Channel data loaded: "+channels.size()+" channels found.");
       layoutManager.setSpanCount(COLUMN_COUNT);
       adapter.setData(channels);
+      getEpg();
     }
   }
 
@@ -192,9 +194,14 @@ public class ChannelGridFragment extends BaseFragment {
 
     @Override
     protected List<VideoProgram> doInBackground(Void... params) {
+      Log.d(TAG, "Loading EPG data.");
+      List<String> channelIds = new ArrayList<>();
+      for (VideoBroadcast channel : adapter.getData()) {
+        channelIds.add(channel.getChannelId());
+      }
       return dlnaCache.searchEpg(
           udn,
-          null,
+          channelIds,
           new Date(),
           new Date()
       );
@@ -203,6 +210,7 @@ public class ChannelGridFragment extends BaseFragment {
     @Override
     protected void onPostExecute(List<VideoProgram> videoPrograms) {
       super.onPostExecute(videoPrograms);
+      Log.d(TAG, "EPG data loaded: "+videoPrograms.size()+" programs found.");
       for (VideoProgram program : videoPrograms) {
         epgData.put(program.getChannelId(), program);
         adapter.notifyDataSetChanged();
