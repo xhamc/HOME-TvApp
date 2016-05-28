@@ -45,7 +45,6 @@ public class SettingsHelper {
   private static final String[] DEFAULT_CHANNEL_VIDEOS = null; // { "file:///sdcard/Movies/tvapp.mp4" };
 
   private Context context;
-  private boolean mainActivityRunning;
   private String currentSearchQuery;
 
   /**
@@ -251,7 +250,7 @@ public class SettingsHelper {
   }
 
   public boolean isProgramRecorded(VideoProgram program) {
-    return getProgramsToRecord().contains(program.getProgramId());
+    return getProgramsToRecord().contains(program.getId());
   }
 
   public Set<String> getSeriesToRecord() {

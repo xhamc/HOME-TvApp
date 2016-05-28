@@ -57,13 +57,18 @@ public class SonyTvInputService extends TvInputService {
     public boolean onSetSurface(Surface surface) {
       Log.d(TAG, "Session onSetSurface()");
       this.surface = surface;
+      if (mediaPlayer != null) {
+        mediaPlayer.setSurface(surface);
+      }
       return true;
     }
 
     @Override
     public void onSetStreamVolume(float volume) {
       Log.d(TAG, "Session onSetStreamVolume(" + volume + ").");
-      // TODO Auto-generated method stub
+      if (mediaPlayer != null) {
+        mediaPlayer.setVolume(volume, volume);
+      }
     }
 
     @Override
